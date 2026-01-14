@@ -19,7 +19,12 @@ const config = {
       },
       {
         test: /\.(ts|tsx)$/,
-        use: "ts-loader",
+        use: {
+          loader: "ts-loader",
+          options: {
+            transpileOnly: true,
+          },
+        },
         exclude: /node_modules/,
       },
       {
@@ -54,9 +59,12 @@ const config = {
     ],
   },
   resolve: {
-    extensions: [".js", ".tsx", ".ts"],
+    extensions: [".js", ".tsx", ".ts", ".mjs"],
     fallback: {
       fs: false,
+    },
+    alias: {
+      "signify-ts": path.resolve(__dirname, "node_modules/signify-ts/dist/index.js"),
     },
   },
   plugins: [
@@ -104,6 +112,7 @@ const config = {
   },
   experiments: {
     asyncWebAssembly: true,
+    topLevelAwait: true,
   },
 };
 

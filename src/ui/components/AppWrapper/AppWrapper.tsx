@@ -216,17 +216,22 @@ const AppWrapper = (props: { children: ReactNode }) => {
     try {
       await Agent.agent.identifiers.getAvailableWitnesses();
     } catch (e) {
-      if (
-        e instanceof Error &&
-        (e.message.includes(
-          IdentifierService.INSUFFICIENT_WITNESSES_AVAILABLE
-        ) ||
+      if (e instanceof Error) {
+        const isConfigError =
+          e.message.includes(
+            IdentifierService.INSUFFICIENT_WITNESSES_AVAILABLE
+          ) ||
           e.message.includes(
             IdentifierService.MISCONFIGURED_AGENT_CONFIGURATION
-          ))
-      ) {
-        dispatch(showNoWitnessAlert(true));
-        return;
+          ) ||
+          // Treat unauthorized /config responses as misconfiguration in UI
+          e.message.includes("HTTP GET /config") ||
+          e.message.includes("/config - 401");
+
+        if (isConfigError) {
+          dispatch(showNoWitnessAlert(true));
+          return;
+        }
       }
 
       throw e;

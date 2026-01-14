@@ -123,8 +123,9 @@ class KeriaNotificationService extends AgentService {
     } catch (error) {
       /* eslint-disable no-console */
       console.error("Error at pollNotifications", error);
+      // Avoid losing 'this' context when retrying
       setTimeout(
-        this.pollNotifications,
+        () => this.pollNotifications(),
         KeriaNotificationService.POLL_KERIA_INTERVAL
       );
     }
