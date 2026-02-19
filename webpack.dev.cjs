@@ -40,6 +40,15 @@ module.exports = merge(require("./webpack.common.cjs"), {
       client: {
          overlay: false
       },
+      watchFiles: {
+         paths: ['src/**/*'],
+         options: {
+            usePolling: true,
+            interval: 1000,
+         },
+      },
+      liveReload: true,
+      hot: true,
    },
    plugins: [
       new webpack.DefinePlugin({

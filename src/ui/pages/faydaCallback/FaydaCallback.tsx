@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import { IonPage, IonContent, IonSpinner, IonText, IonButton } from "@ionic/react";
+import * as jose from 'jose';
+import { de } from "@faker-js/faker";
 
 // ===== CONFIG =====
 const API_BASE =
@@ -18,13 +20,13 @@ const SESSION_KEYS = {
 type FaydaProfile = {
   name?: string;
   email?: string;
-  phone?: string;
+  phone_number?: string;
   picture?: string;
-  fan?: string;
+  birthdate?: string;
 };
 
 // eslint-disable-next-line no-console
-console.log("Api base url:", API_BASE);
+
 
 export const FaydaCallback = () => {
   const location = useLocation();
@@ -32,6 +34,7 @@ export const FaydaCallback = () => {
 
   const [status, setStatus] = useState("Processing Fayda login...");
   const [error, setError] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<FaydaProfile | null>(null);
 
   // ===== GET QUERY PARAMS =====
   const params = new URLSearchParams(location.search);
@@ -46,6 +49,17 @@ export const FaydaCallback = () => {
 
     handleCallback(code, state || undefined);
   }, [code]);
+
+  const decodeUserInfoResponse = async (userinfoJwtToken :string) => {
+    console.log("Decoding user info JWT token:", userinfoJwtToken, ' trying to decode with jose library...');
+    try {
+      const decoded = jose.decodeJwt(userinfoJwtToken);
+      return decoded;
+    } catch (error) {
+      console.error('Error decoding JWT user info:', error);
+      return null;
+    }
+  };
 
   // ===== MAIN FLOW =====
   const handleCallback = async (authCode: string, returnedState?: string) => {
@@ -89,31 +103,16 @@ export const FaydaCallback = () => {
 
       if (!userRes.ok) throw new Error("Userinfo failed");
 
-      const userData: FaydaProfile = await userRes.json();
+      const userInfoResponse = await userRes.json();
+      const decodedUserInfo : FaydaProfile = await decodeUserInfoResponse(userInfoResponse) as FaydaProfile;
+      console.log("Decoded user info:", decodedUserInfo);
+      // const userData: FaydaProfile = await userRes.json();
 
-      setStatus("Saving session...");
+      // Show fetched user info to the user and wait for confirmation
+      setUserInfo(decodedUserInfo);
+      setStatus("Review the received user information and confirm.");
 
-      // ===== STORE SESSION =====
-      localStorage.setItem("fayda_session", "true");
-
-      if (userData?.fan)
-        localStorage.setItem("fayda_fan", userData.fan);
-
-      if (userData?.name)
-        localStorage.setItem("fayda_name", userData.name);
-
-      if (userData?.picture)
-        localStorage.setItem("fayda_picture", userData.picture);
-
-      // ===== CLEANUP =====
-      sessionStorage.removeItem(SESSION_KEYS.state);
-      sessionStorage.removeItem(SESSION_KEYS.verifier);
-
-      setStatus("Login successful — redirecting...");
-
-      setTimeout(() => {
-        history.replace("/tabs/menu");
-      }, 800);
+      // Keep session keys until user confirms; do not auto-redirect.
     } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error(err);
@@ -122,16 +121,73 @@ export const FaydaCallback = () => {
     }
   };
 
+  const confirmAndContinue = () => {
+  // save session/localStorage then redirect
+  localStorage.setItem("fayda_session", "true");
+  if (userInfo?.name) localStorage.setItem("fayda_name", userInfo.name);
+  // cleanup
+  sessionStorage.removeItem(SESSION_KEYS.state);
+  sessionStorage.removeItem(SESSION_KEYS.verifier);
+  history.replace("/tabs/menu");
+};
+
+const cancel = () => {
+  history.replace("/tabs/menu");
+};
+
   return (
     <IonPage>
       <IonContent className="ion-padding">
-        {!error && (
+        {!error && !userInfo && (
           <>
             <IonSpinner />
             <IonText>
               <p>{status}</p>
+              <p>{String(userInfo)}</p>
             </IonText>
           </>
+        )}
+
+        {userInfo && (
+          <div style={{ width: '100%', maxWidth: '900px', margin: '24px auto', textAlign: 'center' }}>
+            <div
+              style={{
+                backgroundColor: '#162447',
+                borderRadius: '15px',
+                boxShadow: '0 10px 20px rgba(0, 0, 0, 0.3)',
+                border: 'none',
+                padding: '30px'
+              }}
+            >
+              <h3 style={{ color: '#f8c94e', marginBottom: '12px' }}>User Information</h3>
+              <ul style={{ listStyleType: 'none', padding: 0, textAlign: 'left' }}>
+                <li style={{ backgroundColor: '#0f3460', borderRadius: '8px', padding: '12px', marginBottom: '8px', color: 'white' }}>
+                  <strong>Name:</strong> {userInfo.name || 'N/A'}
+                </li>
+                <li style={{ backgroundColor: '#0f3460', borderRadius: '8px', padding: '12px', marginBottom: '8px', color: 'white' }}>
+                  <strong>Email:</strong> {userInfo.email || 'N/A'}
+                </li>
+                <li style={{ backgroundColor: '#0f3460', borderRadius: '8px', padding: '12px', marginBottom: '8px', color: 'white' }}>
+                  <strong>Phone:</strong> {userInfo.phone_number || 'N/A'}
+                </li>
+                {userInfo.birthdate && (
+                  <li style={{ backgroundColor: '#0f3460', borderRadius: '8px', padding: '12px', marginBottom: '8px', color: 'white' }}>
+                    <strong>Date Of Birth:</strong> {userInfo.birthdate}
+                  </li>
+                )}
+                {userInfo.picture && (
+                  <li style={{ textAlign: 'center', marginTop: '12px' }}>
+                    <img src={userInfo.picture} alt="User" style={{ width: 140, height: 140, borderRadius: '50%', border: '3px solid rgb(193,160,77)', padding: 6 }} />
+                  </li>
+                )}
+              </ul>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '18px' }}>
+                <IonButton color="primary" onClick={confirmAndContinue}>Confirm and continue</IonButton>
+                <IonButton fill="outline" onClick={cancel}>Cancel</IonButton>
+              </div>
+            </div>
+          </div>
         )}
 
         {error && (
