@@ -122,14 +122,20 @@ export const FaydaCallback = () => {
   };
 
   const confirmAndContinue = () => {
-  // save session/localStorage then redirect
-  localStorage.setItem("fayda_session", "true");
-  if (userInfo?.name) localStorage.setItem("fayda_name", userInfo.name);
-  // cleanup
-  sessionStorage.removeItem(SESSION_KEYS.state);
-  sessionStorage.removeItem(SESSION_KEYS.verifier);
-  history.replace("/tabs/menu");
-};
+    // save session/localStorage then redirect
+    localStorage.setItem("fayda_session", "true");
+    if (userInfo) {
+      Object.entries(userInfo).forEach(([key, value]) => {
+        if (value) {
+          localStorage.setItem(`fayda_${key}`, value);
+        }
+      });
+    }
+    // cleanup
+    sessionStorage.removeItem(SESSION_KEYS.state);
+    sessionStorage.removeItem(SESSION_KEYS.verifier);
+    history.replace("/tabs/menu");
+  };
 
 const cancel = () => {
   history.replace("/tabs/menu");

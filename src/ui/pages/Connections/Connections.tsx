@@ -191,7 +191,8 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
     };
 
     const handleConnectModal = () => {
-      if(verifiedWithFayda === false){
+      const faydaUser = localStorage.getItem("fayda_name");
+      if(faydaUser === null){
         setVerifiedWithFayda(true);
         return;
       }
