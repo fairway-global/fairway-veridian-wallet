@@ -54,6 +54,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { ConnectionDetails } from "../ConnectionDetails";
 import { CreateIdentifier } from "../../components/CreateIdentifier";
 import { SearchInput } from "./components/SearchInput";
+import { FaydaModal } from "../faydaFlow/faydaModal";
 
 const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
   ({ showConnections, setShowConnections }, ref) => {
@@ -91,6 +92,7 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
     const [hideHeader, setHideHeader] = useState(false);
     const [openConnectionlModal, setOpenConnectionlModal] = useState(false);
     const [search, setSearch] = useState("");
+    const [verifiedWithFayda, setVerifiedWithFayda] = useState<boolean>(false);
 
     useEffect(() => {
       setShowPlaceholder(Object.keys(connectionsCache).length === 0);
@@ -189,6 +191,20 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
     };
 
     const handleConnectModal = () => {
+      if(verifiedWithFayda === false){
+        setVerifiedWithFayda(true);
+        return;
+      }
+      setConnectModalIsOpen(true);
+    };
+
+    const handleFaydaRedirect = () => {
+      // const faydaUrl = `faydaapp://fayda.veridianwallet.com/connection?oobi=${encodeURIComponent(
+      //   oobi
+      // )}`;
+      // window.location.href = faydaUrl;
+      
+      setVerifiedWithFayda(false);
       setConnectModalIsOpen(true);
     };
 
@@ -375,6 +391,11 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
             "connections.page.deletepending.secondchecktitle"
           )}`}
           onDeletePendingItem={deleteConnection}
+        />
+        <FaydaModal
+          isOpen={verifiedWithFayda}
+          setIsOpen={setVerifiedWithFayda}
+          onSubmit={handleFaydaRedirect}
         />
       </>
     );

@@ -21,6 +21,7 @@ import { VerifyRecoverySeedPhrase } from "../ui/pages/VerifyRecoverySeedPhrase";
 import { VerifySeedPhrase } from "../ui/pages/VerifySeedPhrase";
 import { getNextRoute } from "./nextRoute";
 import { RoutePath, TabsRoutePath } from "./paths";
+import { FaydaCallback } from "../ui/pages/faydaCallback/FaydaCallback";
 
 const Routes = () => {
   const stateCache = useAppSelector(getStateCache);
@@ -118,6 +119,8 @@ const Routes = () => {
         from="/"
         to={nextPath}
       />
+      <Route path="/callback" component={FaydaCallback} exact />
+
     </IonRouterOutlet>
   );
 };
