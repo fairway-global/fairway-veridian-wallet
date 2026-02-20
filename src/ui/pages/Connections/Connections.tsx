@@ -55,6 +55,7 @@ import { ConnectionDetails } from "../ConnectionDetails";
 import { CreateIdentifier } from "../../components/CreateIdentifier";
 import { SearchInput } from "./components/SearchInput";
 import { FaydaModal } from "../faydaFlow/faydaModal";
+import { selectFaydaVerified } from '../../../store/selectors/faydaVerifiedSelectors';
 
 const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
   ({ showConnections, setShowConnections }, ref) => {
@@ -93,6 +94,7 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
     const [openConnectionlModal, setOpenConnectionlModal] = useState(false);
     const [search, setSearch] = useState("");
     const [verifiedWithFayda, setVerifiedWithFayda] = useState<boolean>(false);
+    const faydaVerified = useAppSelector(selectFaydaVerified);
 
     useEffect(() => {
       setShowPlaceholder(Object.keys(connectionsCache).length === 0);
@@ -191,8 +193,9 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
     };
 
     const handleConnectModal = () => {
-      const faydaUser = localStorage.getItem("fayda_name");
-      if(faydaUser === null){
+      // Access global Fayda verified state
+      console.log('Fayda verified (global):', faydaVerified);
+      if (!faydaVerified) {
         setVerifiedWithFayda(true);
         return;
       }

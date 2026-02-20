@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useAppDispatch } from '../../../store/hooks';
+import { setFaydaVerified } from '../../../store/reducers/faydaVerifiedCache';
 import { useLocation, useHistory } from "react-router-dom";
 import { IonPage, IonContent, IonSpinner, IonText, IonButton } from "@ionic/react";
 import * as jose from 'jose';
@@ -29,6 +31,7 @@ type FaydaProfile = {
 
 
 export const FaydaCallback = () => {
+  const dispatch = useAppDispatch();
   const location = useLocation();
   const history = useHistory();
 
@@ -110,6 +113,7 @@ export const FaydaCallback = () => {
 
       // Show fetched user info to the user and wait for confirmation
       setUserInfo(decodedUserInfo);
+      dispatch(setFaydaVerified(true));
       setStatus("Review the received user information and confirm.");
 
       // Keep session keys until user confirms; do not auto-redirect.
@@ -149,7 +153,6 @@ const cancel = () => {
             <IonSpinner />
             <IonText>
               <p>{status}</p>
-              <p>{String(userInfo)}</p>
             </IonText>
           </>
         )}

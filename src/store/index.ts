@@ -10,6 +10,7 @@ import { biometricsCacheSlice } from "./reducers/biometricsCache";
 import { credsArchivedCacheSlice } from "./reducers/credsArchivedCache";
 import { ssiAgentSlice } from "./reducers/ssiAgent";
 import { notificationsCacheSlice } from "./reducers/notificationsCache";
+import { faydaVerifiedCacheSlice } from "./reducers/faydaVerifiedCache";
 
 const store = configureStore({
   reducer: {
@@ -24,6 +25,7 @@ const store = configureStore({
     biometricsCache: biometricsCacheSlice.reducer,
     ssiAgentCache: ssiAgentSlice.reducer,
     notificationsCache: notificationsCacheSlice.reducer,
+    faydaVerifiedCache: faydaVerifiedCacheSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
