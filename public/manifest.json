@@ -1,6 +1,6 @@
 {
-  "short_name": "Veridian",
-  "name": "Veridian",
+  "short_name": "Fairway",
+  "name": "Fairway Wallet",
   "icons": [
     {
       "src": "assets/icons/icon-16.png",
@@ -29,6 +29,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#022339",
   "background_color": "#ffffff"
 }

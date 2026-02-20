@@ -1,0 +1,117 @@
+:root {
+  /*
+   * White-label theme tokens
+   * Update these values to rebrand the app quickly.
+   */
+  --wl-font-family: "Inter", "Roboto", "Helvetica Neue", Arial, sans-serif;
+
+  --wl-color-accent: #fdb82c;
+  --wl-color-accent-strong: #e49f10;
+  --wl-color-deep: #022339;
+  --wl-color-mint: #68d3ac;
+
+  --wl-color-surface: #ffffff;
+  --wl-color-surface-soft: #f4f8ff;
+  --wl-color-border: #d4e1ef;
+  --wl-color-text-primary: #0e2f47;
+  --wl-color-text-secondary: #4d677d;
+
+  --wl-page-background: radial-gradient(
+      circle at 12% 6%,
+      rgba(104, 211, 172, 0.16),
+      transparent 36%
+    ),
+    radial-gradient(circle at 89% 12%, rgba(253, 184, 44, 0.16), transparent 34%),
+    linear-gradient(160deg, #ffffff 0%, #f1f6ff 100%);
+
+  --wl-card-glass: rgba(255, 255, 255, 0.94);
+  --wl-shadow-card: 0 18px 42px rgba(2, 35, 57, 0.12);
+  --wl-shadow-button: 0 12px 26px rgba(253, 184, 44, 0.36);
+
+  --wl-radius-sm: 0.75rem;
+  --wl-radius-md: 1.125rem;
+  --wl-radius-lg: 1.5rem;
+  --wl-radius-pill: 1.875rem;
+
+  --wl-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --wl-motion-fast: 220ms;
+  --wl-motion-base: 420ms;
+  --wl-motion-slow: 760ms;
+
+  /* Ionic color remap */
+  --ion-color-primary-100: #fff4de;
+  --ion-color-primary-200: #ffe9c2;
+  --ion-color-primary-300: #ffdca0;
+  --ion-color-primary-400: #ffcd75;
+  --ion-color-primary-500: var(--wl-color-accent);
+  --ion-color-primary-600: #f2ad1d;
+  --ion-color-primary-700: var(--wl-color-accent);
+  --ion-color-primary-800: var(--wl-color-accent-strong);
+
+  --ion-color-neutral-100: var(--wl-color-surface);
+  --ion-color-neutral-200: var(--wl-color-surface-soft);
+  --ion-color-neutral-300: #e4ecf6;
+  --ion-color-neutral-400: #bfcede;
+  --ion-color-neutral-500: #90a3b6;
+  --ion-color-neutral-600: #61788e;
+  --ion-color-neutral-700: #35516b;
+  --ion-color-neutral-800: #0f2f47;
+  --ion-color-neutral-900: #061525;
+
+  --ion-color-neutral-500-rgb: 144, 163, 182;
+  --ion-color-neutral-600-rgb: 97, 120, 142;
+  --ion-color-neutral-700-rgb: 53, 81, 107;
+  --ion-color-neutral-800-rgb: 15, 47, 71;
+  --ion-color-warning-800-rgb: 178, 104, 0;
+
+  --ion-color-theme-one-primary: var(--wl-color-deep);
+  --ion-color-theme-one-secondary: #0a3f5d;
+  --ion-color-theme-two-primary: var(--wl-color-accent);
+  --ion-color-theme-two-secondary: #f2a100;
+  --ion-color-theme-three-primary: var(--wl-color-mint);
+  --ion-color-theme-three-secondary: #3cbf94;
+  --ion-color-theme-four-primary: #31516d;
+  --ion-color-theme-four-secondary: #1b3a57;
+  --ion-color-theme-five-primary: #3d6686;
+  --ion-color-theme-five-secondary: #1f4d72;
+
+  --ion-color-success-100: #e7faef;
+  --ion-color-success-400: #42b67d;
+  --ion-color-success-800: #1d8c57;
+
+  --ion-color-warning-100: #fff5e6;
+  --ion-color-warning-400: #f6be56;
+  --ion-color-warning-800: #b26800;
+
+  --ion-color-error-100: #ffeaea;
+  --ion-color-error-400: #f57070;
+  --ion-color-error-800: #b23a3a;
+  --ion-color-error-800-rgb: 178, 58, 58;
+
+  --ion-color-black-900: #000000;
+  --ion-color-archive-400: #0f3d5f;
+
+  --ion-color-primary: var(--wl-color-deep);
+  --ion-color-secondary: var(--wl-color-accent);
+  --ion-color-danger: var(--ion-color-error-800);
+  --ion-color-danger-contrast: var(--ion-color-neutral-100);
+  --ion-item-background: var(--ion-color-neutral-100);
+
+  --toast-secondary-bg-color: var(--wl-color-deep);
+}
+
+@keyframes wl-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fairway-rise-in {
+  animation: wl-rise-in var(--wl-motion-base) var(--wl-motion-ease) both;
+}

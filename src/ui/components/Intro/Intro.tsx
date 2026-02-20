@@ -2,7 +2,7 @@ import { IonIcon } from "@ionic/react";
 import "@ionic/react/css/ionic-swiper.css";
 import { pauseCircleOutline, playCircleOutline } from "ionicons/icons";
 import Lottie from "lottie-react";
-import { useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import "swiper/css";
 import "swiper/css/autoplay";
 import { Autoplay } from "swiper/modules";
@@ -39,11 +39,69 @@ const items: SlideItem[] = [
   },
 ];
 
+const highlights = [
+  {
+    title: "Compliance-ready identity",
+    description: "Built for regulated digital asset and institutional flows.",
+  },
+  {
+    title: "Privacy by design",
+    description: "Secure credentials with selective disclosure by default.",
+  },
+  {
+    title: "Multi-chain confidence",
+    description: "A clean wallet experience for modern crypto ecosystems.",
+  },
+];
+
 const Intro = () => {
   const [swiper, setSwiper] = useState<SwiperClass | undefined>(undefined);
   const [activeIndex, setActiveIndex] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
   const [autoplayIsClicked, setAutoplayIsClicked] = useState(false);
+  const [visibleHighlights, setVisibleHighlights] = useState<number[]>([]);
+  const highlightContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const highlightElements =
+      highlightContainerRef.current?.querySelectorAll<HTMLElement>(
+        "[data-highlight-index]"
+      );
+
+    if (!highlightElements?.length) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      setVisibleHighlights(highlights.map((_, index) => index));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+
+          const highlightIndex = Number(
+            entry.target.getAttribute("data-highlight-index")
+          );
+          if (Number.isNaN(highlightIndex)) return;
+
+          setVisibleHighlights((current) =>
+            current.includes(highlightIndex)
+              ? current
+              : [...current, highlightIndex]
+          );
+          observer.unobserve(entry.target);
+        });
+      },
+      {
+        threshold: 0.2,
+      }
+    );
+
+    highlightElements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
 
   const handleAutoplay = () => {
     if (autoplay) {
@@ -131,6 +189,38 @@ const Intro = () => {
           </div>
         </div>
       )}
+      <div
+        className="onboarding-highlights"
+        ref={highlightContainerRef}
+      >
+        {highlights.map((highlight, index) => {
+          const cardStyle = {
+            "--highlight-delay": `${index * 120}ms`,
+          } as CSSProperties;
+
+          return (
+            <article
+              key={highlight.title}
+              data-highlight-index={index}
+              className={`onboarding-highlight-card ${
+                visibleHighlights.includes(index) ? "is-visible" : ""
+              }`}
+              style={cardStyle}
+            >
+              <span
+                className="highlight-dot"
+                aria-hidden="true"
+              >
+                <span />
+              </span>
+              <div className="highlight-copy">
+                <h4>{highlight.title}</h4>
+                <p>{highlight.description}</p>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
 };

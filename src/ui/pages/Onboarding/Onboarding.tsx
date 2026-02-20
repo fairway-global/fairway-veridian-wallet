@@ -14,6 +14,7 @@ import { Intro } from "../../components/Intro";
 import { PageFooter } from "../../components/PageFooter";
 import { ResponsivePageLayout } from "../../components/layout/ResponsivePageLayout";
 import { useExitAppWithDoubleTap } from "../../hooks/exitAppWithDoubleTapHook";
+import fairwayLogo from "../../assets/images/fairway-logo.png";
 import "./Onboarding.scss";
 
 const Onboarding = () => {
@@ -59,6 +60,16 @@ const Onboarding = () => {
 
   return (
     <ResponsivePageLayout pageId={pageId}>
+      <div className="onboarding-brand-header fairway-rise-in">
+        <img
+          src={fairwayLogo}
+          alt="Fairway logo"
+          className="onboarding-brand-logo"
+        />
+        <p className="onboarding-brand-subtitle">
+          Institutional identity wallet with elegant crypto-native security.
+        </p>
+      </div>
       <Intro />
       <PageFooter
         pageId={pageId}
