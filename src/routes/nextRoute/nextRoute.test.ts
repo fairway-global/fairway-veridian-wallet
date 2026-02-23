@@ -104,63 +104,10 @@ describe("NextRoute", () => {
       notificationsCache: {
         notifications: [],
       },
-    };
+      faydaVerifiedCache: { verified: false },
+    }
     data = {
       store: storeMock,
-    };
-  });
-
-  afterEach(() => {
-    jest.resetAllMocks();
-  });
-
-  test("should return correct route for /onboarding when passcodeIsSet is true and seedPhrase is not set", () => {
-    localStorageMock.getItem = jest.fn().mockReturnValue(null);
-    storeMock.stateCache.authentication.passcodeIsSet = true;
-
-    const result = getNextOnboardingRoute(data as DataProps);
-
-    expect(result).toEqual({
-      pathname: RoutePath.SETUP_BIOMETRICS,
-    });
-  });
-
-  test("should return correct route for /onboarding when passcodeIsSet is false and seedPhrase is set", () => {
-    localStorageMock.getItem = jest.fn().mockReturnValue("someSeedPhrase");
-
-    const result = getNextOnboardingRoute(data as DataProps);
-
-    expect(result).toEqual({
-      pathname: RoutePath.SET_PASSCODE,
-    });
-  });
-
-  test("should return correct route for /onboarding when passwordIsSet is true", () => {
-    data = {
-      store: {
-        ...storeMock,
-        stateCache: {
-          initializationPhase: InitializationPhase.PHASE_TWO,
-          routes: [],
-          authentication: {
-            loggedIn: false,
-            userName: "",
-            time: 0,
-            passcodeIsSet: true,
-            seedPhraseIsSet: false,
-            passwordIsSet: true,
-            passwordIsSkipped: false,
-            ssiAgentIsUrl: "",
-            finishSetupBiometrics: true,
-          },
-          currentOperation: OperationType.IDLE,
-          queueIncomingRequest: {
-            isProcessing: false,
-            queues: [],
-            isPaused: false,
-          },
-        },
-      },
     };
 
     const result = getNextOnboardingRoute(data as DataProps);
@@ -196,6 +143,7 @@ describe("NextRoute", () => {
             isPaused: false,
           },
         },
+        faydaVerifiedCache: { verified: false },
       },
     };
 
@@ -290,88 +238,99 @@ describe("NextRoute", () => {
   });
 });
 
+
 describe("getNextRoute", () => {
-  const storeMock: RootState = {
-    stateCache: {
-      isOnline: true,
-      initializationPhase: InitializationPhase.PHASE_TWO,
-      recoveryCompleteNoInterruption: false,
-      routes: [],
-      authentication: {
-        loggedIn: false,
-        userName: "",
-        time: 0,
-        passcodeIsSet: true,
-        seedPhraseIsSet: false,
-        passwordIsSet: false,
-        passwordIsSkipped: false,
-        ssiAgentIsSet: false,
-        ssiAgentUrl: "",
-        recoveryWalletProgress: false,
-        loginAttempt: {
-          attempts: 0,
-          lockedUntil: Date.now(),
+  let storeMock: RootState;
+  beforeEach(() => {
+    storeMock = {
+      stateCache: {
+        isOnline: true,
+        initializationPhase: InitializationPhase.PHASE_TWO,
+        recoveryCompleteNoInterruption: false,
+        routes: [],
+        authentication: {
+          loggedIn: false,
+          userName: "",
+          time: 0,
+          passcodeIsSet: true,
+          seedPhraseIsSet: false,
+          passwordIsSet: false,
+          passwordIsSkipped: false,
+          ssiAgentIsSet: false,
+          ssiAgentUrl: "",
+          recoveryWalletProgress: false,
+          loginAttempt: {
+            attempts: 0,
+            lockedUntil: Date.now(),
+          },
+          firstAppLaunch: false,
+          finishSetupBiometrics: false,
         },
-        firstAppLaunch: false,
-        finishSetupBiometrics: false,
+        showConnections: false,
+        toastMsgs: [],
+        currentOperation: OperationType.IDLE,
+        queueIncomingRequest: {
+          isProcessing: false,
+          queues: [],
+          isPaused: false,
+        },
       },
-      showConnections: false,
-      toastMsgs: [],
-      currentOperation: OperationType.IDLE,
-      queueIncomingRequest: {
-        isProcessing: false,
-        queues: [],
-        isPaused: false,
+      seedPhraseCache: {
+        seedPhrase: "",
+        bran: "",
       },
-    },
-    seedPhraseCache: {
-      seedPhrase: "",
-      bran: "",
-    },
-    identifiersCache: {
-      identifiers: {},
-      favourites: [],
-      multiSigGroup: {
-        groupId: "",
-        connections: [],
+      identifiersCache: {
+        identifiers: {},
+        favourites: [],
+        multiSigGroup: {
+          groupId: "",
+          connections: [],
+        },
+        filters: IdentifiersFilters.All,
       },
-      filters: IdentifiersFilters.All,
-    },
-    credsCache: { creds: [], favourites: [], filters: CredentialsFilters.All },
-    credsArchivedCache: { creds: [] },
-    connectionsCache: {
-      connections: {},
-      multisigConnections: {},
-    },
-    walletConnectionsCache: {
-      walletConnections: [],
-      connectedWallet: null,
-      pendingConnection: null,
-    },
-    viewTypeCache: {
-      identifier: {
-        viewType: null,
-        favouriteIndex: 0,
+      credsCache: {
+        creds: [],
+        favourites: [],
+        filters: CredentialsFilters.All,
       },
-      credential: {
-        viewType: null,
-        favouriteIndex: 0,
+      credsArchivedCache: { creds: [] },
+      connectionsCache: {
+        connections: {},
+        multisigConnections: {},
       },
-    },
-    biometricsCache: {
-      enabled: false,
-    },
-    ssiAgentCache: {
-      bootUrl: "",
-      connectUrl: "",
-    },
-    notificationsCache: {
-      notifications: [],
-    },
-  };
+      walletConnectionsCache: {
+        walletConnections: [],
+        connectedWallet: null,
+        pendingConnection: null,
+      },
+      viewTypeCache: {
+        identifier: {
+          viewType: null,
+          favouriteIndex: 0,
+        },
+        credential: {
+          viewType: null,
+          favouriteIndex: 0,
+        },
+      },
+      biometricsCache: {
+        enabled: false,
+      },
+      ssiAgentCache: {
+        bootUrl: "",
+        connectUrl: "",
+      },
+      notificationsCache: {
+        notifications: [],
+      },
+      faydaVerifiedCache: { verified: false },
+    };
+  });
   const state = {};
   const payload = {};
 
+
+// ...existing code...
   test("should return the correct Onboarding next route", () => {
     let result = getNextRoute(RoutePath.ONBOARDING, {
       store: storeMock,

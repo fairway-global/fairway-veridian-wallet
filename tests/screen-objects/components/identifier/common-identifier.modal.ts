@@ -3,7 +3,7 @@ export class CommonIdentifierModal {
     return $("[data-testid=\"color-input-title\"]");
   }
 
-  async colorItem(index: number) {
+  colorItem(index: number) {
     return $(`[data-testid="color-${index}"]`);
   }
 
@@ -15,36 +15,36 @@ export class CommonIdentifierModal {
     return $("[data-testid=\"theme-input-title\"]");
   }
 
-  async themeItem(index: number) {
+  themeItem(index: number) {
     return $(`[data-testid="identifier-theme-selector-item-${index}"]`);
   }
 
   async clickChosenTheme(index: number) {
-    await (await this.themeItem(index)).click();
+    await this.themeItem(index).click();
   }
 
-  async displayNameInputElement(elementName: string) {
+  displayNameInputElement(elementName: string) {
     return $(`#${elementName}-name-input input`);
   }
 
-  async getIdElementLocator(elementName: string) {
+  getIdElementLocator(elementName: string) {
     return `[data-testid="${elementName}-identifier-modal"]`;
   }
 
-  async idElement(elementName: string) {
-    return $(await this.getIdElementLocator(elementName));
+  idElement(elementName: string) {
+    return $(this.getIdElementLocator(elementName));
   }
 
-  async identifierTypeItem(name: string) {
+  identifierTypeItem(name: string) {
     return $(`[data-testid="identifier-aidtype-${name.toLowerCase()}"]`);
   }
 
-  async modalTitleElement(elementName: string) {
+  modalTitleElement(elementName: string) {
     return $(`[data-testid="${elementName}-title"]`);
   }
 
   async clickChosenIdentifierType(identifierType: string) {
-    await (await this.identifierTypeItem(identifierType)).click();
+    await this.identifierTypeItem(identifierType).click();
   }
 }
 

@@ -2,7 +2,7 @@ import { Keyboard } from "@capacitor/keyboard";
 import { useCallback, KeyboardEvent } from "react";
 
 const useHideKeyboard = () => {
-  const hideKeyboard = useCallback((event: KeyboardEvent<HTMLElement>) => {
+  const hideKeyboard = useCallback((event: KeyboardEvent<Element>) => {
     if (event.key === "Enter") Keyboard.hide();
   }, []);
 

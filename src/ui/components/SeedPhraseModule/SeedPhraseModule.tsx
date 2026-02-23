@@ -31,7 +31,7 @@ const SeedPhraseModule = forwardRef<SeedPhraseModuleRef, SeedPhraseModuleProps>(
     },
     ref
   ) => {
-    const seedInputs = useRef<(HTMLElement | null)[]>([]);
+    const seedInputs = useRef<(HTMLIonInputElement | null)[]>([]);
     const { hideKeyboard } = useHideKeyboard();
 
     useImperativeHandle(ref, () => ({

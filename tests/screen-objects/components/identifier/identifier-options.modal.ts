@@ -1,4 +1,4 @@
-import { CommonIdentifierModal } from "./common-identifier.modal.js";
+import { CommonIdentifierModal } from "./common-identifier.modal";
 
 export class IdentifierOptionsModal extends CommonIdentifierModal {
   get deleteIdentifierOption() {

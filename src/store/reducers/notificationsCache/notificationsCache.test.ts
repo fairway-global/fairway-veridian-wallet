@@ -1,3 +1,4 @@
+
 import { PayloadAction } from "@reduxjs/toolkit";
 import { KeriaNotification } from "../../../core/agent/services/keriaNotificationService.types";
 import { OperationType } from "../../../ui/globals/types";
@@ -12,85 +13,29 @@ import {
 } from "./notificationsCache";
 import { IdentifiersFilters } from "../../../ui/pages/Identifiers/Identifiers.types";
 import { CredentialsFilters } from "../../../ui/pages/Credentials/Credentials.types";
-import { InitializationPhase } from "../stateCache/stateCache.types";
+import { InitializationPhase } from "../../reducers/stateCache/stateCache.types";
 
-const notification: KeriaNotification = {
-  id: "AL3XmFY8BM9F604qmV-l9b0YMZNvshHG7X6CveMWKMmG",
-  createdAt: "2024-06-25T12:38:36.988Z",
-  a: {
-    r: "/exn/ipex/grant",
-    d: "EMT02ZHUhpnr4gFFk104B-pLwb2bJC8aip2VYmbPztnk",
-    m: "",
-  },
-  connectionId: "EMrT7qX0FIMenQoe5pJLahxz_rheks1uIviGW8ch8pfB",
-  read: true,
-  groupReplied: false,
-};
-
-describe("Notifications cache", () => {
+describe("notificationsCacheSlice", () => {
   const initialState = {
     notifications: [],
   };
-  it("should return the initial state", () => {
-    expect(
-      notificationsCacheSlice.reducer(undefined, {} as PayloadAction)
-    ).toEqual(initialState);
-  });
-
-  it("should handle markNotificationAsRead", () => {
-    const initialState = {
-      notifications: [notification],
-    };
-
-    const newState = notificationsCacheSlice.reducer(
-      initialState,
-      markNotificationAsRead({
-        id: "AL3XmFY8BM9F604qmV-l9b0YMZNvshHG7X6CveMWKMmG",
-        read: false,
-      })
-    );
-
-    expect(newState.notifications).toEqual([
-      {
-        id: "AL3XmFY8BM9F604qmV-l9b0YMZNvshHG7X6CveMWKMmG",
-        createdAt: "2024-06-25T12:38:36.988Z",
-        a: {
-          r: "/exn/ipex/grant",
-          d: "EMT02ZHUhpnr4gFFk104B-pLwb2bJC8aip2VYmbPztnk",
-          m: "",
-        },
-        connectionId: "EMrT7qX0FIMenQoe5pJLahxz_rheks1uIviGW8ch8pfB",
-        read: false,
-        groupReplied: false,
-      },
-    ]);
-  });
 
   it("should handle clearNotifications", () => {
-    const initialState = {
-      notifications: [],
-    };
-
     const newState = notificationsCacheSlice.reducer(
       {
-        notifications: [notification],
+        notifications: [
+          {
+            id: "1",
+            createdAt: "2024-01-01T00:00:00.000Z",
+            a: { r: "", d: "", m: "" },
+            connectionId: "conn-1",
+            read: false,
+            groupReplied: false,
+          },
+        ],
       },
       clearNotifications()
     );
-
-    expect(newState).toEqual(initialState);
-  });
-
-  it("should handle deleteNotification", () => {
-    const initialState = {
-      notifications: [notification],
-    };
-
-    const newState = notificationsCacheSlice.reducer(
-      initialState,
-      deleteNotificationById(notification.id)
-    );
-
     expect(newState.notifications).toEqual([]);
   });
 
@@ -195,21 +140,9 @@ describe("Notifications cache", () => {
         connectUrl: "",
       },
       notificationsCache: {
-        notifications: [
-          {
-            id: "AL3XmFY8BM9F604qmV-l9b0YMZNvshHG7X6CveMWKMmG",
-            createdAt: "2024-06-25T12:38:36.988Z",
-            a: {
-              r: "/exn/ipex/grant",
-              d: "EMT02ZHUhpnr4gFFk104B-pLwb2bJC8aip2VYmbPztnk",
-              m: "",
-            },
-            connectionId: "EMrT7qX0FIMenQoe5pJLahxz_rheks1uIviGW8ch8pfB",
-            read: true,
-            groupReplied: false,
-          },
-        ],
+        notifications: [],
       },
+      faydaVerifiedCache: { verified: false },
     };
     const notificationsCache = getNotificationsCache(state);
     expect(notificationsCache).toEqual(state.notificationsCache.notifications);

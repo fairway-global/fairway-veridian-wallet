@@ -1,5 +1,5 @@
 import { expect } from "expect-webdriverio";
-import { CommonIdentifierModal } from "./common-identifier.modal.js";
+import { CommonIdentifierModal } from "./common-identifier.modal";
 
 export class IdentifierEditModal extends CommonIdentifierModal {
   modalName = "edit";

@@ -31,13 +31,12 @@ export class WelcomeMessageScreen {
   }
 
   async loads(titleName: string) {
-    if (expect(this.welcomeBoard).toBeDisplayed()) {
-      await expect(this.titleText).toBeDisplayed();
-      await expect(this.titleText).toHaveText(titleName);
-      await expect(this.welcomeText).toBeDisplayed();
-      await expect(this.welcomeText).toHaveText(WelcomeMessage.Description)
-      await expect(this.skipButton).toBeDisplayed();
-    }
+    await expect(this.welcomeBoard).toBeDisplayed();
+    await expect(this.titleText).toBeDisplayed();
+    await expect(this.titleText).toHaveText(titleName);
+    await expect(this.welcomeText).toBeDisplayed();
+    await expect(this.welcomeText).toHaveText(WelcomeMessage.Description);
+    await expect(this.skipButton).toBeDisplayed();
   }
 
   async welcomeScreenInvisible() {
@@ -48,14 +47,20 @@ export class WelcomeMessageScreen {
 
   async pendingToast() {
     if (await this.pendingToastMessage.isDisplayed()) {
-      await expect(this.createdToastMessage.getAttribute("message")).toHaveText("Identifier pending");
+      await expect(this.pendingToastMessage).toHaveAttribute(
+        "message",
+        "Identifier pending"
+      );
       await this.pendingToastMessage.waitForDisplayed({ reverse: true });
     }
   }
 
   async createdToast() {
     if (await this.createdToastMessage.isDisplayed()) {
-      await expect(this.createdToastMessage.getAttribute("message")).toHaveText("Identifier created");
+      await expect(this.createdToastMessage).toHaveAttribute(
+        "message",
+        "Identifier created"
+      );
       await this.createdToastMessage.waitForDisplayed({ reverse: true });
     }
   }

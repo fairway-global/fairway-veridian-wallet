@@ -6,106 +6,92 @@ import { IdentifiersFilters } from "../../ui/pages/Identifiers/Identifiers.types
 import { DataProps } from "../nextRoute/nextRoute.types";
 import { calcPreviousRoute, getBackRoute, getPreviousRoute } from "./backRoute";
 
-jest.mock("../../store/reducers/stateCache", () => ({
-  removeCurrentRoute: jest.fn(),
-  setCurrentRoute: jest.fn(),
-  setAuthentication: jest.fn(),
-}));
-
-jest.mock("../../store/reducers/seedPhraseCache", () => ({
-  clearSeedPhraseCache: jest.fn(),
-}));
+const makeStoreMock = (): RootState =>
+  ({
+    seedPhraseCache: {
+      seedPhrase: "",
+      bran: "",
+    },
+    ssiAgentCache: {
+      bootUrl: "",
+      connectUrl: "",
+    },
+    stateCache: {
+      isOnline: true,
+      initializationPhase: InitializationPhase.PHASE_TWO,
+      recoveryCompleteNoInterruption: false,
+      routes: [{ path: "/route1" }, { path: "/route2" }, { path: "/route3" }],
+      authentication: {
+        passcodeIsSet: true,
+        seedPhraseIsSet: false,
+        passwordIsSet: false,
+        passwordIsSkipped: true,
+        loggedIn: false,
+        userName: "",
+        time: 0,
+        ssiAgentIsSet: false,
+        ssiAgentUrl: "",
+        recoveryWalletProgress: false,
+        loginAttempt: {
+          attempts: 0,
+          lockedUntil: Date.now(),
+        },
+        firstAppLaunch: false,
+      },
+      currentOperation: OperationType.IDLE,
+      queueIncomingRequest: {
+        isProcessing: false,
+        queues: [],
+        isPaused: false,
+      },
+      showConnections: false,
+      toastMsgs: [],
+    },
+    identifiersCache: {
+      identifiers: {},
+      favourites: [],
+      multiSigGroup: {
+        groupId: "",
+        connections: [],
+      },
+      filters: IdentifiersFilters.All,
+    },
+    credsCache: {
+      creds: [],
+      favourites: [],
+      filters: CredentialsFilters.All,
+    },
+    credsArchivedCache: { creds: [] },
+    connectionsCache: {
+      connections: {},
+      multisigConnections: {},
+    },
+    walletConnectionsCache: {
+      walletConnections: [],
+      connectedWallet: null,
+      pendingConnection: null,
+    },
+    viewTypeCache: {
+      identifier: {
+        viewType: null,
+        favouriteIndex: 0,
+      },
+      credential: {
+        viewType: null,
+        favouriteIndex: 0,
+      },
+    },
+    biometricsCache: {
+      enabled: false,
+    },
+    notificationsCache: {
+      notifications: [],
+    },
+    faydaVerifiedCache: { verified: false },
+  } as RootState);
 
 describe("getBackRoute", () => {
-  let storeMock: RootState;
-
-  beforeEach(() => {
-    storeMock = {
-      seedPhraseCache: {
-        seedPhrase: "",
-        bran: "",
-      },
-      ssiAgentCache: {
-        bootUrl: "",
-        connectUrl: "",
-      },
-      stateCache: {
-        isOnline: true,
-        initializationPhase: InitializationPhase.PHASE_TWO,
-        recoveryCompleteNoInterruption: false,
-        routes: [{ path: "/route1" }, { path: "/route2" }, { path: "/route3" }],
-        authentication: {
-          passcodeIsSet: true,
-          seedPhraseIsSet: false,
-          passwordIsSet: false,
-          passwordIsSkipped: true,
-          loggedIn: false,
-          userName: "",
-          time: 0,
-          ssiAgentIsSet: false,
-          ssiAgentUrl: "",
-          recoveryWalletProgress: false,
-          loginAttempt: {
-            attempts: 0,
-            lockedUntil: Date.now(),
-          },
-          firstAppLaunch: false,
-        },
-        currentOperation: OperationType.IDLE,
-        queueIncomingRequest: {
-          isProcessing: false,
-          queues: [],
-          isPaused: false,
-        },
-        showConnections: false,
-        toastMsgs: [],
-      },
-      identifiersCache: {
-        identifiers: {},
-        favourites: [],
-        multiSigGroup: {
-          groupId: "",
-          connections: [],
-        },
-        filters: IdentifiersFilters.All,
-      },
-      credsCache: {
-        creds: [],
-        favourites: [],
-        filters: CredentialsFilters.All,
-      },
-      credsArchivedCache: { creds: [] },
-      connectionsCache: {
-        connections: {},
-        multisigConnections: {},
-      },
-      walletConnectionsCache: {
-        walletConnections: [],
-        connectedWallet: null,
-        pendingConnection: null,
-      },
-      viewTypeCache: {
-        identifier: {
-          viewType: null,
-          favouriteIndex: 0,
-        },
-        credential: {
-          viewType: null,
-          favouriteIndex: 0,
-        },
-      },
-      biometricsCache: {
-        enabled: false,
-      },
-      notificationsCache: {
-        notifications: [],
-      },
-    };
-  });
-
-  afterEach(() => {
-    jest.resetAllMocks();
-  });
+  const storeMock = makeStoreMock();
 
   test("should return the correct 'backPath' and 'updateRedux' when currentPath is '/'", () => {
     const currentPath = "/";
@@ -172,97 +158,9 @@ describe("calcPreviousRoute", () => {
 });
 
 describe("getPreviousRoute", () => {
-  let storeMock: RootState;
-  beforeEach(() => {
-    storeMock = {
-      seedPhraseCache: {
-        seedPhrase: "",
-        bran: "",
-      },
-      ssiAgentCache: {
-        bootUrl: "",
-        connectUrl: "",
-      },
-      stateCache: {
-        isOnline: true,
-        initializationPhase: InitializationPhase.PHASE_TWO,
-        recoveryCompleteNoInterruption: false,
-        routes: [{ path: "/route1" }, { path: "/route2" }, { path: "/route3" }],
-        authentication: {
-          passcodeIsSet: true,
-          seedPhraseIsSet: false,
-          passwordIsSet: false,
-          passwordIsSkipped: true,
-          loggedIn: false,
-          userName: "",
-          time: 0,
-          ssiAgentIsSet: false,
-          ssiAgentUrl: "",
-          recoveryWalletProgress: false,
-          loginAttempt: {
-            attempts: 0,
-            lockedUntil: Date.now(),
-          },
-          firstAppLaunch: false,
-        },
-        currentOperation: OperationType.IDLE,
-        queueIncomingRequest: {
-          isProcessing: false,
-          queues: [],
-          isPaused: false,
-        },
-        showConnections: false,
-        toastMsgs: [],
-      },
-      identifiersCache: {
-        identifiers: {},
-        favourites: [],
-        multiSigGroup: {
-          groupId: "",
-          connections: [],
-        },
-        filters: IdentifiersFilters.All,
-      },
-      credsCache: {
-        creds: [],
-        favourites: [],
-        filters: CredentialsFilters.All,
-      },
-      credsArchivedCache: { creds: [] },
-      connectionsCache: {
-        connections: {},
-        multisigConnections: {},
-      },
-      walletConnectionsCache: {
-        walletConnections: [],
-        connectedWallet: null,
-        pendingConnection: null,
-      },
-      viewTypeCache: {
-        identifier: {
-          viewType: null,
-          favouriteIndex: 0,
-        },
-        credential: {
-          viewType: null,
-          favouriteIndex: 0,
-        },
-      },
-      biometricsCache: {
-        enabled: false,
-      },
-      notificationsCache: {
-        notifications: [],
-      },
-    };
-  });
-
-  afterEach(() => {
-    jest.resetAllMocks();
-  });
-  test("should return the correct previous route pathname", () => {
+  test("should return previous route when available", () => {
     const data: DataProps = {
-      store: storeMock,
+      store: makeStoreMock(),
     };
 
     const result = getPreviousRoute(data);
@@ -270,23 +168,14 @@ describe("getPreviousRoute", () => {
     expect(result).toEqual({ pathname: "/route2" });
   });
 
-  test("should return the ROOT path if no previous route exists", () => {
+  test("should return root route when history is empty", () => {
+    const storeMock = makeStoreMock();
+    storeMock.stateCache.routes = [];
     const data: DataProps = {
       store: storeMock,
     };
 
-    const storeWithoutRoutes = {
-      ...storeMock,
-      stateCache: {
-        ...storeMock.stateCache,
-        routes: [],
-      },
-    };
-
-    const result = getPreviousRoute({
-      ...data,
-      store: storeWithoutRoutes,
-    });
+    const result = getPreviousRoute(data);
 
     expect(result).toEqual({ pathname: "/" });
   });

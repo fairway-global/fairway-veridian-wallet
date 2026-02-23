@@ -58,6 +58,13 @@ const config = {
     fallback: {
       fs: false,
     },
+    alias: {
+      "libsodium-wrappers-sumo/dist/modules-sumo-esm/libsodium-sumo.mjs":
+        path.resolve(
+          __dirname,
+          "node_modules/libsodium-sumo/dist/modules-sumo-esm/libsodium-sumo.mjs"
+        ),
+    },
   },
   plugins: [
     new webpack.ProgressPlugin(),
@@ -94,6 +101,21 @@ const config = {
       VERSION: JSON.stringify(require("./package.json").version),
       "process.env": JSON.stringify(process.env)
     }),
+    new webpack.NormalModuleReplacementPlugin(
+      /^\.\/libsodium-sumo\.mjs$/,
+      (resource) => {
+        if (
+          resource.context.includes(
+            path.join("libsodium-wrappers-sumo", "dist", "modules-sumo-esm")
+          )
+        ) {
+          resource.request = path.resolve(
+            __dirname,
+            "node_modules/libsodium-sumo/dist/modules-sumo-esm/libsodium-sumo.mjs"
+          );
+        }
+      }
+    ),
     new webpack.ProvidePlugin({
       Buffer: ["buffer", "Buffer"],
     }),
