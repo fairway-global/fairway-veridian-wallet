@@ -202,16 +202,6 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
       setConnectModalIsOpen(true);
     };
 
-    const handleFaydaRedirect = () => {
-      // const faydaUrl = `faydaapp://fayda.veridianwallet.com/connection?oobi=${encodeURIComponent(
-      //   oobi
-      // )}`;
-      // window.location.href = faydaUrl;
-      
-      setVerifiedWithFayda(false);
-      setConnectModalIsOpen(true);
-    };
-
     useImperativeHandle(ref, () => ({
       handleConnectModalButton: handleConnectModal,
     }));
@@ -399,7 +389,6 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
         <FaydaModal
           isOpen={verifiedWithFayda}
           setIsOpen={setVerifiedWithFayda}
-          onSubmit={handleFaydaRedirect}
         />
       </>
     );

@@ -1,7 +1,7 @@
 // import { Share } from "@capacitor/share";
 import { IonButton, IonIcon } from "@ionic/react";
 import { Browser } from "@capacitor/browser";
-import { cardOutline, list } from "ionicons/icons";
+import { cardOutline } from "ionicons/icons";
 import { i18n } from "../../../i18n";
 // import { useAppDispatch } from "../../../store/hooks";
 // import { setToastMsg } from "../../../store/reducers/stateCache";
@@ -11,15 +11,13 @@ import { PageHeader } from "../../../ui/components/PageHeader";
 import { ResponsiveModal } from "../../../ui/components/layout/ResponsiveModal";
 import "./faydaModal.scss";
 import { FaydaModalProps } from "./faydaModal.types";
-import {useEffect, useState} from "react";
-import { pad } from "signify-ts";
+import { useEffect, useState } from "react";
 
 
 // const VERIFICATION_CANCELLED_ERROR = "Verification canceled";
 const FaydaModal = ({
   isOpen,
-  setIsOpen,
-  onSubmit
+  setIsOpen
 }: FaydaModalProps) => {
   const componentId = "share-connection-modal";
   //   const dispatch = useAppDispatch();
@@ -30,29 +28,31 @@ const FaydaModal = ({
     const listener = Browser.addListener("browserFinished", () => {
       //eslint-disable-next-line no-console
       console.log("Browser closed by user");
-
-      // Example: Continue login flow here
-      handleAfterBrowserClose();
+      setVerificationInProgress(false);
     });
-    async () => {
-      (await listener).remove();
+    return () => {
+      listener.then((browserListener) => browserListener.remove());
     };
-    return ;
   }, []);
 
-  const handleAfterBrowserClose = () => {
-    // Browser returns when user closes it
-    setVerificationInProgress(false);
-    onSubmit && onSubmit();
-    closeModal();
-  }
+  useEffect(() => {
+    if (!isOpen) {
+      setVerificationInProgress(false);
+    }
+  }, [isOpen]);
 
-  const closeModal = () => setIsOpen(false);
+  const closeModal = () => {
+    setVerificationInProgress(false);
+    setIsOpen(false);
+  };
 
   const faydaUrlGenerator = () => {
     const CLIENT_ID = "crXYIYg2cJiNTaw5t-peoPzCRo-3JATNfBd5A86U8t0";
-    const REDIRECT_URI = "http://localhost:3000/callback";
-    const AUTH_ENDPOINT = "https://esignet.ida.fayda.et/authorize"
+    const REDIRECT_URI =
+      process.env.REACT_APP_FAYDA_REDIRECT_URI ||
+      // "org.cardanofoundation.idw://fayda/callback";
+      "http://localhost:3000/callback";
+    const AUTH_ENDPOINT = "https://esignet.ida.fayda.et/authorize";
 
     if (!CLIENT_ID || !REDIRECT_URI || !AUTH_ENDPOINT) {
       // eslint-disable-next-line no-console

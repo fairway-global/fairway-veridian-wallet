@@ -1,3 +1,5 @@
+import { App as CapacitorApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 import { Device, DeviceInfo } from "@capacitor/device";
 import { ScreenOrientation } from "@capacitor/screen-orientation";
@@ -64,6 +66,28 @@ const App = () => {
 
   const [threatsDetected, setThreatsDetected] = useState<ThreatCheck[]>([]);
   const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const listener = CapacitorApp.addListener("appUrlOpen", async ({ url }) => {
+      if (!url?.startsWith("org.cardanofoundation.idw://fayda/callback")) {
+        return;
+      }
+
+      const callbackUrl = new URL(url);
+      const callbackPath = `/callback${callbackUrl.search || ""}${
+        callbackUrl.hash || ""
+      }`;
+
+      await Browser.close().catch(() => undefined);
+      window.location.assign(callbackPath);
+    });
+
+    return () => {
+      listener.then((appUrlOpenListener) => appUrlOpenListener.remove());
+    };
+  }, []);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
