@@ -7,7 +7,7 @@ import { formatShortDate } from "../../../../utils/formatters";
 import { Alert } from "../../../Alert";
 import { CredentialCardTemplateProps } from "../../CredentialCardTemplate.types";
 import { useCardOffsetTop } from "../../../IdentifierCardTemplate";
-import RomeBackground from "../../../../assets/images/rome-bg.png";
+import { CardTheme } from "../../../CardTheme";
 import "./RomeCardTemplate.scss";
 
 const RomeCardTemplate = ({
@@ -23,8 +23,6 @@ const RomeCardTemplate = ({
 
   const CredentialCardTemplateStyles = {
     zIndex: index,
-    backgroundImage: `url(${RomeBackground})`,
-    backgroundSize: "cover",
     transform: pickedCard
       ? `translateY(${-getCardOffsetTop() * index}px)`
       : undefined,
@@ -51,6 +49,12 @@ const RomeCardTemplate = ({
       onClick={() => handleCardClick()}
       style={CredentialCardTemplateStyles}
     >
+      <div className="rome-card-theme">
+        <CardTheme
+          color={1}
+          layout={1}
+        />
+      </div>
       <div className={`rome-card-template-inner ${cardData.status}`}>
         <div className="card-header">
           {cardData.status === CredentialStatus.PENDING ? (

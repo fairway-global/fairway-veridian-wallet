@@ -1,0 +1,64 @@
+.fayda-callback-review {
+  width: 100%;
+  max-width: 56.25rem;
+  margin: 1.5rem auto;
+  text-align: center;
+}
+
+.fayda-callback-review-card {
+  background: var(--ion-color-neutral-800);
+  border-radius: 0.9375rem;
+  box-shadow: 0 0.625rem 1.25rem rgba(var(--ion-color-neutral-800-rgb), 0.3);
+  padding: 1.875rem;
+}
+
+.fayda-callback-review-title {
+  color: var(--ion-color-warning-400);
+  margin-bottom: 0.75rem;
+}
+
+.fayda-callback-review-list {
+  list-style-type: none;
+  padding: 0;
+  text-align: left;
+  margin: 0;
+}
+
+.fayda-callback-review-item {
+  background: var(--ion-color-neutral-700);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  color: var(--ion-color-neutral-100);
+}
+
+.fayda-callback-review-image-wrap {
+  text-align: center;
+  margin-top: 0.75rem;
+}
+
+.fayda-callback-review-image {
+  width: 8.75rem;
+  height: 8.75rem;
+  border-radius: 50%;
+  border: 0.1875rem solid var(--ion-color-warning-400);
+  padding: 0.375rem;
+  object-fit: cover;
+}
+
+.fayda-callback-review-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.125rem;
+}
+
+@media screen and (max-width: 480px) {
+  .fayda-callback-review-card {
+    padding: 1.25rem;
+  }
+
+  .fayda-callback-review-actions {
+    flex-direction: column;
+  }
+}

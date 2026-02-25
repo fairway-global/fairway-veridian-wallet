@@ -55,7 +55,7 @@ import { ConnectionDetails } from "../ConnectionDetails";
 import { CreateIdentifier } from "../../components/CreateIdentifier";
 import { SearchInput } from "./components/SearchInput";
 import { FaydaModal } from "../faydaFlow/faydaModal";
-import { selectFaydaVerified } from '../../../store/selectors/faydaVerifiedSelectors';
+import { selectFaydaVerified } from "../../../store/selectors/faydaVerifiedSelectors";
 
 const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
   ({ showConnections, setShowConnections }, ref) => {
@@ -194,7 +194,7 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
 
     const handleConnectModal = () => {
       // Access global Fayda verified state
-      console.log('Fayda verified (global):', faydaVerified);
+      console.log("Fayda verified (global):", faydaVerified);
       if (!faydaVerified) {
         setVerifiedWithFayda(true);
         return;

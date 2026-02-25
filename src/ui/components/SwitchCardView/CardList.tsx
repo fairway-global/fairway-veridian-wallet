@@ -2,7 +2,6 @@ import { useCallback } from "react";
 import { CredentialShortDetails } from "../../../core/agent/services/credentialService.types";
 import { IdentifierShortDetails } from "../../../core/agent/services/identifier.types";
 import { IpexCommunicationService } from "../../../core/agent/services/ipexCommunicationService";
-import BackgroundRome from "../../assets/images/rome-bg.png";
 import { CardType } from "../../globals/types";
 import { formatShortDate } from "../../utils/formatters";
 import { getTheme } from "../../utils/theme";
@@ -46,11 +45,10 @@ const CardList = ({
         const card = data as CredentialShortDetails;
 
         return card.schema == IpexCommunicationService.SCHEMA_SAID_ROME_DEMO ? (
-          <img
-            src={BackgroundRome}
-            alt="rome"
+          <CardTheme
             className="card-logo"
-            data-testid="card-logo"
+            layout={1}
+            color={1}
           />
         ) : (
           <CardTheme

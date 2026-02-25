@@ -13,12 +13,8 @@ import "./faydaModal.scss";
 import { FaydaModalProps } from "./faydaModal.types";
 import { useEffect, useState } from "react";
 
-
 // const VERIFICATION_CANCELLED_ERROR = "Verification canceled";
-const FaydaModal = ({
-  isOpen,
-  setIsOpen
-}: FaydaModalProps) => {
+const FaydaModal = ({ isOpen, setIsOpen }: FaydaModalProps) => {
   const componentId = "share-connection-modal";
   //   const dispatch = useAppDispatch();
 
@@ -68,9 +64,9 @@ const FaydaModal = ({
         picture: { essential: true },
         gender: { essential: true },
         birthdate: { essential: true },
-        address: { essential: true }
+        address: { essential: true },
       },
-      id_token: {}
+      id_token: {},
     };
 
     const params = new URLSearchParams({
@@ -86,13 +82,12 @@ const FaydaModal = ({
       display: "page",
       nonce: "g4DEuje5Fx57Vb64dO4oqLHXGT8L8G7g",
       state: "ptOO76SD",
-      ui_locales: "en"
+      ui_locales: "en",
     });
 
     return `${AUTH_ENDPOINT}?${params.toString()}`;
   };
 
-  
   const openFayda = async () => {
     const url = faydaUrlGenerator();
     if (!url) {
@@ -121,23 +116,30 @@ const FaydaModal = ({
         title={"Verify with Fayda"}
       />
       <p style={{ padding: "0 16px" }}>
-        You will be redirected to Fayda to complete verification.
-        Once completed, return to the app to add a connection.
+        You will be redirected to Fayda to complete verification. Once
+        completed, return to the app to add a connection.
       </p>
 
-      <div style={{ padding: 16, display: "flex", justifyContent: "center" }} onClick={openFayda}>
-        <IonButton 
+      <div
+        style={{ padding: 16, display: "flex", justifyContent: "center" }}
+        onClick={openFayda}
+      >
+        <IonButton
           style={{ width: "100%" }}
-          expand="block"       // prevents circular layout
+          expand="block" // prevents circular layout
           fill="solid"
-          shape={undefined}    // explicitly remove round
+          shape={undefined} // explicitly remove round
           color="primary"
-          disabled={verificationInProgress}>
-          <IonIcon slot="start" icon={cardOutline} style={{padding: "0 8px"}} />
+          disabled={verificationInProgress}
+        >
+          <IonIcon
+            slot="start"
+            icon={cardOutline}
+            style={{ padding: "0 8px" }}
+          />
           {verificationInProgress ? "Verifying..." : "Verify with Fayda"}
         </IonButton>
       </div>
-    
     </ResponsiveModal>
   );
 };

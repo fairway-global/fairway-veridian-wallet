@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
-import { useAppDispatch } from '../../../store/hooks';
-import { setFaydaVerified } from '../../../store/reducers/faydaVerifiedCache';
+import { useEffect, useRef, useState } from "react";
+import { useAppDispatch } from "../../../store/hooks";
+import { setFaydaVerified } from "../../../store/reducers/faydaVerifiedCache";
 import { useLocation, useHistory } from "react-router-dom";
-import { IonPage, IonContent, IonSpinner, IonText, IonButton } from "@ionic/react";
-import * as jose from 'jose';
-import { de } from "@faker-js/faker";
+import {
+  IonPage,
+  IonContent,
+  IonSpinner,
+  IonText,
+  IonButton,
+} from "@ionic/react";
+import * as jose from "jose";
+import "./FaydaCallback.scss";
 
 // ===== CONFIG =====
-const API_BASE =
-  process.env.REACT_APP_BACKEND_API || "http://localhost:3001";
-
+const API_BASE = process.env.REACT_APP_BACKEND_API || "http://localhost:3001";
 
 const TOKEN_ENDPOINT = `${API_BASE}/token`;
 const USERINFO_ENDPOINT = `${API_BASE}/userinfo`;
@@ -29,11 +33,11 @@ type FaydaProfile = {
 
 // eslint-disable-next-line no-console
 
-
 export const FaydaCallback = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const history = useHistory();
+  const hasHandledCallback = useRef(false);
 
   const [status, setStatus] = useState("Processing Fayda login...");
   const [error, setError] = useState<string | null>(null);
@@ -50,16 +54,25 @@ export const FaydaCallback = () => {
       return;
     }
 
-    handleCallback(code, state || undefined);
-  }, [code]);
+    if (hasHandledCallback.current) {
+      return;
+    }
+    hasHandledCallback.current = true;
 
-  const decodeUserInfoResponse = async (userinfoJwtToken :string) => {
-    console.log("Decoding user info JWT token:", userinfoJwtToken, ' trying to decode with jose library...');
+    void handleCallback(code, state || undefined);
+  }, [code, state]);
+
+  const decodeUserInfoResponse = async (userinfoJwtToken: string) => {
+    console.log(
+      "Decoding user info JWT token:",
+      userinfoJwtToken,
+      " trying to decode with jose library..."
+    );
     try {
       const decoded = jose.decodeJwt(userinfoJwtToken);
       return decoded;
     } catch (error) {
-      console.error('Error decoding JWT user info:', error);
+      console.error("Error decoding JWT user info:", error);
       return null;
     }
   };
@@ -84,7 +97,7 @@ export const FaydaCallback = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          code: authCode
+          code: authCode,
         }),
       });
 
@@ -107,7 +120,9 @@ export const FaydaCallback = () => {
       if (!userRes.ok) throw new Error("Userinfo failed");
 
       const userInfoResponse = await userRes.json();
-      const decodedUserInfo : FaydaProfile = await decodeUserInfoResponse(userInfoResponse) as FaydaProfile;
+      const decodedUserInfo: FaydaProfile = (await decodeUserInfoResponse(
+        userInfoResponse
+      )) as FaydaProfile;
       console.log("Decoded user info:", decodedUserInfo);
       // const userData: FaydaProfile = await userRes.json();
 
@@ -141,9 +156,9 @@ export const FaydaCallback = () => {
     history.replace("/tabs/menu");
   };
 
-const cancel = () => {
-  history.replace("/tabs/menu");
-};
+  const cancel = () => {
+    history.replace("/tabs/menu");
+  };
 
   return (
     <IonPage>
@@ -158,42 +173,48 @@ const cancel = () => {
         )}
 
         {userInfo && (
-          <div style={{ width: '100%', maxWidth: '900px', margin: '24px auto', textAlign: 'center' }}>
-            <div
-              style={{
-                backgroundColor: '#162447',
-                borderRadius: '15px',
-                boxShadow: '0 10px 20px rgba(0, 0, 0, 0.3)',
-                border: 'none',
-                padding: '30px'
-              }}
-            >
-              <h3 style={{ color: '#f8c94e', marginBottom: '12px' }}>User Information</h3>
-              <ul style={{ listStyleType: 'none', padding: 0, textAlign: 'left' }}>
-                <li style={{ backgroundColor: '#0f3460', borderRadius: '8px', padding: '12px', marginBottom: '8px', color: 'white' }}>
-                  <strong>Name:</strong> {userInfo.name || 'N/A'}
+          <div className="fayda-callback-review">
+            <div className="fayda-callback-review-card">
+              <h3 className="fayda-callback-review-title">User Information</h3>
+              <ul className="fayda-callback-review-list">
+                <li className="fayda-callback-review-item">
+                  <strong>Name:</strong> {userInfo.name || "N/A"}
                 </li>
-                <li style={{ backgroundColor: '#0f3460', borderRadius: '8px', padding: '12px', marginBottom: '8px', color: 'white' }}>
-                  <strong>Email:</strong> {userInfo.email || 'N/A'}
+                <li className="fayda-callback-review-item">
+                  <strong>Email:</strong> {userInfo.email || "N/A"}
                 </li>
-                <li style={{ backgroundColor: '#0f3460', borderRadius: '8px', padding: '12px', marginBottom: '8px', color: 'white' }}>
-                  <strong>Phone:</strong> {userInfo.phone_number || 'N/A'}
+                <li className="fayda-callback-review-item">
+                  <strong>Phone:</strong> {userInfo.phone_number || "N/A"}
                 </li>
                 {userInfo.birthdate && (
-                  <li style={{ backgroundColor: '#0f3460', borderRadius: '8px', padding: '12px', marginBottom: '8px', color: 'white' }}>
+                  <li className="fayda-callback-review-item">
                     <strong>Date Of Birth:</strong> {userInfo.birthdate}
                   </li>
                 )}
                 {userInfo.picture && (
-                  <li style={{ textAlign: 'center', marginTop: '12px' }}>
-                    <img src={userInfo.picture} alt="User" style={{ width: 140, height: 140, borderRadius: '50%', border: '3px solid rgb(193,160,77)', padding: 6 }} />
+                  <li className="fayda-callback-review-image-wrap">
+                    <img
+                      src={userInfo.picture}
+                      alt="User"
+                      className="fayda-callback-review-image"
+                    />
                   </li>
                 )}
               </ul>
 
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '18px' }}>
-                <IonButton color="primary" onClick={confirmAndContinue}>Confirm and continue</IonButton>
-                <IonButton fill="outline" onClick={cancel}>Cancel</IonButton>
+              <div className="fayda-callback-review-actions">
+                <IonButton
+                  color="primary"
+                  onClick={confirmAndContinue}
+                >
+                  Confirm and continue
+                </IonButton>
+                <IonButton
+                  fill="outline"
+                  onClick={cancel}
+                >
+                  Cancel
+                </IonButton>
               </div>
             </div>
           </div>

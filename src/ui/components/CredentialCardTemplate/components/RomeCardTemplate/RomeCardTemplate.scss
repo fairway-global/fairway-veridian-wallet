@@ -6,6 +6,7 @@
   font-size: 0.875rem;
   line-height: 1.375rem;
   overflow: hidden;
+  position: relative;
   text-shadow: 0rem 0.125rem 0.25rem rgba(var(--ion-color-neutral-500-rgb), 0.5);
   box-shadow: 0.25rem 0.25rem 0.5rem 0rem
     rgba(var(--ion-color-neutral-500-rgb), 0.2);
@@ -22,6 +23,14 @@
 
   &:not(:first-child) {
     margin-top: -45%;
+  }
+
+  .rome-card-theme {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: 100%;
   }
 
   .rome-card-template-inner {
