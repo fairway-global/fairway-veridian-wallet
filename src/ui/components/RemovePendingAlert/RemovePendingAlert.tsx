@@ -16,6 +16,8 @@ const RemovePendingAlert = ({
   onClose,
   firstCheckProps,
   onDeletePendingItem,
+  finishConnectingButtonText,
+  onFinishConnecting,
 }: RemovePendingAlertProps) => {
   const alertId = `${pageId}-delete-pending-modal`;
   const [isOpenSecondCheck, setOpenSecondCheck] = useState(false);
@@ -40,6 +42,11 @@ const RemovePendingAlert = ({
     setOpenSecondCheck(true);
   };
 
+  const handleFinishConnecting = () => {
+    onClose();
+    onFinishConnecting?.();
+  };
+
   return (
     <>
       <OptionModal
@@ -61,6 +68,8 @@ const RemovePendingAlert = ({
         />
         <PageFooter
           pageId={alertId}
+          primaryButtonText={finishConnectingButtonText}
+          primaryButtonAction={handleFinishConnecting}
           deleteButtonText={firstCheckProps.button}
           deleteButtonAction={openSecondCheck}
         />

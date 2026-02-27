@@ -3,6 +3,7 @@ import { useAppDispatch } from "../../../store/hooks";
 import { setFaydaVerified } from "../../../store/reducers/faydaVerifiedCache";
 import { useLocation, useHistory } from "react-router-dom";
 import {
+  IonAlert,
   IonPage,
   IonContent,
   IonSpinner,
@@ -14,9 +15,16 @@ import "./FaydaCallback.scss";
 
 // ===== CONFIG =====
 const API_BASE = process.env.REACT_APP_BACKEND_API || "http://localhost:3001";
+const CREDENTIAL_ISSUER_API =
+  (
+    process.env.REACT_APP_CREDENTIAL_SERVER_API || "http://localhost:3001"
+  )
+    .trim()
+    .replace(/\/+$/, "");
 
 const TOKEN_ENDPOINT = `${API_BASE}/token`;
 const USERINFO_ENDPOINT = `${API_BASE}/userinfo`;
+const SAVE_FAYDA_DATA_ENDPOINT = `${CREDENTIAL_ISSUER_API}/saveFayda`;
 
 const SESSION_KEYS = {
   state: "fayda_state",
@@ -42,6 +50,8 @@ export const FaydaCallback = () => {
   const [status, setStatus] = useState("Processing Fayda login...");
   const [error, setError] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<FaydaProfile | null>(null);
+  const [issuingCredential, setIssuingCredential] = useState(false);
+  const [showIssuedModal, setShowIssuedModal] = useState(false);
 
   // ===== GET QUERY PARAMS =====
   const params = new URLSearchParams(location.search);
@@ -128,8 +138,9 @@ export const FaydaCallback = () => {
 
       // Show fetched user info to the user and wait for confirmation
       setUserInfo(decodedUserInfo);
-      dispatch(setFaydaVerified(true));
-      setStatus("Review the received user information and confirm.");
+      setStatus(
+        "Review the received user information, then accept and continue."
+      );
 
       // Keep session keys until user confirms; do not auto-redirect.
     } catch (err: any) {
@@ -140,23 +151,77 @@ export const FaydaCallback = () => {
     }
   };
 
-  const confirmAndContinue = () => {
-    // save session/localStorage then redirect
-    localStorage.setItem("fayda_session", "true");
-    if (userInfo) {
-      Object.entries(userInfo).forEach(([key, value]) => {
-        if (value) {
-          localStorage.setItem(`fayda_${key}`, value);
-        }
-      });
+  const confirmAndContinue = async () => {
+    if (!userInfo) {
+      return;
     }
-    // cleanup
-    sessionStorage.removeItem(SESSION_KEYS.state);
-    sessionStorage.removeItem(SESSION_KEYS.verifier);
-    history.replace("/tabs/menu");
+
+    const holderAid = (sessionStorage.getItem("fayda_holder_aid") || "").trim();
+
+    if (!holderAid) {
+      setError(
+        "No connection found for credential issuance. Create/scan the connection first, then verify with Fayda."
+      );
+      return;
+    }
+
+    try {
+      setIssuingCredential(true);
+      setError(null);
+      setStatus("Issuing FaydaVerifiedFairwayId...");
+
+      // Avoid sending large base64 blobs (for example `picture`) to issuer API.
+      const { picture: _ignoredPicture, ...faydaDataForCredential } =
+        userInfo as FaydaProfile & Record<string, unknown>;
+
+      const issueResponse = await fetch(SAVE_FAYDA_DATA_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          aid: holderAid,
+          credentialName: "FaydaVerifiedFairwayId",
+          faydaData: faydaDataForCredential,
+        }),
+      });
+
+      if (!issueResponse.ok) {
+        let backendMessage = "Credential issuance failed";
+        try {
+          const backendBody = await issueResponse.json();
+          if (backendBody?.data) {
+            backendMessage =
+              typeof backendBody.data === "string"
+                ? backendBody.data
+                : JSON.stringify(backendBody.data);
+          }
+        } catch {
+          // Ignore JSON parsing errors and use default error message.
+        }
+        throw new Error(backendMessage);
+      }
+
+      dispatch(setFaydaVerified(true));
+      setShowIssuedModal(true);
+      setStatus("Credential offer was sent to your wallet.");
+
+      try {
+        window.localStorage.removeItem("fayda_pending_connection_label");
+      } catch {
+        // no-op
+      }
+      sessionStorage.removeItem(SESSION_KEYS.state);
+      sessionStorage.removeItem(SESSION_KEYS.verifier);
+    } catch (err: any) {
+      dispatch(setFaydaVerified(false));
+      setError(err.message || "Unable to issue credential");
+    } finally {
+      setIssuingCredential(false);
+    }
   };
 
   const cancel = () => {
+    sessionStorage.removeItem(SESSION_KEYS.state);
+    sessionStorage.removeItem(SESSION_KEYS.verifier);
     history.replace("/tabs/menu");
   };
 
@@ -205,12 +270,16 @@ export const FaydaCallback = () => {
               <div className="fayda-callback-review-actions">
                 <IonButton
                   color="primary"
+                  disabled={issuingCredential}
                   onClick={confirmAndContinue}
                 >
-                  Confirm and continue
+                  {issuingCredential
+                    ? "Issuing credential..."
+                    : "Accept and continue"}
                 </IonButton>
                 <IonButton
                   fill="outline"
+                  disabled={issuingCredential}
                   onClick={cancel}
                 >
                   Cancel
@@ -234,6 +303,24 @@ export const FaydaCallback = () => {
             </IonButton>
           </>
         )}
+
+        <IonAlert
+          isOpen={showIssuedModal}
+          header="FaydaVerifiedFairwayId issued"
+          message="Credential offer sent. Open Notifications and accept the credential."
+          buttons={[
+            {
+              text: "Check notifications",
+              handler: () => history.replace("/tabs/notifications"),
+            },
+            {
+              text: "Later",
+              role: "cancel",
+              handler: () => history.replace("/tabs/menu"),
+            },
+          ]}
+          onDidDismiss={() => setShowIssuedModal(false)}
+        />
       </IonContent>
     </IonPage>
   );

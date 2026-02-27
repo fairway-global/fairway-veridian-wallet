@@ -19,6 +19,7 @@ const FaydaModal = ({ isOpen, setIsOpen }: FaydaModalProps) => {
   //   const dispatch = useAppDispatch();
 
   const [verificationInProgress, setVerificationInProgress] = useState(false);
+  const [connectionLabel, setConnectionLabel] = useState("");
 
   useEffect(() => {
     const listener = Browser.addListener("browserFinished", () => {
@@ -34,6 +35,14 @@ const FaydaModal = ({ isOpen, setIsOpen }: FaydaModalProps) => {
   useEffect(() => {
     if (!isOpen) {
       setVerificationInProgress(false);
+      return;
+    }
+    try {
+      setConnectionLabel(
+        window.localStorage.getItem("fayda_pending_connection_label") || ""
+      );
+    } catch {
+      setConnectionLabel("");
     }
   }, [isOpen]);
 
@@ -116,8 +125,11 @@ const FaydaModal = ({ isOpen, setIsOpen }: FaydaModalProps) => {
         title={"Verify with Fayda"}
       />
       <p style={{ padding: "0 16px" }}>
-        You will be redirected to Fayda to complete verification. Once
-        completed, return to the app to add a connection.
+        Your new connection will remain pending until Fayda verification is
+        completed.
+        {connectionLabel
+          ? ` Verify now to finalize connection (${connectionLabel}).`
+          : ""}
       </p>
 
       <div

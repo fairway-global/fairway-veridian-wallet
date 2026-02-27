@@ -56,6 +56,16 @@ import { NotificationDetailsProps } from "../../NotificationDetails.types";
 import "./ReceiveCredential.scss";
 
 const ANIMATION_DELAY = 2600;
+const ACCEPT_RETRY_DELAY_MS = 1200;
+const RETRYABLE_ACCEPT_ERROR_PATTERNS = [
+  /Failed to resolve OOBI/i,
+  /operation not completing/i,
+  /Schema not found/i,
+];
+const IDEMPOTENT_ACCEPT_ERROR_PATTERNS = [
+  /IPEX message has already been responded to/i,
+  /already exists/i,
+];
 
 const ReceiveCredential = ({
   pageId,
@@ -199,22 +209,61 @@ const ReceiveCredential = ({
     }
   };
 
+  const isRetryableAcceptError = (error: unknown): boolean => {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    return RETRYABLE_ACCEPT_ERROR_PATTERNS.some((pattern) =>
+      pattern.test(error.message)
+    );
+  };
+
+  const isIdempotentAcceptError = (error: unknown): boolean => {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    return IDEMPOTENT_ACCEPT_ERROR_PATTERNS.some((pattern) =>
+      pattern.test(error.message)
+    );
+  };
+
+  const submitCredentialAccept = async () => {
+    if (!isMultisig || (isMultisig && isGroupInitiator)) {
+      await Agent.agent.ipexCommunications.admitAcdcFromGrant(
+        notificationDetails.id
+      );
+      return;
+    }
+
+    if (multisigMemberStatus.linkedRequest.current) {
+      await Agent.agent.ipexCommunications.joinMultisigAdmit(
+        notificationDetails.id
+      );
+    }
+  };
+
   const handleAccept = async () => {
     try {
       const startTime = Date.now();
       setInitiateAnimation(true);
 
-      if (!isMultisig || (isMultisig && isGroupInitiator)) {
-        await Agent.agent.ipexCommunications.admitAcdcFromGrant(
-          notificationDetails.id
+      try {
+        await submitCredentialAccept();
+      } catch (error) {
+        if (!isRetryableAcceptError(error)) {
+          throw error;
+        }
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, ACCEPT_RETRY_DELAY_MS)
         );
-      } else if (multisigMemberStatus.linkedRequest.current) {
-        await Agent.agent.ipexCommunications.joinMultisigAdmit(
-          notificationDetails.id
-        );
+        await submitCredentialAccept();
       }
 
       const finishTime = Date.now();
+      const delay = Math.max(0, ANIMATION_DELAY - (finishTime - startTime));
 
       setTimeout(() => {
         if (!isMultisig) {
@@ -223,8 +272,16 @@ const ReceiveCredential = ({
 
         handleBack();
         setOpenInfo(false);
-      }, ANIMATION_DELAY - (finishTime - startTime));
+      }, delay);
     } catch (e) {
+      if (isIdempotentAcceptError(e)) {
+        if (!isMultisig) {
+          await handleNotificationUpdate();
+        }
+        handleBack();
+        setOpenInfo(false);
+        return;
+      }
       setInitiateAnimation(false);
       showError("Unable to accept acdc", e, dispatch);
     }

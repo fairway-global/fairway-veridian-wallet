@@ -1,8 +1,5 @@
 import { scanCircleOutline, qrCodeOutline } from "ionicons/icons";
 import { ConnectionsOptionModalProps } from "./ConnectionsOptionModal.types";
-import { useAppDispatch } from "../../../../../store/hooks";
-import { setCurrentOperation } from "../../../../../store/reducers/stateCache";
-import { OperationType } from "../../../../globals/types";
 import { OptionItem, OptionModal } from "../../../../components/OptionsModal";
 import { i18n } from "../../../../../i18n";
 
@@ -10,17 +7,16 @@ const ConnectionsOptionModal = ({
   type,
   connectModalIsOpen,
   setConnectModalIsOpen,
+  handleScanConnection,
   handleProvideQr,
 }: ConnectionsOptionModalProps) => {
-  const dispatch = useAppDispatch();
-
   const options: OptionItem[] = [
     {
       icon: scanCircleOutline,
       label: i18n.t("connectmodal.scan"),
       onClick: () => {
         setConnectModalIsOpen(false);
-        dispatch(setCurrentOperation(OperationType.SCAN_CONNECTION));
+        handleScanConnection();
       },
       testId: "add-connection-modal-scan-qr-code",
     },

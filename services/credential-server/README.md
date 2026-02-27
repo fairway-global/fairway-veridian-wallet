@@ -8,3 +8,9 @@ Right now, this is only used for testing purposes for the wallet - it is not mea
     `npm run dev`
 3. Build code and run the built server:
    `npm build`&& `npm start`
+
+### API Documentation (Swagger UI)
+After starting the server, open:
+
+- Swagger UI: `http://localhost:3001/api-docs`
+- OpenAPI JSON: `http://localhost:3001/api-docs.json`

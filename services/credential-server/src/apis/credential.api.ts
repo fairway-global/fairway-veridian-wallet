@@ -9,22 +9,34 @@ export const CREDENTIAL_NOT_FOUND = "Not found credential with ID: ";
 export const CREDENTIAL_REVOKED_ALREADY =
   "The credential has been revoked already";
 
-export async function issueAcdcCredential(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  const client: SignifyClient = req.app.get("signifyClient");
-  const qviCredentialId = req.app.get("qviCredentialId");
+interface IssueAcdcCredentialInput {
+  schemaSaid: string;
+  aid: string;
+  attribute?: Record<string, unknown>;
+}
 
-  const { schemaSaid, aid, attribute } = req.body;
+function toAttachment(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    const first = value.find((item) => typeof item === "string" && item);
+    return typeof first === "string" ? first : undefined;
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return undefined;
+}
+
+export async function issueCredentialAndGrant(
+  client: SignifyClient,
+  qviCredentialId: string,
+  input: IssueAcdcCredentialInput
+): Promise<void> {
+  const { schemaSaid, aid, attribute } = input;
 
   if (!ACDC_SCHEMAS_ID.some((schemaId) => schemaId === schemaSaid)) {
-    res.status(409).send({
-      success: false,
-      data: "",
-    });
-    return;
+    throw new Error(`${UNKNOW_SCHEMA_ID}${schemaSaid}`);
   }
 
   const keriRegistryRegk = await getRegistry(client, ISSUER_NAME);
@@ -96,13 +108,38 @@ export async function issueAcdcCredential(
     acdc: new Serder(credential.sad),
     anc: new Serder(credential.anc),
     iss: new Serder(credential.iss),
-    ancAttachment: credential.ancatc?.[0],
+    ancAttachment: toAttachment(credential.ancatc),
     datetime,
   });
 
   await client
     .ipex()
     .submitGrant(grantParams.senderName, grant, gsigs, gend, [aid]);
+}
+
+export async function issueAcdcCredential(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  const client: SignifyClient = req.app.get("signifyClient");
+  const qviCredentialId = req.app.get("qviCredentialId");
+
+  const { schemaSaid, aid, attribute } = req.body;
+
+  if (!ACDC_SCHEMAS_ID.some((schemaId) => schemaId === schemaSaid)) {
+    res.status(409).send({
+      success: false,
+      data: "",
+    });
+    return;
+  }
+
+  await issueCredentialAndGrant(client, qviCredentialId, {
+    schemaSaid,
+    aid,
+    attribute,
+  });
 
   res.status(200).send({
     success: true,
@@ -202,7 +239,7 @@ export async function revokeCredential(
     anc: new Serder(credential.anc),
     iss: new Serder(credential.iss),
     datetime,
-    ancAttachment: credential.ancatc?.[0],
+    ancAttachment: toAttachment(credential.ancatc),
   });
   const submitGrantOp: Operation = await client
     .ipex()

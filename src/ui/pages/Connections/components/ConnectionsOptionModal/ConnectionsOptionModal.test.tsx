@@ -1,11 +1,9 @@
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { Provider } from "react-redux";
-import configureStore from "redux-mock-store";
 import { i18n } from "../../../../../i18n";
 import { store } from "../../../../../store";
-import { setCurrentOperation } from "../../../../../store/reducers/stateCache";
-import { OperationType, RequestType } from "../../../../globals/types";
+import { RequestType } from "../../../../globals/types";
 import { ConnectionsOptionModal } from "./ConnectionsOptionModal";
 
 jest.mock("@ionic/react", () => ({
@@ -21,6 +19,7 @@ describe("Connection modal", () => {
           type={RequestType.CONNECTION}
           connectModalIsOpen={true}
           setConnectModalIsOpen={jest.fn()}
+          handleScanConnection={jest.fn()}
           handleProvideQr={jest.fn()}
         />
       </Provider>
@@ -36,18 +35,14 @@ describe("Connection modal", () => {
   });
 
   test("It should open scan a QR code component successfully", async () => {
-    const mockStore = configureStore();
-    const dispatchMock = jest.fn();
-    const storeMocked = {
-      ...mockStore(store.getState()),
-      dispatch: dispatchMock,
-    };
+    const handleScanConnection = jest.fn();
     const { getByTestId } = render(
-      <Provider store={storeMocked}>
+      <Provider store={store}>
         <ConnectionsOptionModal
           type={RequestType.CONNECTION}
           connectModalIsOpen={true}
           setConnectModalIsOpen={jest.fn()}
+          handleScanConnection={handleScanConnection}
           handleProvideQr={jest.fn()}
         />
       </Provider>
@@ -56,9 +51,7 @@ describe("Connection modal", () => {
     act(() => {
       fireEvent.click(btn);
     });
-    expect(dispatchMock).toBeCalledWith(
-      setCurrentOperation(OperationType.SCAN_CONNECTION)
-    );
+    expect(handleScanConnection).toBeCalled();
   });
 
   test("It should open share a QR code component successfully", async () => {
@@ -69,6 +62,7 @@ describe("Connection modal", () => {
           type={RequestType.CONNECTION}
           connectModalIsOpen={true}
           setConnectModalIsOpen={jest.fn()}
+          handleScanConnection={jest.fn()}
           handleProvideQr={handleProvideQr}
         />
       </Provider>

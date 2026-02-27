@@ -11,6 +11,8 @@ interface RemovePendingAlertProps {
   firstCheckProps: PopupProps;
   secondCheckTitle: string;
   onDeletePendingItem: () => void;
+  finishConnectingButtonText?: string;
+  onFinishConnecting?: () => void;
 }
 
 export type { RemovePendingAlertProps };

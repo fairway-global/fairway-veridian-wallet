@@ -1078,6 +1078,13 @@ class KeriaNotificationService extends AgentService {
           await this.processOperation(pendingOperation);
         } catch (error) {
           console.error("Error when process a operation", error);
+          // Prevent hot-loop retries for malformed/stale operations.
+          if (!(error instanceof Error) || !isNetworkError(error)) {
+            await this.operationPendingStorage.deleteById(pendingOperation.id);
+            this.pendingOperations = this.pendingOperations.filter(
+              (op) => op.id !== pendingOperation.id
+            );
+          }
         }
       }
 

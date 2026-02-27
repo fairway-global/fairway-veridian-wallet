@@ -83,6 +83,7 @@ class ConnectionService extends AgentService {
   static readonly DEFAULT_ROLE = "agent";
   static readonly FAILED_TO_RESOLVE_OOBI =
     "Failed to resolve OOBI, operation not completing...";
+  static readonly OOBI_RESOLVE_TIMEOUT_MS = 20000;
   static readonly CANNOT_GET_OOBI = "No OOBI available from KERIA";
   static readonly OOBI_INVALID = "OOBI URL is invalid";
 
@@ -534,7 +535,7 @@ class ConnectionService extends AgentService {
       operation = (await waitAndGetDoneOp(
         this.props.signifyClient,
         await this.props.signifyClient.oobis().resolve(strippedUrl),
-        5000
+        ConnectionService.OOBI_RESOLVE_TIMEOUT_MS
       )) as Operation & { response: State };
 
       if (!operation.done) {

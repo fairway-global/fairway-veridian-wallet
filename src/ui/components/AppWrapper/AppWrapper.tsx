@@ -5,6 +5,7 @@ import { ReactNode, useCallback, useEffect, useState } from "react";
 import { Agent } from "../../../core/agent/agent";
 import {
   ConnectionStatus,
+  CreationStatus,
   MiscRecordId,
 } from "../../../core/agent/agent.types";
 import {
@@ -12,6 +13,7 @@ import {
   ConnectionStateChangedEvent,
 } from "../../../core/agent/event.types";
 import { IdentifierService } from "../../../core/agent/services";
+import { IdentifierShortDetails } from "../../../core/agent/services/identifier.types";
 import { CredentialStatus } from "../../../core/agent/services/credentialService.types";
 import { PeerConnection } from "../../../core/cardano/walletConnect/peerConnection";
 import {
@@ -44,6 +46,8 @@ import {
 } from "../../../store/reducers/identifiersCache";
 import { FavouriteIdentifier } from "../../../store/reducers/identifiersCache/identifiersCache.types";
 import { setNotificationsCache } from "../../../store/reducers/notificationsCache";
+import { setFaydaVerified } from "../../../store/reducers/faydaVerifiedCache";
+import { selectFaydaVerified } from "../../../store/selectors/faydaVerifiedSelectors";
 import {
   getAuthentication,
   getForceInitApp,
@@ -92,10 +96,45 @@ import {
 } from "./coreEventListeners";
 import { useActivityTimer } from "./hooks/useActivityTimer";
 
+const FAYDA_STATUS_API_BASE = (
+  process.env.REACT_APP_CREDENTIAL_SERVER_API || "http://localhost:3001"
+).trim().replace(/\/+$/, "");
+const FAYDA_VERIFIED_STORAGE_KEY = "fayda_verified";
+const FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY = "fayda_pending_connection_id";
+const FAYDA_PENDING_CONNECTION_LABEL_STORAGE_KEY =
+  "fayda_pending_connection_label";
+
+function getLocalStorageItem(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function setLocalStorageItem(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // no-op
+  }
+}
+
+function removeLocalStorageItem(key: string): void {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // no-op
+  }
+}
+
 const connectionStateChangedHandler = async (
   event: ConnectionStateChangedEvent,
   dispatch: ReturnType<typeof useAppDispatch>
 ) => {
+  const isFaydaVerified =
+    getLocalStorageItem(FAYDA_VERIFIED_STORAGE_KEY) === "true";
+
   if (event.payload.status === ConnectionStatus.PENDING) {
     if (event.payload.isMultiSigInvite) return;
 
@@ -115,6 +154,25 @@ const connectionStateChangedHandler = async (
       await Agent.agent.connections.getConnectionShortDetailById(
         connectionRecordId
       );
+
+    if (!isFaydaVerified) {
+      setLocalStorageItem(
+        FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY,
+        connectionRecordId
+      );
+      setLocalStorageItem(
+        FAYDA_PENDING_CONNECTION_LABEL_STORAGE_KEY,
+        connectionDetails.label || ""
+      );
+      dispatch(
+        updateOrAddConnectionCache({
+          ...connectionDetails,
+          status: ConnectionStatus.PENDING,
+        })
+      );
+      return;
+    }
+
     dispatch(updateOrAddConnectionCache(connectionDetails));
     dispatch(setToastMsg(ToastMsgType.NEW_CONNECTION_ADDED));
   }
@@ -199,6 +257,7 @@ const AppWrapper = (props: { children: ReactNode }) => {
   const recoveryCompleteNoInterruption = useAppSelector(
     getRecoveryCompleteNoInterruption
   );
+  const faydaVerified = useAppSelector(selectFaydaVerified);
   const forceInitApp = useAppSelector(getForceInitApp);
   const [isAlertPeerBrokenOpen, setIsAlertPeerBrokenOpen] = useState(false);
   useActivityTimer();
@@ -293,6 +352,94 @@ const AppWrapper = (props: { children: ReactNode }) => {
   }, [recoveryCompleteNoInterruption]);
 
   useEffect(() => {
+    setLocalStorageItem(
+      FAYDA_VERIFIED_STORAGE_KEY,
+      faydaVerified ? "true" : "false"
+    );
+  }, [faydaVerified]);
+
+  useEffect(() => {
+    if (!faydaVerified) {
+      return;
+    }
+
+    const pendingConnectionId = getLocalStorageItem(
+      FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY
+    );
+    if (!pendingConnectionId) {
+      return;
+    }
+
+    const resolvePendingConnection = async () => {
+      try {
+        const connectionDetails =
+          await Agent.agent.connections.getConnectionShortDetailById(
+            pendingConnectionId
+          );
+        dispatch(updateOrAddConnectionCache(connectionDetails));
+        dispatch(setToastMsg(ToastMsgType.NEW_CONNECTION_ADDED));
+      } catch (error) {
+        showError(
+          "Unable to refresh connection after Fayda verification",
+          error,
+          dispatch
+        );
+      } finally {
+        removeLocalStorageItem(FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY);
+        removeLocalStorageItem(FAYDA_PENDING_CONNECTION_LABEL_STORAGE_KEY);
+      }
+    };
+
+    resolvePendingConnection();
+  }, [dispatch, faydaVerified]);
+
+  const syncFaydaVerificationStatus = useCallback(
+    async (storedIdentifiers: IdentifierShortDetails[]) => {
+      const primaryIdentifier = storedIdentifiers.find(
+        (identifier) =>
+          identifier.creationStatus === CreationStatus.COMPLETE &&
+          !identifier.groupMetadata &&
+          !identifier.groupMemberPre
+      );
+
+      if (!primaryIdentifier?.id) {
+        dispatch(setFaydaVerified(false));
+        return false;
+      }
+
+      const aid = primaryIdentifier.id;
+      sessionStorage.setItem("fayda_holder_aid", aid);
+
+      if (typeof fetch !== "function") {
+        dispatch(setFaydaVerified(false));
+        return false;
+      }
+
+      try {
+        const response = await fetch(
+          `${FAYDA_STATUS_API_BASE}/saveFayda?aid=${encodeURIComponent(
+            aid
+          )}`
+        );
+
+        if (!response.ok) {
+          dispatch(setFaydaVerified(false));
+          return false;
+        }
+
+        const payload = await response.json();
+        const verified = Boolean(payload?.data?.verified);
+        dispatch(setFaydaVerified(verified));
+        return verified;
+      } catch {
+        dispatch(setFaydaVerified(false));
+        return false;
+      }
+    },
+    [dispatch]
+  );
+
+  useEffect(() => {
     const startAgent = async () => {
       // This small pause allows the LockPage to close fully in the UI before starting the agent.
       // Starting the agent causes the UI to freeze up in JS, so visually a jumpy spinner is better than
@@ -342,10 +489,24 @@ const AppWrapper = (props: { children: ReactNode }) => {
       const notifications =
         await Agent.agent.keriaNotifications.getNotifications();
 
+      const isFaydaVerified = await syncFaydaVerificationStatus(
+        storedIdentifiers
+      );
+      const pendingConnectionId = getLocalStorageItem(
+        FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY
+      );
+      const normalizedConnections = !isFaydaVerified && pendingConnectionId
+        ? connectionsDetails.map((connection) =>
+            connection.id === pendingConnectionId
+              ? { ...connection, status: ConnectionStatus.PENDING }
+              : connection
+          )
+        : connectionsDetails;
+
       dispatch(setIdentifiersCache(storedIdentifiers));
       dispatch(setCredsCache(credsCache));
       dispatch(setCredsArchivedCache(credsArchivedCache));
-      dispatch(setConnectionsCache(connectionsDetails));
+      dispatch(setConnectionsCache(normalizedConnections));
       dispatch(setMultisigConnectionsCache(multisigConnectionsDetails));
       dispatch(setWalletConnectionsCache(storedPeerConnections));
       dispatch(setNotificationsCache(notifications));

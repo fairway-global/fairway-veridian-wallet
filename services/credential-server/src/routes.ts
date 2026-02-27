@@ -6,6 +6,11 @@ import {
   requestDisclosure,
   revokeCredential,
 } from "./apis/credential.api";
+import {
+  getFaydaDataStatus,
+  saveFaydaData,
+  deleteFaydaData,
+} from "./apis/fayda.api";
 import { keriOobiApi } from "./apis/invitation.api";
 import { resolveOobi } from "./apis/oobi.api";
 import { ping } from "./apis/ping.api";
@@ -15,7 +20,12 @@ import { config } from "./config";
 export const router: Router = express.Router();
 router.get(config.path.ping, ping);
 router.get(config.path.keriOobi, keriOobiApi);
+router.get(config.path.saveFayda, getFaydaDataStatus);
+router.get(config.path.saveFaydaData, getFaydaDataStatus);
 router.post(config.path.issueAcdcCredential, issueAcdcCredential);
+router.post(config.path.saveFayda, saveFaydaData);
+router.post(config.path.saveFaydaData, saveFaydaData);
+router.delete(config.path.saveData, deleteFaydaData);
 router.post(config.path.resolveOobi, resolveOobi);
 router.get(config.path.contacts, contactList);
 router.get(config.path.contactCredentials, contactCredentials);

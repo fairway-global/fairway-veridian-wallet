@@ -94,6 +94,8 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
     const [openConnectionlModal, setOpenConnectionlModal] = useState(false);
     const [search, setSearch] = useState("");
     const [verifiedWithFayda, setVerifiedWithFayda] = useState<boolean>(false);
+    const [lastPromptedPendingConnectionId, setLastPromptedPendingConnectionId] =
+      useState<string | null>(null);
     const faydaVerified = useAppSelector(selectFaydaVerified);
 
     useEffect(() => {
@@ -186,19 +188,75 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
       setCreateIdentifierModalIsOpen(false);
     };
 
-    const handleProvideQr = () => {
+    const startProvideQrFlow = useCallback(() => {
       availableIdentifiers.length
         ? setOpenIdentifierSelector(true)
         : setOpenIdentifierMissingAlert(true);
+    }, [availableIdentifiers.length]);
+
+    const handleProvideQr = () => {
+      startProvideQrFlow();
     };
 
-    const handleConnectModal = () => {
-      // Access global Fayda verified state
-      console.log("Fayda verified (global):", faydaVerified);
-      if (!faydaVerified) {
-        setVerifiedWithFayda(true);
+    const handleScanConnection = () => {
+      dispatch(setCurrentOperation(OperationType.SCAN_CONNECTION));
+    };
+
+    useEffect(() => {
+      if (faydaVerified || verifiedWithFayda || !showConnections) {
         return;
       }
+
+      let pendingConnectionId: string | null = null;
+      try {
+        pendingConnectionId = window.localStorage.getItem(
+          "fayda_pending_connection_id"
+        );
+      } catch {
+        pendingConnectionId = null;
+      }
+
+      if (
+        !pendingConnectionId ||
+        pendingConnectionId === lastPromptedPendingConnectionId
+      ) {
+        return;
+      }
+
+      const pendingConnection = connectionsCache[pendingConnectionId];
+      if (
+        !pendingConnection ||
+        pendingConnection.status !== ConnectionStatus.PENDING
+      ) {
+        return;
+      }
+
+      try {
+        window.localStorage.setItem(
+          "fayda_pending_connection_label",
+          pendingConnection.label || ""
+        );
+      } catch {
+        // no-op
+      }
+      setLastPromptedPendingConnectionId(pendingConnectionId);
+      setVerifiedWithFayda(true);
+    }, [
+      connectionsCache,
+      faydaVerified,
+      lastPromptedPendingConnectionId,
+      showConnections,
+      verifiedWithFayda,
+    ]);
+
+    useEffect(() => {
+      if (faydaVerified) {
+        setVerifiedWithFayda(false);
+        setLastPromptedPendingConnectionId(null);
+      }
+    }, [faydaVerified]);
+
+    const handleConnectModal = () => {
       setConnectModalIsOpen(true);
     };
 
@@ -259,6 +317,25 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
         );
       }
       dispatch(setCurrentOperation(OperationType.IDLE));
+    };
+
+    const handleFinishConnecting = () => {
+      if (deletePendingItem) {
+        try {
+          window.localStorage.setItem(
+            "fayda_pending_connection_id",
+            deletePendingItem.id
+          );
+          window.localStorage.setItem(
+            "fayda_pending_connection_label",
+            deletePendingItem.label || ""
+          );
+        } catch {
+          // no-op
+        }
+      }
+      setOpenDeletePendingAlert(false);
+      setVerifiedWithFayda(true);
     };
 
     const handleDone = () => {
@@ -348,6 +425,7 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
           type={RequestType.CONNECTION}
           connectModalIsOpen={connectModalIsOpen}
           setConnectModalIsOpen={setConnectModalIsOpen}
+          handleScanConnection={handleScanConnection}
           handleProvideQr={handleProvideQr}
         />
         <IdentifierSelectorModal
@@ -385,6 +463,8 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
             "connections.page.deletepending.secondchecktitle"
           )}`}
           onDeletePendingItem={deleteConnection}
+          finishConnectingButtonText="Finish connecting"
+          onFinishConnecting={handleFinishConnecting}
         />
         <FaydaModal
           isOpen={verifiedWithFayda}

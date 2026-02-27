@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { SignifyClient } from "signify-ts";
+import { LOCAL_IDENTIFIER_CONTACT_ERROR } from "../utils/utils";
 
 export async function contactList(
   _: Request,
@@ -14,9 +15,16 @@ export async function contactList(
   for (const contact of contacts) {
     if (!contact.createdAt) {
       contact.createdAt = new Date();
-      client.contacts().update(contact.id, {
-        createdAt: contact.createdAt,
-      });
+      try {
+        await client.contacts().update(contact.id, {
+          createdAt: contact.createdAt,
+        });
+      } catch (error: any) {
+        const message = String(error?.message ?? error ?? "");
+        if (!message.includes(LOCAL_IDENTIFIER_CONTACT_ERROR)) {
+          throw error;
+        }
+      }
     }
   }
 

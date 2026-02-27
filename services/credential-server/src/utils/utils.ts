@@ -18,6 +18,8 @@ export const OP_TIMEOUT = 15000;
 export const FAILED_TO_RESOLVE_OOBI =
   "Failed to resolve OOBI, operation not completing...";
 export const REGISTRIES_NOT_FOUND = "No registries found for";
+export const LOCAL_IDENTIFIER_CONTACT_ERROR =
+  "contact information only for remote identifiers";
 
 export function randomSalt(): string {
   return new Salter({}).qb64;
@@ -169,11 +171,18 @@ export async function resolveOobi(
   if (operation.response && operation.response.i) {
     const connectionId = operation.response.i;
     const createdAt = new Date((operation.response as State).dt);
-    await client.contacts().update(connectionId, {
-      alias,
-      createdAt,
-      oobi: url,
-    });
+    try {
+      await client.contacts().update(connectionId, {
+        alias,
+        createdAt,
+        oobi: url,
+      });
+    } catch (error: any) {
+      const message = String(error?.message ?? error ?? "");
+      if (!message.includes(LOCAL_IDENTIFIER_CONTACT_ERROR)) {
+        throw error;
+      }
+    }
   }
   return operation;
 }

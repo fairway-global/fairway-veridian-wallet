@@ -115,14 +115,6 @@ class IpexCommunicationService extends AgentService {
     }
 
     const schemaSaid = grantExn.exn.e.acdc.s;
-    const issuerOobi = (
-      await this.connections.getConnectionById(grantExn.exn.i)
-    ).serviceEndpoints[0];
-    await this.connections.resolveOobi(
-      await this.getSchemaUrl(issuerOobi, grantExn.exn.i, schemaSaid),
-      true
-    );
-
     const allSchemaSaids = Object.keys(grantExn.exn.e.acdc?.e || {})
       .map(
         // Chained schemas, will be resolved in admit/multisigAdmit
@@ -131,13 +123,25 @@ class IpexCommunicationService extends AgentService {
       .filter((schema) => !!schema);
     allSchemaSaids.push(schemaSaid);
 
-    const schema = await this.props.signifyClient.schemas().get(schemaSaid);
+    const issuerOobi = await this.getIssuerOobi(grantExn.exn.i);
+    await this.ensureSchemasResolved(allSchemaSaids, grantExn.exn.i, issuerOobi);
+
+    const schema = await this.props.signifyClient
+      .schemas()
+      .get(schemaSaid)
+      .catch((error) => {
+        const status = error instanceof Error ? error.message.split(" - ")[1] : "";
+        if (/404/gi.test(status || "")) {
+          return undefined;
+        }
+        throw error;
+      });
     try {
       const credential = await this.saveAcdcMetadataRecord(
         holder,
         grantExn.exn.e.acdc.d,
         grantExn.exn.e.acdc.a.dt,
-        schema.title,
+        schema?.title || schemaSaid,
         grantExn.exn.i,
         schemaSaid
       );
@@ -168,7 +172,9 @@ class IpexCommunicationService extends AgentService {
       const { op: opMultisigAdmit, exnSaid } = await this.submitMultisigAdmit(
         holder.id,
         grantExn,
-        allSchemaSaids
+        allSchemaSaids,
+        undefined,
+        issuerOobi
       );
 
       op = opMultisigAdmit;
@@ -462,15 +468,10 @@ class IpexCommunicationService extends AgentService {
     notificationD: string,
     holderAid: string,
     issuerAid: string,
-    issuerOobi: string,
+    issuerOobi: string | undefined,
     schemaSaids: string[]
   ): Promise<SubmitIPEXResult> {
-    for (const schemaSaid of schemaSaids) {
-      await this.connections.resolveOobi(
-        await this.getSchemaUrl(issuerOobi, issuerAid, schemaSaid),
-        true
-      );
-    }
+    await this.ensureSchemasResolved(schemaSaids, issuerAid, issuerOobi);
 
     const dt = new Date().toISOString().replace("Z", "000+00:00");
     const [admit, sigs, aend] = await this.props.signifyClient.ipex().admit({
@@ -513,7 +514,7 @@ class IpexCommunicationService extends AgentService {
       return;
     }
 
-    let schemaSaid;
+    let schemaSaid = "";
     if (message.exn.r === ExchangeRoute.IpexGrant) {
       schemaSaid = message.exn.e.acdc.s;
     } else if (message.exn.r === ExchangeRoute.IpexApply) {
@@ -528,15 +529,30 @@ class IpexCommunicationService extends AgentService {
       schemaSaid = previousExchange.exn.e.acdc.s;
     }
 
-    await this.connections.resolveOobi(
-      await this.getSchemaUrl(
-        connection.serviceEndpoints[0],
-        connectionId,
-        schemaSaid
-      ),
-      true
-    );
-    const schema = await this.props.signifyClient.schemas().get(schemaSaid);
+    try {
+      await this.connections.resolveOobi(
+        await this.getSchemaUrl(
+          connection.serviceEndpoints[0],
+          connectionId,
+          schemaSaid
+        ),
+        true
+      );
+    } catch {
+      // History rendering can proceed without resolved schema metadata.
+    }
+    const schema = await this.props.signifyClient
+      .schemas()
+      .get(schemaSaid)
+      .catch((error) => {
+        const status = error instanceof Error ? error.message.split(" - ")[1] : "";
+        if (/404/gi.test(status || "")) {
+          return {
+            title: schemaSaid,
+          };
+        }
+        throw error;
+      });
 
     let prefix;
     let key;
@@ -558,7 +574,7 @@ class IpexCommunicationService extends AgentService {
     const historyItem: ConnectionHistoryItem = {
       id: message.exn.d,
       dt: message.exn.dt,
-      credentialType: schema.title,
+      credentialType: schema.title || schemaSaid,
       connectionId,
       historyType,
     };
@@ -608,21 +624,33 @@ class IpexCommunicationService extends AgentService {
       .map((key) => grantExn.exn.e.acdc.e?.[key]?.s)
       .filter((schema) => !!schema);
     allSchemaSaids.push(schemaSaid);
+    const issuerOobi = await this.getIssuerOobi(grantExn.exn.i);
+    await this.ensureSchemasResolved(allSchemaSaids, grantExn.exn.i, issuerOobi);
 
     const { op } = await this.submitMultisigAdmit(
       holder.id,
       grantExn,
       allSchemaSaids,
-      admitExn
+      admitExn,
+      issuerOobi
     );
 
-    const schema = await this.props.signifyClient.schemas().get(schemaSaid);
+    const schema = await this.props.signifyClient
+      .schemas()
+      .get(schemaSaid)
+      .catch((error) => {
+        const status = error instanceof Error ? error.message.split(" - ")[1] : "";
+        if (/404/gi.test(status || "")) {
+          return undefined;
+        }
+        throw error;
+      });
     try {
       const credential = await this.saveAcdcMetadataRecord(
         holder,
         credentialId,
         grantExn.exn.e.acdc.a.dt,
-        schema.title,
+        schema?.title || schemaSaid,
         connectionId,
         schemaSaid
       );
@@ -952,24 +980,16 @@ class IpexCommunicationService extends AgentService {
       .state(exchange.exn.e.acdc.ri, exchange.exn.e.acdc.d);
 
     const schemaSaid = exchange.exn.e.acdc.s;
+    const issuerOobi = await this.getIssuerOobi(exchange.exn.i);
+    await this.ensureSchemasResolved([schemaSaid], exchange.exn.i, issuerOobi);
     const schema = await this.props.signifyClient
       .schemas()
       .get(schemaSaid)
-      .catch(async (error) => {
-        const status = error.message.split(" - ")[1];
-        if (/404/gi.test(status)) {
-          const issuerOobi = (
-            await this.connections.getConnectionById(exchange.exn.i)
-          ).serviceEndpoints[0];
-          await this.connections.resolveOobi(
-            await this.getSchemaUrl(issuerOobi, exchange.exn.i, schemaSaid),
-            true
-          );
-          return await this.props.signifyClient.schemas().get(schemaSaid);
-        } else {
-          throw error;
-        }
-      });
+      .catch(() => ({
+        title: schemaSaid,
+        description: "",
+        version: "",
+      }));
 
     return {
       id: exchange.exn.e.acdc.d,
@@ -977,9 +997,9 @@ class IpexCommunicationService extends AgentService {
       i: exchange.exn.e.acdc.i,
       a: exchange.exn.e.acdc.a,
       s: {
-        title: schema.title,
-        description: schema.description,
-        version: schema.version,
+        title: schema.title || schemaSaid,
+        description: schema.description || "",
+        version: schema.version || "",
       },
       lastStatus: {
         s: credentialState.et === Ilks.iss ? "0" : "1",
@@ -995,23 +1015,17 @@ class IpexCommunicationService extends AgentService {
     multisigId: string,
     grantExn: ExnMessage,
     schemaSaids: string[],
-    admitExnToJoin?: any
+    admitExnToJoin?: any,
+    issuerOobi?: string
   ): Promise<SubmitIPEXResult> {
     let exn: Serder;
     let sigsMes: string[];
     let mend: string;
 
-    const issuerOobi = (
-      await this.connections.getConnectionById(grantExn.exn.i)
-    ).serviceEndpoints[0];
-    await Promise.all(
-      schemaSaids.map(
-        async (schemaSaid) =>
-          await this.connections.resolveOobi(
-            await this.getSchemaUrl(issuerOobi, grantExn.exn.i, schemaSaid),
-            true
-          )
-      )
+    await this.ensureSchemasResolved(
+      schemaSaids,
+      grantExn.exn.i,
+      issuerOobi ?? (await this.getIssuerOobi(grantExn.exn.i))
     );
 
     const { ourIdentifier, multisigMembers } =
@@ -1180,6 +1194,84 @@ class IpexCommunicationService extends AgentService {
     return offerExn.e.acdc.d;
   }
 
+  private async getIssuerOobi(issuerAid: string): Promise<string | undefined> {
+    try {
+      const connection = await this.connections.getConnectionById(issuerAid);
+      return connection.serviceEndpoints[0];
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith(Agent.MISSING_DATA_ON_KERIA)
+      ) {
+        return undefined;
+      }
+      throw error;
+    }
+  }
+
+  private async ensureSchemasResolved(
+    schemaSaids: string[],
+    issuerAid: string,
+    issuerOobi?: string
+  ): Promise<void> {
+    const uniqueSchemaSaids = [...new Set(schemaSaids.filter(Boolean))];
+
+    for (const schemaSaid of uniqueSchemaSaids) {
+      try {
+        await this.props.signifyClient.schemas().get(schemaSaid);
+        continue;
+      } catch (error) {
+        const status =
+          error instanceof Error ? error.message.split(" - ")[1] : "";
+        if (!/404/gi.test(status || "")) {
+          throw error;
+        }
+      }
+
+      if (!issuerOobi) {
+        continue;
+      }
+
+      let schemaOobi: string;
+      try {
+        schemaOobi = await this.getSchemaUrl(issuerOobi, issuerAid, schemaSaid);
+      } catch {
+        // Schema metadata is optional for rendering and admitting.
+        continue;
+      }
+
+      let resolved = false;
+      const schemaOobiCandidates = [schemaOobi, this.tryGetLocalSchemaUrl(schemaOobi)]
+        .filter((candidate): candidate is string => !!candidate)
+        .filter((candidate, index, list) => list.indexOf(candidate) === index);
+
+      for (const schemaOobiCandidate of schemaOobiCandidates) {
+        try {
+          await this.connections.resolveOobi(schemaOobiCandidate, true);
+          resolved = true;
+          break;
+        } catch {
+          // Best effort only: continue with next candidate.
+        }
+      }
+
+      if (!resolved) {
+        continue;
+      }
+
+      try {
+        await this.props.signifyClient.schemas().get(schemaSaid);
+      } catch (error) {
+        const status =
+          error instanceof Error ? error.message.split(" - ")[1] : "";
+        if (/404/gi.test(status || "")) {
+          continue;
+        }
+        throw error;
+      }
+    }
+  }
+
   private async getSchemaUrl(
     agentOobi: string,
     prefix: string,
@@ -1199,6 +1291,20 @@ class IpexCommunicationService extends AgentService {
     const schemaBase = indexerOobiResult.split("\"url\":\"")[1].split("\"")[0];
 
     return `${schemaBase}/oobi/${said}`;
+  }
+
+  private tryGetLocalSchemaUrl(schemaOobi: string): string | undefined {
+    try {
+      const url = new URL(schemaOobi);
+      if (url.hostname !== "host.docker.internal") {
+        return undefined;
+      }
+
+      url.hostname = "127.0.0.1";
+      return url.toString();
+    } catch {
+      return undefined;
+    }
   }
 }
 
