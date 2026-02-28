@@ -19,7 +19,7 @@ mockIonicReact();
 
 const getMultiSignMock = jest.fn().mockResolvedValue({
   sender: {
-    label: "CF Credential Issuance",
+    label: "Fairway credential issuance",
   },
   otherConnections: connectionsFix,
 });

@@ -22,6 +22,8 @@ import {
 } from "react";
 import { Agent } from "../../../core/agent/agent";
 import {
+  DOOBI_RE,
+  OOBI_RE,
   OOBI_AGENT_ONLY_RE,
   OobiType,
   WOOBI_RE,
@@ -62,7 +64,7 @@ import {
 import { OperationType, ToastMsgType } from "../../globals/types";
 import { showError } from "../../utils/error";
 import { combineClassNames } from "../../utils/style";
-import { isValidConnectionUrl, isValidHttpUrl } from "../../utils/urlChecker";
+import { isValidHttpUrl } from "../../utils/urlChecker";
 import { Alert } from "../Alert";
 import { CreateGroupIdentifier } from "../CreateGroupIdentifier";
 import { CreateIdentifier } from "../CreateIdentifier";
@@ -436,10 +438,11 @@ const Scanner = forwardRef(
     };
 
     const checkUrl = (url: string) => {
-      const isMultiSigUrl = url.includes(OobiQueryParams.GROUP_ID);
-      const urlGroupId = new URL(url).searchParams.get(
+      const parsedUrl = new URL(url);
+      const isMultiSigUrl = parsedUrl.searchParams.has(
         OobiQueryParams.GROUP_ID
       );
+      const urlGroupId = parsedUrl.searchParams.get(OobiQueryParams.GROUP_ID);
       const openScanFromMultiSig = [
         OperationType.MULTI_SIG_INITIATOR_SCAN,
         OperationType.MULTI_SIG_RECEIVER_SCAN,
@@ -453,12 +456,17 @@ const Scanner = forwardRef(
         throw new Error(ErrorMessage.GROUP_ID_NOT_MATCH);
       }
 
-      if (
-        (!isMultiSigUrl && !isValidConnectionUrl(url)) ||
-        (isMultiSigUrl && !isValidHttpUrl(url)) ||
-        (!new URL(url).pathname.match(OOBI_AGENT_ONLY_RE) &&
-          !new URL(url).pathname.match(WOOBI_RE))
-      ) {
+      if (!isValidHttpUrl(url)) {
+        throw new Error(ErrorMessage.INVALID_CONNECTION_URL);
+      }
+
+      const pathname = parsedUrl.pathname;
+      const isSupportedPath =
+        !!pathname.match(OOBI_AGENT_ONLY_RE) ||
+        !!pathname.match(OOBI_RE) ||
+        !!pathname.match(WOOBI_RE) ||
+        (isMultiSigUrl && !!pathname.match(DOOBI_RE));
+      if (!isSupportedPath) {
         throw new Error(ErrorMessage.INVALID_CONNECTION_URL);
       }
 
@@ -558,6 +566,7 @@ const Scanner = forwardRef(
             })
           );
         }, OPEN_CONNECTION_TIME);
+        isHandlingQR.current = false;
         return;
       }
 
@@ -603,12 +612,14 @@ const Scanner = forwardRef(
         const createdIdentifiers = await getCreatedIdentifiers();
         if (createdIdentifiers.length === 0) {
           setOpenIdentifierMissingAlert(true);
+          isHandlingQR.current = false;
           return;
         }
 
         if (createdIdentifiers.length > 1) {
           setCreatedIdentifiers(createdIdentifiers);
           setOpenIdentifierSelector(true);
+          isHandlingQR.current = false;
           return;
         }
 
@@ -618,7 +629,7 @@ const Scanner = forwardRef(
 
       if (!identifier) return;
       checkUrl(connection);
-      resolveConnectionOobi(connection, identifier);
+      await resolveConnectionOobi(connection, identifier);
       handleReset?.();
       setIsValueCaptured?.(true);
     };
@@ -628,7 +639,7 @@ const Scanner = forwardRef(
 
       try {
         if (!isMultisigUrl) {
-          handleResolveConnection(content);
+          await handleResolveConnection(content);
           return;
         }
 
@@ -650,9 +661,16 @@ const Scanner = forwardRef(
 
     const processValue = async (content: string) => {
       await stopScan();
+      const normalizedContent = (content || "").trim();
+
+      if (!normalizedContent) {
+        dispatch(setToastMsg(ToastMsgType.SCANNER_ERROR));
+        isHandlingQR.current = false;
+        return;
+      }
 
       if (currentOperation === OperationType.SCAN_WALLET_CONNECTION) {
-        handleConnectWallet(content);
+        handleConnectWallet(normalizedContent);
         isHandlingQR.current = false;
         return;
       }
@@ -661,14 +679,14 @@ const Scanner = forwardRef(
         [
           OperationType.SCAN_SSI_BOOT_URL,
           OperationType.SCAN_SSI_CONNECT_URL,
-        ].includes(currentOperation)
+      ].includes(currentOperation)
       ) {
-        handleSSIScan(content);
+        handleSSIScan(normalizedContent);
         isHandlingQR.current = false;
         return;
       }
 
-      handleResolveOobi(content);
+      await handleResolveOobi(normalizedContent);
     };
 
     const handlePrimaryButtonAction = () => {

@@ -76,7 +76,7 @@ export const openApiDocument = {
                 schema: successEnvelopeSchema,
                 example: {
                   success: true,
-                  data: `${config.endpoint}/oobi/example?name=CF%20Credential%20Issuance`,
+                  data: `${config.endpoint}/oobi/example?name=Fairway%20credential%20issuance`,
                 },
               },
             },
@@ -720,6 +720,58 @@ export const openApiDocument = {
             content: {
               "application/json": {
                 schema: successEnvelopeSchema,
+              },
+            },
+          },
+          "500": {
+            description: "Unhandled server error",
+            content: {
+              "application/json": {
+                schema: errorEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    [config.path.deleteRevokedCredentials]: {
+      delete: {
+        tags: ["Credentials"],
+        summary: "Delete revoked credentials from issuer cloud storage",
+        description:
+          "Permanently deletes revoked credentials from issuer storage. Optionally filter by holder AID and/or schema SAID.",
+        parameters: [
+          {
+            name: "holder",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Optional holder AID filter (-a-i).",
+          },
+          {
+            name: "schemaSaid",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Optional schema SAID filter (-s).",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Revoked credentials deleted",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+                example: {
+                  success: true,
+                  data: {
+                    holder: "EA...",
+                    schemaSaid: "EKgoX7j8AIkUv44WtJzcO_CvMbVuYH367hrivzaAKacm",
+                    deletedCredentialIds: ["EL..."],
+                    alreadyDeletedCredentialIds: [],
+                    skippedNonRevokedCredentialIds: ["EM..."],
+                  },
+                },
               },
             },
           },

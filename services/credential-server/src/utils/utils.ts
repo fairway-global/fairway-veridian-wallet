@@ -21,6 +21,39 @@ export const REGISTRIES_NOT_FOUND = "No registries found for";
 export const LOCAL_IDENTIFIER_CONTACT_ERROR =
   "contact information only for remote identifiers";
 
+function toAttachment(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    const first = value.find((item) => typeof item === "string" && item);
+    return typeof first === "string" ? first : undefined;
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return undefined;
+}
+
+function buildGrantAttachments(credential: Record<string, unknown>): {
+  acdcAttachment?: string;
+  ancAttachment?: string;
+  issAttachment?: string;
+} {
+  return {
+    acdcAttachment: toAttachment(
+      credential["atc"] ?? credential["acdcAttachment"]
+    ),
+    ancAttachment: toAttachment(
+      credential["ancatc"] ?? credential["ancAttachment"]
+    ),
+    issAttachment: toAttachment(
+      credential["issAtc"] ??
+      credential["issatc"] ??
+      credential["issAttachment"]
+    ),
+  };
+}
+
 export function randomSalt(): string {
   return new Salter({}).qb64;
 }
@@ -107,7 +140,7 @@ export async function createQVICredential(
     acdc: new Serder(issuerCredential.sad),
     anc: new Serder(issuerCredential.anc),
     iss: new Serder(issuerCredential.iss),
-    ancAttachment: issuerCredential.ancAttachment,
+    ...buildGrantAttachments(issuerCredential as Record<string, unknown>),
     datetime,
   });
   const smg: Operation = await clientIssuer

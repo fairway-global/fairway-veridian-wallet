@@ -23,7 +23,7 @@ mockIonicReact();
 
 const multisigIcpDetails = {
   sender: {
-    label: "CF Credential Issuance",
+    label: "Fairway credential issuance",
   },
   ourIdentifier: {
     theme: 1,

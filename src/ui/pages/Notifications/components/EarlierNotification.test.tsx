@@ -29,7 +29,7 @@ jest.mock("../../../../core/agent/agent", () => ({
       multiSigs: {
         getMultisigIcpDetails: jest.fn().mockResolvedValue({
           sender: {
-            label: "CF Credential Issuance",
+            label: "Fairway credential issuance",
           },
         }),
       },

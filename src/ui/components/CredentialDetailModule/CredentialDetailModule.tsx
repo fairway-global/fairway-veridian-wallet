@@ -6,6 +6,7 @@ import {
   ConnectionShortDetails,
   MiscRecordId,
 } from "../../../core/agent/agent.types";
+import { CredentialService } from "../../../core/agent/services/credentialService";
 import { NotificationRoute } from "../../../core/agent/services/keriaNotificationService.types";
 import { BasicRecord } from "../../../core/agent/records";
 import {
@@ -130,7 +131,12 @@ const CredentialDetailModule = ({
       getConnection(cardDetails.i);
     } catch (error) {
       setCloudError(true);
-      showError("Unable to get credential detail", error);
+      if (
+        !(error instanceof Error) ||
+        !error.message.includes(CredentialService.CREDENTIAL_NOT_FOUND)
+      ) {
+        showError("Unable to get credential detail", error);
+      }
     }
   }, [credDetail, id, getConnection]);
 

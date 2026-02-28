@@ -3193,7 +3193,7 @@ describe("Long running operation tracker", () => {
     const operationMock = {
       metadata: {
         said: "said",
-        oobi: "http://keria:3902/oobi/ELDjcyhsjppizfKQ_AvYeF4RuF1u0O6ya6OYUM6zLYH-/agent/EI4-oLA5XcrZepuB5mDrl3279EjbFtiDrz4im5Q4Ht0O?name=CF%20Credential%20Issuance",
+        oobi: "http://keria:3902/oobi/ELDjcyhsjppizfKQ_AvYeF4RuF1u0O6ya6OYUM6zLYH-/agent/EI4-oLA5XcrZepuB5mDrl3279EjbFtiDrz4im5Q4Ht0O?name=Fairway%20credential%20issuance",
       },
       done: true,
       response: {
@@ -3206,7 +3206,7 @@ describe("Long running operation tracker", () => {
       id: "id",
       creationStatus: CreationStatus.PENDING,
       createdAt: new Date(),
-      alias: "CF Credential Issuance",
+      alias: "Fairway credential issuance",
       oobi: "http://oobi.com/",
     };
     connectionStorage.findById.mockResolvedValueOnce(connectionMock);
@@ -3230,7 +3230,7 @@ describe("Long running operation tracker", () => {
       oobi: "http://oobi.com/",
     });
     expect(contactsUpdateMock).toBeCalledWith(connectionMock.id, {
-      alias: "CF Credential Issuance",
+      alias: "Fairway credential issuance",
       createdAt: operationMock.response.dt,
       oobi: "http://oobi.com/",
       sharedIdentifier: "",
@@ -3259,7 +3259,7 @@ describe("Long running operation tracker", () => {
     const operationMock = {
       metadata: {
         said: "said",
-        oobi: "http://keria:3902/oobi/ELDjcyhsjppizfKQ_AvYeF4RuF1u0O6ya6OYUM6zLYH-/agent/EI4-oLA5XcrZepuB5mDrl3279EjbFtiDrz4im5Q4Ht0O?name=CF%20Credential%20Issuance",
+        oobi: "http://keria:3902/oobi/ELDjcyhsjppizfKQ_AvYeF4RuF1u0O6ya6OYUM6zLYH-/agent/EI4-oLA5XcrZepuB5mDrl3279EjbFtiDrz4im5Q4Ht0O?name=Fairway%20credential%20issuance",
       },
       done: true,
       response: {
@@ -3272,7 +3272,7 @@ describe("Long running operation tracker", () => {
       id: "id",
       creationStatus: CreationStatus.PENDING,
       createdAt: new Date(),
-      alias: "CF Credential Issuance",
+      alias: "Fairway credential issuance",
       oobi: "http://oobi.com/",
       sharedIdentifier: "EGrdtLIlSIQHF1gHhE7UVfs9yRF-EDhqtLT41pJlj_p9",
     };
@@ -3301,7 +3301,7 @@ describe("Long running operation tracker", () => {
       sharedIdentifier: "EGrdtLIlSIQHF1gHhE7UVfs9yRF-EDhqtLT41pJlj_p9",
     });
     expect(contactsUpdateMock).toBeCalledWith(connectionMock.id, {
-      alias: "CF Credential Issuance",
+      alias: "Fairway credential issuance",
       createdAt: operationMock.response.dt,
       oobi: "http://oobi.com/",
       sharedIdentifier: "EGrdtLIlSIQHF1gHhE7UVfs9yRF-EDhqtLT41pJlj_p9",
@@ -3330,7 +3330,7 @@ describe("Long running operation tracker", () => {
     const operationMock = {
       metadata: {
         said: "said",
-        oobi: "http://keria:3902/oobi/ELDjcyhsjppizfKQ_AvYeF4RuF1u0O6ya6OYUM6zLYH-/agent/EI4-oLA5XcrZepuB5mDrl3279EjbFtiDrz4im5Q4Ht0O?name=CF%20Credential%20Issuance",
+        oobi: "http://keria:3902/oobi/ELDjcyhsjppizfKQ_AvYeF4RuF1u0O6ya6OYUM6zLYH-/agent/EI4-oLA5XcrZepuB5mDrl3279EjbFtiDrz4im5Q4Ht0O?name=Fairway%20credential%20issuance",
       },
       done: true,
       response: {
@@ -3344,7 +3344,7 @@ describe("Long running operation tracker", () => {
       id: "id",
       creationStatus: CreationStatus.PENDING,
       createdAt: new Date(),
-      alias: "CF Credential Issuance",
+      alias: "Fairway credential issuance",
     };
     connectionStorage.findById.mockResolvedValueOnce(connectionMock);
     const operationRecord = {
@@ -3382,7 +3382,7 @@ describe("Long running operation tracker", () => {
     const operationMock = {
       metadata: {
         said: "said",
-        oobi: "http://keria:3902/oobi/ELDjcyhsjppizfKQ_AvYeF4RuF1u0O6ya6OYUM6zLYH-/agent/EI4-oLA5XcrZepuB5mDrl3279EjbFtiDrz4im5Q4Ht0O?name=CF%20Credential%20Issuance",
+        oobi: "http://keria:3902/oobi/ELDjcyhsjppizfKQ_AvYeF4RuF1u0O6ya6OYUM6zLYH-/agent/EI4-oLA5XcrZepuB5mDrl3279EjbFtiDrz4im5Q4Ht0O?name=Fairway%20credential%20issuance",
       },
       done: true,
       response: {
@@ -3396,7 +3396,7 @@ describe("Long running operation tracker", () => {
       id: "id",
       creationStatus: CreationStatus.PENDING,
       createdAt: new Date(),
-      alias: "CF Credential Issuance",
+      alias: "Fairway credential issuance",
     };
     connectionStorage.findById.mockResolvedValueOnce(connectionMock);
     const operationRecord = {
@@ -4251,7 +4251,7 @@ describe("Handling of failed long running operations", () => {
       done: true,
       error: { code: 400 },
       metadata: {
-        oobi: "http://keria.com/oobi/EMoQKrOjmuOGgoqBuPB5goSZiEqjYNN5hb9sAt1HHVrU/agent/EMXchkqpJKegnObFGUAt7Cqj9yggGNZIpc5PbS7Igwip?name=CF%20Credential%20Issuance",
+        oobi: "http://keria.com/oobi/EMoQKrOjmuOGgoqBuPB5goSZiEqjYNN5hb9sAt1HHVrU/agent/EMXchkqpJKegnObFGUAt7Cqj9yggGNZIpc5PbS7Igwip?name=Fairway%20credential%20issuance",
       },
     });
     const operationRecord = {
@@ -4265,8 +4265,8 @@ describe("Handling of failed long running operations", () => {
       id: "id",
       creationStatus: CreationStatus.PENDING,
       createdAt: new Date(),
-      alias: "CF Credential Issuance",
-      oobi: "http://keria.com/oobi/EMoQKrOjmuOGgoqBuPB5goSZiEqjYNN5hb9sAt1HHVrU/agent/EMXchkqpJKegnObFGUAt7Cqj9yggGNZIpc5PbS7Igwip?name=CF%20Credential%20Issuance",
+      alias: "Fairway credential issuance",
+      oobi: "http://keria.com/oobi/EMoQKrOjmuOGgoqBuPB5goSZiEqjYNN5hb9sAt1HHVrU/agent/EMXchkqpJKegnObFGUAt7Cqj9yggGNZIpc5PbS7Igwip?name=Fairway%20credential%20issuance",
     });
 
     await keriaNotificationService.processOperation(operationRecord);
@@ -4320,7 +4320,7 @@ describe("Handling of failed long running operations", () => {
       id: "id",
       creationStatus: CreationStatus.PENDING,
       createdAt: new Date(),
-      alias: "CF Credential Issuance",
+      alias: "Fairway credential issuance",
       oobi: "http://keria.com/oobi/EMoQKrOjmuOGgoqBuPB5goSZiEqjYNN5hb9sAt1HHVrU",
     });
 

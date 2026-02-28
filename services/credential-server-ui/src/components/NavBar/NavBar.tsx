@@ -25,7 +25,8 @@ import {
 } from "@mui/material";
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import Logo from "../../assets/Logo.svg";
+import LogoLong from "../../assets/fairway-logo-long.png";
+import LogoSmall from "../../assets/fairway-logo-small.png";
 import { RoutePath } from "../../const/route";
 import { i18n } from "../../i18n";
 import { SwitchAccount } from "../SwitchAccount";
@@ -123,8 +124,8 @@ const NavBar = ({ window }: Props) => {
             >
               <img
                 className="header-logo"
-                alt="veridian-logo"
-                src={Logo}
+                alt="fairway-logo-small"
+                src={LogoSmall}
               />
             </Button>
           </Box>
@@ -167,8 +168,8 @@ const NavBar = ({ window }: Props) => {
             >
               <img
                 className="header-logo"
-                alt="veridian-logo"
-                src={Logo}
+                alt="fairway-logo-long"
+                src={LogoLong}
               />
             </Button>
             {displayMenuItems.map((item) => {

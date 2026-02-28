@@ -28,6 +28,26 @@ class CredentialService extends AgentService {
   static readonly CREDENTIAL_NOT_FOUND =
     "Credential with given SAID not found on KERIA";
 
+  private static isMissingCredentialCloudError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    const message = error.message || "";
+    const status = message.split(" - ")[1] || "";
+
+    if (/404/gi.test(status)) {
+      return true;
+    }
+
+    // Some KERIA versions return 500 instead of 404 for missing /credentials/{said}.
+    return (
+      /500/gi.test(status) &&
+      /HTTP GET \/credentials\//i.test(message) &&
+      /"title"\s*:\s*"500 Internal Server Error"/i.test(message)
+    );
+  }
+
   protected readonly credentialStorage: CredentialStorage;
   protected readonly notificationStorage!: NotificationStorage;
   protected readonly identifierStorage!: IdentifierStorage;
@@ -80,8 +100,7 @@ class CredentialService extends AgentService {
       .credentials()
       .get(metadata.id)
       .catch((error) => {
-        const status = error.message.split(" - ")[1];
-        if (/404/gi.test(status)) {
+        if (CredentialService.isMissingCredentialCloudError(error)) {
           return undefined;
         } else {
           throw error;

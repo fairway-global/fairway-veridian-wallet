@@ -15,6 +15,24 @@ interface IssueAcdcCredentialInput {
   attribute?: Record<string, unknown>;
 }
 
+type CredentialRecord = {
+  id?: string;
+  status?: {
+    s?: string;
+  };
+  sad?: {
+    d?: string;
+  };
+  atc?: unknown;
+  ancatc?: unknown;
+  issAtc?: unknown;
+  issatc?: unknown;
+  acdcAttachment?: unknown;
+  ancAttachment?: unknown;
+  issAttachment?: unknown;
+  [key: string]: unknown;
+};
+
 function toAttachment(value: unknown): string | undefined {
   if (Array.isArray(value)) {
     const first = value.find((item) => typeof item === "string" && item);
@@ -26,6 +44,47 @@ function toAttachment(value: unknown): string | undefined {
   }
 
   return undefined;
+}
+
+function buildGrantAttachments(credential: CredentialRecord): {
+  acdcAttachment?: string;
+  ancAttachment?: string;
+  issAttachment?: string;
+} {
+  return {
+    acdcAttachment: toAttachment(credential.atc ?? credential.acdcAttachment),
+    ancAttachment: toAttachment(
+      credential.ancatc ?? credential.ancAttachment
+    ),
+    issAttachment: toAttachment(
+      credential.issAtc ?? credential.issatc ?? credential.issAttachment
+    ),
+  };
+}
+
+function getCredentialEntries(listResponse: unknown): CredentialRecord[] {
+  if (Array.isArray(listResponse)) {
+    return listResponse as CredentialRecord[];
+  }
+
+  if (!listResponse || typeof listResponse !== "object") {
+    return [];
+  }
+
+  const data = listResponse as Record<string, unknown>;
+  const candidates = [data.credentials, data.items, data.data];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      return candidate as CredentialRecord[];
+    }
+  }
+
+  return [];
+}
+
+function getCredentialId(credential: CredentialRecord): string {
+  return String(credential.sad?.d || credential.id || "").trim();
 }
 
 export async function issueCredentialAndGrant(
@@ -78,7 +137,6 @@ export async function issueCredentialAndGrant(
     grantParams = {
       senderName: holderAid.name,
       recipient: aid,
-      ancAttachment: true,
     };
   } else {
     issueParams = {
@@ -108,7 +166,7 @@ export async function issueCredentialAndGrant(
     acdc: new Serder(credential.sad),
     anc: new Serder(credential.anc),
     iss: new Serder(credential.iss),
-    ancAttachment: toAttachment(credential.ancatc),
+    ...buildGrantAttachments(credential),
     datetime,
   });
 
@@ -214,6 +272,10 @@ export async function revokeCredential(
       }
     });
 
+  if (!credential) {
+    return;
+  }
+
   // Handle already revoked credential
   if (credential.status.s === "1") {
     res.status(409).send({
@@ -239,7 +301,7 @@ export async function revokeCredential(
     anc: new Serder(credential.anc),
     iss: new Serder(credential.iss),
     datetime,
-    ancAttachment: toAttachment(credential.ancatc),
+    ...buildGrantAttachments(credential),
   });
   const submitGrantOp: Operation = await client
     .ipex()
@@ -249,5 +311,76 @@ export async function revokeCredential(
   res.status(200).send({
     success: true,
     data: "Revoke credential successfully",
+  });
+}
+
+export async function deleteRevokedCredentials(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const client: SignifyClient = req.app.get("signifyClient");
+  const holder = String(req.query.holder || req.body?.holder || "").trim();
+  const schemaSaid = String(
+    req.query.schemaSaid || req.body?.schemaSaid || ""
+  ).trim();
+
+  const issuer = await client.identifiers().get(ISSUER_NAME);
+  const filter: Record<string, unknown> = {
+    "-i": issuer.prefix,
+  };
+
+  if (holder) {
+    filter["-a-i"] = holder;
+  }
+
+  if (schemaSaid) {
+    filter["-s"] = { $eq: schemaSaid };
+  }
+
+  const credentialsResponse = await client.credentials().list({
+    filter,
+  });
+  const credentials = getCredentialEntries(credentialsResponse);
+
+  const deletedCredentialIds: string[] = [];
+  const alreadyDeletedCredentialIds: string[] = [];
+  const skippedNonRevokedCredentialIds: string[] = [];
+
+  for (const credential of credentials) {
+    const credentialId = getCredentialId(credential);
+    if (!credentialId) {
+      continue;
+    }
+
+    if (String(credential.status?.s || "") !== "1") {
+      skippedNonRevokedCredentialIds.push(credentialId);
+      continue;
+    }
+
+    await client
+      .credentials()
+      .delete(credentialId)
+      .then(() => {
+        deletedCredentialIds.push(credentialId);
+      })
+      .catch((error) => {
+        const status = error instanceof Error ? error.message.split(" - ")[1] : "";
+        if (/404/gi.test(status || "")) {
+          alreadyDeletedCredentialIds.push(credentialId);
+          return;
+        }
+        throw error;
+      });
+  }
+
+  res.status(200).send({
+    success: true,
+    data: {
+      holder: holder || null,
+      schemaSaid: schemaSaid || null,
+      deletedCredentialIds,
+      alreadyDeletedCredentialIds,
+      skippedNonRevokedCredentialIds,
+    },
   });
 }

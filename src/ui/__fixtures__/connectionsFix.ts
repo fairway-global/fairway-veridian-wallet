@@ -12,7 +12,7 @@ const connectionsFix: ConnectionDetails[] = [
     logo: CardanoLogo,
     status: ConnectionStatus.PENDING,
     serviceEndpoints: [
-      "http://keria:3902/oobi/ELjvc_mLWOx7pI4fBh7lGUYofOAJUgUrMKnaoFGdvs86/agent/ENGnzDMWk8PlFbOoYCauLs1rDuQbvsIStxNzkjZPikSo?name=CF%20Credential%20Issuance",
+      "http://keria:3902/oobi/ELjvc_mLWOx7pI4fBh7lGUYofOAJUgUrMKnaoFGdvs86/agent/ENGnzDMWk8PlFbOoYCauLs1rDuQbvsIStxNzkjZPikSo?name=Fairway%20credential%20issuance",
     ],
     notes: [
       {
@@ -37,7 +37,7 @@ const connectionsFix: ConnectionDetails[] = [
     logo: CardanoLogo,
     status: ConnectionStatus.CONFIRMED,
     serviceEndpoints: [
-      "http://keria:3902/oobi/ELjvc_mLWOx7pI4fBh7lGUYofOAJUgUrMKnaoFGdvs86/agent/ENGnzDMWk8PlFbOoYCauLs1rDuQbvsIStxNzkjZPikSo?name=CF%20Credential%20Issuance",
+      "http://keria:3902/oobi/ELjvc_mLWOx7pI4fBh7lGUYofOAJUgUrMKnaoFGdvs86/agent/ENGnzDMWk8PlFbOoYCauLs1rDuQbvsIStxNzkjZPikSo?name=Fairway%20credential%20issuance",
     ],
     notes: [
       {
@@ -137,10 +137,10 @@ const connectionRequestPlaceholder = {
 const connectionsForNotifications = {
   EMrT7qX0FIMenQoe5pJLahxz_rheks1uIviGW8ch8pfB: {
     id: "EMrT7qX0FIMenQoe5pJLahxz_rheks1uIviGW8ch8pfB",
-    label: "CF Credential Issuance",
+    label: "Fairway credential issuance",
     connectionDate: "2024-06-25T12:38:06.342Z",
     status: "confirmed",
-    oobi: "http://keria:3902/oobi/EMrT7qX0FIMenQoe5pJLahxz_rheks1uIviGW8ch8pfB/agent/EK05Hv5jz3yZJD1UG4FwSE0-xgG2wgWeG4RCasOlr9iI?name=CF%20Credential%20Issuance",
+    oobi: "http://keria:3902/oobi/EMrT7qX0FIMenQoe5pJLahxz_rheks1uIviGW8ch8pfB/agent/EK05Hv5jz3yZJD1UG4FwSE0-xgG2wgWeG4RCasOlr9iI?name=Fairway%20credential%20issuance",
     groupId: "549eb79f-856c-4bb7-8dd5-d5eed865906a",
   },
 };

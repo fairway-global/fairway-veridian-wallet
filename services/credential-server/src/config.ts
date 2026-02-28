@@ -67,6 +67,7 @@ export const config = {
     resolveOobi: "/resolveOobi",
     requestDisclosure: "/requestDisclosure",
     revokeCredential: "/revokeCredential",
+    deleteRevokedCredentials: "/deleteRevokedCredentials",
     deleteContact: "/deleteContact",
     schemas: "/schemas",
   },

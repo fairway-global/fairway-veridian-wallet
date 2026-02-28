@@ -404,7 +404,7 @@ describe("KERIA operation state changed handler", () => {
       id: "id",
       creationStatus: CreationStatus.PENDING,
       createdAt: new Date(),
-      alias: "CF Credential Issuance",
+      alias: "Fairway credential issuance",
       oobi: "http://oobi.com/",
     };
     getConnectionShortDetailByIdMock.mockResolvedValue(connectionMock);

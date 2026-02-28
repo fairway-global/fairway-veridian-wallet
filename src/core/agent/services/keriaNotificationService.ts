@@ -521,11 +521,31 @@ class KeriaNotificationService extends AgentService {
 
     const existingCredential =
       await this.credentialStorage.getCredentialMetadata(exchange.exn.e.acdc.d);
-    const telStatus = (
-      await this.props.signifyClient
-        .credentials()
-        .state(exchange.exn.e.acdc.ri, exchange.exn.e.acdc.d)
-    ).et;
+    let telStatus: string;
+    try {
+      telStatus = (
+        await this.props.signifyClient
+          .credentials()
+          .state(exchange.exn.e.acdc.ri, exchange.exn.e.acdc.d)
+      ).et;
+    } catch (error) {
+      const status =
+        error instanceof Error ? error.message.split(" - ")[1] : "";
+      if (/404/gi.test(status || "")) {
+        if (
+          existingCredential &&
+          existingCredential.status !== CredentialStatus.REVOKED
+        ) {
+          await this.credentialService.markAcdc(
+            exchange.exn.e.acdc.d,
+            CredentialStatus.REVOKED
+          );
+        }
+        await this.markNotification(notif.i);
+        return false;
+      }
+      throw error;
+    }
 
     const oldGrantNotifications = await this.notificationStorage.findAllByQuery(
       {

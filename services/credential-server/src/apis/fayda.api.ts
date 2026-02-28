@@ -132,6 +132,22 @@ function toAttachment(value: unknown): string | undefined {
   return undefined;
 }
 
+function buildGrantAttachments(credential: any): {
+  acdcAttachment?: string;
+  ancAttachment?: string;
+  issAttachment?: string;
+} {
+  return {
+    acdcAttachment: toAttachment(credential?.atc ?? credential?.acdcAttachment),
+    ancAttachment: toAttachment(
+      credential?.ancatc ?? credential?.ancAttachment
+    ),
+    issAttachment: toAttachment(
+      credential?.issAtc ?? credential?.issatc ?? credential?.issAttachment
+    ),
+  };
+}
+
 function getSchemaSaid(
   payloadSchemaSaid: string | undefined,
   fallbackSchema: string
@@ -339,7 +355,7 @@ export async function deleteFaydaData(
         anc: new Serder(revokedCredential.anc),
         iss: new Serder(revokedCredential.iss),
         datetime,
-        ancAttachment: toAttachment(revokedCredential.ancatc),
+        ...buildGrantAttachments(revokedCredential),
       });
       const submitGrantOp = await client
         .ipex()

@@ -2,6 +2,7 @@ import express, { Router } from "express";
 import { contactList, deleteContact } from "./apis/contact.api";
 import {
   contactCredentials,
+  deleteRevokedCredentials,
   issueAcdcCredential,
   requestDisclosure,
   revokeCredential,
@@ -32,4 +33,5 @@ router.get(config.path.contactCredentials, contactCredentials);
 router.get(config.path.schemas, schemaApi);
 router.post(config.path.requestDisclosure, requestDisclosure);
 router.post(config.path.revokeCredential, revokeCredential);
+router.delete(config.path.deleteRevokedCredentials, deleteRevokedCredentials);
 router.delete(config.path.deleteContact, deleteContact);

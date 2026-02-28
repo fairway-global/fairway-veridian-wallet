@@ -124,14 +124,17 @@ class ConnectionService extends AgentService {
       await this.identifierStorage.getIdentifierMetadata(sharedIdentifier); // Error if missing
     }
 
-    if (
-      !new URL(url).pathname.match(OOBI_AGENT_ONLY_RE) &&
-      !new URL(url).pathname.match(WOOBI_RE)
-    ) {
+    const multiSigInvite = url.includes(OobiQueryParams.GROUP_ID);
+    const pathname = new URL(url).pathname;
+    const isSupportedPath =
+      !!pathname.match(OOBI_AGENT_ONLY_RE) ||
+      !!pathname.match(WOOBI_RE) ||
+      (multiSigInvite && !!pathname.match(DOOBI_RE));
+
+    if (!isSupportedPath) {
       throw new Error(ConnectionService.OOBI_INVALID);
     }
 
-    const multiSigInvite = url.includes(OobiQueryParams.GROUP_ID);
     const connectionId = new URL(url).pathname
       .split("/oobi/")
       .pop()!
@@ -438,8 +441,20 @@ class ConnectionService extends AgentService {
     groupId?: string,
     externalId?: string
   ): Promise<string> {
-    const result = await this.props.signifyClient.oobis().get(id);
-    if (!result.oobis[0]) {
+    let result;
+    try {
+      result = await this.props.signifyClient
+        .oobis()
+        .get(id, ConnectionService.DEFAULT_ROLE);
+    } catch {
+      result = undefined;
+    }
+
+    if (!result?.oobis?.[0]) {
+      result = await this.props.signifyClient.oobis().get(id);
+    }
+
+    if (!result?.oobis?.[0]) {
       throw new Error(ConnectionService.CANNOT_GET_OOBI);
     }
 

@@ -30,7 +30,7 @@ export enum WelcomeMessage {
 }
 
 export enum Scan {
-  ValidContent = "https://keria-ext.dev.idw-sandboxes.cf-deployments.org/oobi/EMNJSzxcbs5iMsVrbUuusC4HJD4OnViw9KklvAw4n09k/agent/EBuxdKcxfPY0qoNb08DM-lsV7zQ027wqq6C_h5rq-eK5?name=CF%20Credential%20Issuance",
+  ValidContent = "https://keria-ext.dev.idw-sandboxes.cf-deployments.org/oobi/EMNJSzxcbs5iMsVrbUuusC4HJD4OnViw9KklvAw4n09k/agent/EBuxdKcxfPY0qoNb08DM-lsV7zQ027wqq6C_h5rq-eK5?name=Fairway%20credential%20issuance",
   InvalidContent = "https://www.google.com/",
 }
 
