@@ -1,9 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { Serder, SignifyClient } from "signify-ts";
-import {
-  FAYDA_FAIRWAY_ID_SCHEMA_SAID,
-  ISSUER_NAME,
-} from "../consts";
+import { FAYDA_FAIRWAY_ID_SCHEMA_SAID, ISSUER_NAME } from "../consts";
 import { issueCredentialAndGrant, UNKNOW_SCHEMA_ID } from "./credential.api";
 import { OP_TIMEOUT, waitAndGetDoneOp } from "../utils/utils";
 
@@ -106,12 +103,7 @@ function getCredentialEntries(listResponse: unknown): any[] {
 }
 
 function getCredentialSad(credential: any): Record<string, any> {
-  return (
-    credential?.sad ||
-    credential?.acdc?.sad ||
-    credential?.acdc ||
-    {}
-  );
+  return credential?.sad || credential?.acdc?.sad || credential?.acdc || {};
 }
 
 function getCredentialId(credential: any): string {
@@ -152,7 +144,9 @@ function getSchemaSaid(
   payloadSchemaSaid: string | undefined,
   fallbackSchema: string
 ): string {
-  return String(payloadSchemaSaid || process.env.FAYDA_SCHEMA_SAID || fallbackSchema).trim();
+  return String(
+    payloadSchemaSaid || process.env.FAYDA_SCHEMA_SAID || fallbackSchema
+  ).trim();
 }
 
 export async function getFaydaDataStatus(
@@ -303,9 +297,7 @@ export async function deleteFaydaData(
     const targetCredentials = credentials.filter((credential) => {
       const sad = getCredentialSad(credential);
       return (
-        sad?.a?.i === aid &&
-        sad?.s === schemaSaid &&
-        sad?.i === issuer.prefix
+        sad?.a?.i === aid && sad?.s === schemaSaid && sad?.i === issuer.prefix
       );
     });
 

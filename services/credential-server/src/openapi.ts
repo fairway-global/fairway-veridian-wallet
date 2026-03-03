@@ -429,7 +429,8 @@ export const openApiDocument = {
                 properties: {
                   aid: {
                     type: "string",
-                    description: "Holder AID that should receive the credential",
+                    description:
+                      "Holder AID that should receive the credential",
                   },
                   connectionId: {
                     type: "string",

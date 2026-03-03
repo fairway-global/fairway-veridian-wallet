@@ -124,13 +124,18 @@ class IpexCommunicationService extends AgentService {
     allSchemaSaids.push(schemaSaid);
 
     const issuerOobi = await this.getIssuerOobi(grantExn.exn.i);
-    await this.ensureSchemasResolved(allSchemaSaids, grantExn.exn.i, issuerOobi);
+    await this.ensureSchemasResolved(
+      allSchemaSaids,
+      grantExn.exn.i,
+      issuerOobi
+    );
 
     const schema = await this.props.signifyClient
       .schemas()
       .get(schemaSaid)
       .catch((error) => {
-        const status = error instanceof Error ? error.message.split(" - ")[1] : "";
+        const status =
+          error instanceof Error ? error.message.split(" - ")[1] : "";
         if (/404/gi.test(status || "")) {
           return undefined;
         }
@@ -399,13 +404,13 @@ class IpexCommunicationService extends AgentService {
       "-a-i": exchange.exn.rp,
       ...(Object.keys(attributes).length > 0
         ? {
-          ...Object.fromEntries(
-            Object.entries(attributes).map(([key, value]) => [
-              "-a-" + key,
-              value,
-            ])
-          ),
-        }
+            ...Object.fromEntries(
+              Object.entries(attributes).map(([key, value]) => [
+                "-a-" + key,
+                value,
+              ])
+            ),
+          }
         : {}),
     };
 
@@ -545,7 +550,8 @@ class IpexCommunicationService extends AgentService {
       .schemas()
       .get(schemaSaid)
       .catch((error) => {
-        const status = error instanceof Error ? error.message.split(" - ")[1] : "";
+        const status =
+          error instanceof Error ? error.message.split(" - ")[1] : "";
         if (/404/gi.test(status || "")) {
           return {
             title: schemaSaid,
@@ -625,7 +631,11 @@ class IpexCommunicationService extends AgentService {
       .filter((schema) => !!schema);
     allSchemaSaids.push(schemaSaid);
     const issuerOobi = await this.getIssuerOobi(grantExn.exn.i);
-    await this.ensureSchemasResolved(allSchemaSaids, grantExn.exn.i, issuerOobi);
+    await this.ensureSchemasResolved(
+      allSchemaSaids,
+      grantExn.exn.i,
+      issuerOobi
+    );
 
     const { op } = await this.submitMultisigAdmit(
       holder.id,
@@ -639,7 +649,8 @@ class IpexCommunicationService extends AgentService {
       .schemas()
       .get(schemaSaid)
       .catch((error) => {
-        const status = error instanceof Error ? error.message.split(" - ")[1] : "";
+        const status =
+          error instanceof Error ? error.message.split(" - ")[1] : "";
         if (/404/gi.test(status || "")) {
           return undefined;
         }
@@ -1241,7 +1252,10 @@ class IpexCommunicationService extends AgentService {
       }
 
       let resolved = false;
-      const schemaOobiCandidates = [schemaOobi, this.tryGetLocalSchemaUrl(schemaOobi)]
+      const schemaOobiCandidates = [
+        schemaOobi,
+        this.tryGetLocalSchemaUrl(schemaOobi),
+      ]
         .filter((candidate): candidate is string => !!candidate)
         .filter((candidate, index, list) => list.indexOf(candidate) === index);
 
@@ -1288,7 +1302,7 @@ class IpexCommunicationService extends AgentService {
     const indexerOobiResult = await (
       await fetch(`${agentBase}/indexer/${prefix}`)
     ).text();
-    const schemaBase = indexerOobiResult.split("\"url\":\"")[1].split("\"")[0];
+    const schemaBase = indexerOobiResult.split('"url":"')[1].split('"')[0];
 
     return `${schemaBase}/oobi/${said}`;
   }

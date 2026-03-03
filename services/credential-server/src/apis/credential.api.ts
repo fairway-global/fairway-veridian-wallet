@@ -53,9 +53,7 @@ function buildGrantAttachments(credential: CredentialRecord): {
 } {
   return {
     acdcAttachment: toAttachment(credential.atc ?? credential.acdcAttachment),
-    ancAttachment: toAttachment(
-      credential.ancatc ?? credential.ancAttachment
-    ),
+    ancAttachment: toAttachment(credential.ancatc ?? credential.ancAttachment),
     issAttachment: toAttachment(
       credential.issAtc ?? credential.issatc ?? credential.issAttachment
     ),
@@ -364,7 +362,8 @@ export async function deleteRevokedCredentials(
         deletedCredentialIds.push(credentialId);
       })
       .catch((error) => {
-        const status = error instanceof Error ? error.message.split(" - ")[1] : "";
+        const status =
+          error instanceof Error ? error.message.split(" - ")[1] : "";
         if (/404/gi.test(status || "")) {
           alreadyDeletedCredentialIds.push(credentialId);
           return;

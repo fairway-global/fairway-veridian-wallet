@@ -242,10 +242,7 @@ async function startServer() {
     }
 
     const parsedError = err as Error & { status?: number; type?: string };
-    if (
-      parsedError.status === 413 ||
-      parsedError.type === "entity.too.large"
-    ) {
+    if (parsedError.status === 413 || parsedError.type === "entity.too.large") {
       res.status(413).json({
         error:
           "request entity too large; remove very large fields (for example base64 picture) or increase JSON_BODY_LIMIT.",

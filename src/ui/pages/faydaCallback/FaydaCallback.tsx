@@ -15,12 +15,11 @@ import "./FaydaCallback.scss";
 
 // ===== CONFIG =====
 const API_BASE = process.env.REACT_APP_BACKEND_API || "http://localhost:3001";
-const CREDENTIAL_ISSUER_API =
-  (
-    process.env.REACT_APP_CREDENTIAL_SERVER_API || "http://localhost:3001"
-  )
-    .trim()
-    .replace(/\/+$/, "");
+const CREDENTIAL_ISSUER_API = (
+  process.env.REACT_APP_CREDENTIAL_SERVER_API || "http://localhost:3001"
+)
+  .trim()
+  .replace(/\/+$/, "");
 
 const TOKEN_ENDPOINT = `${API_BASE}/token`;
 const USERINFO_ENDPOINT = `${API_BASE}/userinfo`;
