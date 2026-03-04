@@ -55,8 +55,8 @@ import { getTheme } from "../../../../utils/theme";
 import { NotificationDetailsProps } from "../../NotificationDetails.types";
 import "./ReceiveCredential.scss";
 
-const ANIMATION_DELAY = 2600;
-const ACCEPT_RETRY_DELAY_MS = 1200;
+const ANIMATION_DELAY = 700;
+const ACCEPT_RETRY_DELAY_MS = 400;
 const RETRYABLE_ACCEPT_ERROR_PATTERNS = [
   /Failed to resolve OOBI/i,
   /operation not completing/i,

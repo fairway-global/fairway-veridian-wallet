@@ -23,7 +23,9 @@
     "menu": "Menu",
     "overview": "Overview",
     "connections": "Connections",
+    "templates": "Templates",
     "credentials": "Credentials",
+    "credentialsManagement": "Credentials",
     "requestPresentation": "Request Presentation",
     "switchAccount": {
       "title": "Switch account",
@@ -78,6 +80,13 @@
       "connectionDate": "Connection Date",
       "issuedCredentials": "Issued Credentials",
       "identifier": "Identifier",
+      "dashboardTemplates": {
+        "title": "Templates ({{number}})",
+        "viewAll": "View templates",
+        "schema": "Schema ID",
+        "loading": "Loading templates...",
+        "empty": "No templates available yet"
+      },
       "deleteConnections": {
         "title": "Delete Connection(s)",
         "body": "Are you sure you want to delete this connection? This action cannot be undone.",
@@ -217,6 +226,148 @@
           "success": "Credential issued",
           "failed": "Unable to issue credential"
         }
+      }
+    },
+    "templates": {
+      "title": "Credential Templates ({{number}})",
+      "actions": {
+        "create": "Create template",
+        "view": "View details",
+        "edit": "Edit template",
+        "issue": "Issue credential",
+        "delete": "Delete template",
+        "menu": "Actions"
+      },
+      "table": {
+        "headers": {
+          "name": "Template name",
+          "schemaId": "Schema ID",
+          "attributes": "Attributes",
+          "createdAt": "Created date"
+        }
+      },
+      "detail": {
+        "title": "Template detail",
+        "fields": {
+          "schemaId": "Schema ID",
+          "createdAt": "Created at",
+          "updatedAt": "Updated at",
+          "attributes": "Attributes"
+        },
+        "issued": {
+          "title": "Issued credentials ({{number}})",
+          "headers": {
+            "id": "Credential ID",
+            "holder": "Holder DID",
+            "status": "Status",
+            "issuedAt": "Issued at"
+          },
+          "view": "View"
+        }
+      },
+      "create": {
+        "title": "Create template",
+        "submit": "Create"
+      },
+      "edit": {
+        "title": "Edit template",
+        "submit": "Update"
+      },
+      "form": {
+        "cancel": "Cancel",
+        "addAttribute": "Add attribute",
+        "fields": {
+          "name": "Template name",
+          "schemaId": "Schema ID",
+          "selectSchema": "Select schema",
+          "autoSchema": "Auto-generate schema SAID",
+          "attributes": "Attributes",
+          "attributeName": "Attribute name",
+          "required": "Required"
+        },
+        "validation": {
+          "name": "Template name is required",
+          "schemaId": "Schema ID is required",
+          "schemaIdUnsupported": "Schema ID must be selected from supported schemas",
+          "attributes": "Each attribute must have a name"
+        }
+      },
+      "delete": {
+        "title": "Delete template",
+        "body": "Please confirm you want to delete this template. This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
+      "messages": {
+        "fetchError": "Unable to load templates",
+        "invalidTemplate": "Template is invalid",
+        "createSuccess": "Template created",
+        "createError": "Unable to create template",
+        "updateSuccess": "Template updated",
+        "updateError": "Unable to update template",
+        "deleteSuccess": "Template deleted",
+        "deleteError": "Unable to delete template"
+      }
+    },
+    "credentialsManagement": {
+      "title": "Issued Credentials ({{number}})",
+      "actions": {
+        "issue": "Issue credential",
+        "export": "Export CSV",
+        "view": "View details",
+        "revoke": "Revoke credential",
+        "delete": "Delete credential",
+        "menu": "Actions"
+      },
+      "table": {
+        "headers": {
+          "template": "Template",
+          "holder": "Holder DID",
+          "status": "Status",
+          "issuedAt": "Issued date"
+        }
+      },
+      "detail": {
+        "title": "Credential detail",
+        "fields": {
+          "id": "Credential ID",
+          "template": "Template",
+          "schemaId": "Schema ID",
+          "holder": "Holder DID",
+          "status": "Status",
+          "issuedAt": "Issued at",
+          "data": "Attributes"
+        }
+      },
+      "issue": {
+        "title": "Issue credential",
+        "template": "Template",
+        "connection": "Connection",
+        "submit": "Issue",
+        "cancel": "Cancel"
+      },
+      "revoke": {
+        "title": "Revoke credential",
+        "body": "Please confirm you want to revoke this credential.",
+        "cancel": "Cancel",
+        "confirm": "Revoke"
+      },
+      "delete": {
+        "title": "Delete credential",
+        "body": "Please confirm you want to delete this credential from issuer storage.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
+      "messages": {
+        "fetchError": "Unable to load credentials",
+        "validation": "Template and connection are required",
+        "issueSuccess": "Credential issued",
+        "issueError": "Unable to issue credential",
+        "revokeSuccess": "Credential revoked",
+        "revokeError": "Unable to revoke credential",
+        "deleteSuccess": "Credential deleted",
+        "deleteRequiresRevocation": "This credential must be revoked before deletion. Revoke it first, then delete.",
+        "deleteError": "Unable to delete credential"
       }
     },
     "requestPresentation": {

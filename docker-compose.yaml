@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   keria:
     container_name: idw-keria
@@ -44,6 +43,7 @@ services:
     build:
       context: ./services/credential-server
       dockerfile: Dockerfile
+      network: host
     restart: unless-stopped
     environment:
       - OOBI_ENDPOINT=http://cred-issuance:3001

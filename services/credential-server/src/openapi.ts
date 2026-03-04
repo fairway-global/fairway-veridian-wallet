@@ -12,11 +12,20 @@ const successEnvelopeSchema = {
 
 const errorEnvelopeSchema = {
   type: "object",
-  required: ["error"],
+  required: ["success", "error"],
   properties: {
+    success: { type: "boolean", example: false },
+    data: {},
     error: { type: "string" },
   },
 };
+
+const templateByIdPath = config.path.templateById.replace(":id", "{id}");
+const credentialByIdPath = config.path.credentialById.replace(":id", "{id}");
+const revokeCredentialByIdPath = config.path.revokeCredentialApi.replace(
+  ":id",
+  "{id}"
+);
 
 export const openApiDocument = {
   openapi: "3.0.3",
@@ -38,6 +47,8 @@ export const openApiDocument = {
     { name: "Contacts" },
     { name: "Schemas" },
     { name: "Credentials" },
+    { name: "Templates API" },
+    { name: "Credentials API" },
   ],
   paths: {
     [config.path.ping]: {
@@ -292,6 +303,362 @@ export const openApiDocument = {
         },
       },
     },
+    [config.path.templates]: {
+      get: {
+        tags: ["Templates API"],
+        summary: "List credential templates",
+        responses: {
+          "200": {
+            description: "Credential templates",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+      post: {
+        tags: ["Templates API"],
+        summary: "Create credential template",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["name", "schemaId", "attributes"],
+                properties: {
+                  name: { type: "string" },
+                  schemaId: { type: "string" },
+                  attributes: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      required: ["name", "type", "required"],
+                      properties: {
+                        name: { type: "string" },
+                        type: {
+                          type: "string",
+                          enum: ["string", "integer", "number", "boolean"],
+                        },
+                        required: { type: "boolean" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Template created",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+              },
+            },
+          },
+          "400": {
+            description: "Invalid request body",
+            content: {
+              "application/json": {
+                schema: errorEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    [templateByIdPath]: {
+      get: {
+        tags: ["Templates API"],
+        summary: "Get credential template detail",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Template detail",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+              },
+            },
+          },
+          "404": {
+            description: "Template not found",
+            content: {
+              "application/json": {
+                schema: errorEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+      put: {
+        tags: ["Templates API"],
+        summary: "Update credential template",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["name", "schemaId", "attributes"],
+                properties: {
+                  name: { type: "string" },
+                  schemaId: { type: "string" },
+                  attributes: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      required: ["name", "type", "required"],
+                      properties: {
+                        name: { type: "string" },
+                        type: {
+                          type: "string",
+                          enum: ["string", "integer", "number", "boolean"],
+                        },
+                        required: { type: "boolean" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Template updated",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+              },
+            },
+          },
+          "404": {
+            description: "Template not found",
+            content: {
+              "application/json": {
+                schema: errorEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+      delete: {
+        tags: ["Templates API"],
+        summary: "Delete credential template",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Template deleted",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+              },
+            },
+          },
+          "404": {
+            description: "Template not found",
+            content: {
+              "application/json": {
+                schema: errorEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    [config.path.credentialsApi]: {
+      get: {
+        tags: ["Credentials API"],
+        summary: "List issued credentials",
+        responses: {
+          "200": {
+            description: "Issued credentials",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    [credentialByIdPath]: {
+      get: {
+        tags: ["Credentials API"],
+        summary: "Get issued credential detail",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Issued credential detail",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+              },
+            },
+          },
+          "404": {
+            description: "Credential not found",
+            content: {
+              "application/json": {
+                schema: errorEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+      delete: {
+        tags: ["Credentials API"],
+        summary: "Delete issued credential from issuer storage",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Credential deleted",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+              },
+            },
+          },
+          "409": {
+            description: "Credential is not revoked yet",
+            content: {
+              "application/json": {
+                schema: errorEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    [config.path.issueCredentialApi]: {
+      post: {
+        tags: ["Credentials API"],
+        summary: "Issue credential from template",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["templateId", "connectionId"],
+                properties: {
+                  templateId: { type: "string", format: "uuid" },
+                  connectionId: { type: "string" },
+                  values: {
+                    type: "object",
+                    additionalProperties: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Credential issued",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+              },
+            },
+          },
+          "400": {
+            description: "Invalid payload",
+            content: {
+              "application/json": {
+                schema: errorEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    [revokeCredentialByIdPath]: {
+      put: {
+        tags: ["Credentials API"],
+        summary: "Revoke issued credential",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        requestBody: {
+          required: false,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  holder: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Credential revoked",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
+              },
+            },
+          },
+          "404": {
+            description: "Credential not found",
+            content: {
+              "application/json": {
+                schema: errorEnvelopeSchema,
+              },
+            },
+          },
+        },
+      },
+    },
     [config.path.issueAcdcCredential]: {
       post: {
         tags: ["Credentials"],
@@ -361,7 +728,7 @@ export const openApiDocument = {
     [config.path.saveFayda]: {
       get: {
         tags: ["Credentials"],
-        summary: "Check if holder already has Fayda verification credential",
+        summary: "Check if holder has an active Fayda verification credential",
         parameters: [
           {
             name: "aid",
@@ -376,7 +743,7 @@ export const openApiDocument = {
             required: false,
             schema: { type: "string" },
             description:
-              "Optional schema SAID for status check only. Defaults to FAYDA_SCHEMA_SAID or FaydaFairwayId schema.",
+              "Optional schema SAID for status check only. If omitted, status checks the default auto-issue Fayda schema and legacy Fayda schema.",
           },
         ],
         responses: {
@@ -389,8 +756,10 @@ export const openApiDocument = {
                   success: true,
                   data: {
                     aid: "EA...",
-                    schemaSaid: "EKgoX7j8AIkUv44WtJzcO_CvMbVuYH367hrivzaAKacm",
+                    schemaSaid: "EHYYZFJas0_cgo3nA1_BeeyWRIzyWqic3pM-LdYmL_R6",
                     verified: true,
+                    verifiedSchemaSaid:
+                      "EHYYZFJas0_cgo3nA1_BeeyWRIzyWqic3pM-LdYmL_R6",
                   },
                 },
               },
@@ -416,16 +785,16 @@ export const openApiDocument = {
       },
       post: {
         tags: ["Credentials"],
-        summary: "Process Fayda payload and auto-issue credential",
+        summary: "Auto-issue Fayda credential after Fayda ID verification",
         description:
-          "Accepts verified Fayda claims and immediately sends an ACDC credential offer to the holder wallet.",
+          "Accepts verified Fayda claims, validates unique Fayda ID linkage, then automatically issues and grants an ACDC credential.",
         requestBody: {
           required: true,
           content: {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["aid", "faydaData"],
+                required: ["faydaData"],
                 properties: {
                   aid: {
                     type: "string",
@@ -442,11 +811,29 @@ export const openApiDocument = {
                     description:
                       "Human-readable name shown by caller (not written to ACDC).",
                   },
+                  schemaSaid: {
+                    type: "string",
+                    description:
+                      "Optional schema SAID. Defaults to FaydaVerifiedAutoIssue schema.",
+                  },
                   faydaData: {
                     type: "object",
                     description: "Verified claims from Fayda",
                     additionalProperties: true,
                     properties: {
+                      id: {
+                        type: "string",
+                        description: "Fayda identifier (one accepted form).",
+                      },
+                      fayda_id: {
+                        type: "string",
+                        description: "Fayda identifier (preferred field).",
+                      },
+                      sub: {
+                        type: "string",
+                        description:
+                          "OIDC subject from Fayda; used as fallback identifier.",
+                      },
                       name: { type: "string" },
                       email: { type: "string" },
                       phone_number: { type: "string" },
@@ -475,12 +862,26 @@ export const openApiDocument = {
                 example: {
                   success: true,
                   data: {
-                    message: "Fayda data processed and credential offer sent",
-                    credentialName: "FaydaVerifiedFairwayId",
+                    message:
+                      "Fayda verification succeeded and credential offer was sent automatically.",
+                    credentialName: "FaydaVerifiedAutoIssue",
                     holderAid: "EA...",
-                    schemaSaid: "EKgoX7j8AIkUv44WtJzcO_CvMbVuYH367hrivzaAKacm",
+                    schemaSaid: "EHYYZFJas0_cgo3nA1_BeeyWRIzyWqic3pM-LdYmL_R6",
+                    faydaId: "258010005988397142835639033041895718",
+                    credentialId: "E....",
+                    alreadyIssued: false,
+                    verified: true,
                   },
                 },
+              },
+            },
+          },
+          "409": {
+            description:
+              "Duplicate or conflicting Fayda ID verification for another holder",
+            content: {
+              "application/json": {
+                schema: successEnvelopeSchema,
               },
             },
           },
@@ -580,7 +981,7 @@ export const openApiDocument = {
             required: false,
             schema: { type: "string" },
             description:
-              "Optional schema SAID filter. Defaults to FAYDA_SCHEMA_SAID or FaydaFairwayId schema.",
+              "Optional schema SAID filter. Defaults to FaydaVerifiedAutoIssue schema.",
           },
         ],
         responses: {

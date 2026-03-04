@@ -62,6 +62,25 @@ class KeriaNotificationService extends AgentService {
   static readonly CHECK_READINESS_INTERNAL = 25;
   static readonly FAILED_NOTIFICATIONS_RETRY_INTERVAL = 1000; // @TODO - foconnor: Optimise with backoff.
 
+  private static isCredentialCloudMissing(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    const message = error.message || "";
+    const status = message.split(" - ")[1] || "";
+
+    if (/404/gi.test(status)) {
+      return true;
+    }
+
+    return (
+      /500/gi.test(status) &&
+      /HTTP GET \/credentials\//i.test(message) &&
+      /"title"\s*:\s*"500 Internal Server Error"/i.test(message)
+    );
+  }
+
   protected readonly notificationStorage!: NotificationStorage;
   protected readonly identifierStorage: IdentifierStorage;
   protected readonly operationPendingStorage: OperationPendingStorage;
@@ -1291,6 +1310,21 @@ class KeriaNotificationService extends AgentService {
               .exchanges()
               .get(admitExchange.exn.p);
             const credentialId = grantExchange.exn.e.acdc.d;
+            let credentialAvailable = true;
+            try {
+              await this.props.signifyClient.credentials().get(credentialId);
+            } catch (error) {
+              if (KeriaNotificationService.isCredentialCloudMissing(error)) {
+                credentialAvailable = false;
+              } else {
+                throw error;
+              }
+            }
+
+            // Keep pending operation until holder KERIA can read credential details.
+            if (!credentialAvailable) {
+              return;
+            }
 
             const notifications = await this.notificationStorage.findAllByQuery(
               {

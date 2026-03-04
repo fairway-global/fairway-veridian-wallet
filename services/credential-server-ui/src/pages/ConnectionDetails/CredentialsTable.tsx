@@ -23,7 +23,7 @@ import { RoleIndex } from "../../components/NavBar/constants/roles";
 import { PopupModal } from "../../components/PopupModal";
 import { RoutePath } from "../../const/route";
 import { i18n } from "../../i18n";
-import { CredentialService } from "../../services";
+import { CredentialService, TemplateService } from "../../services";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { getRoleView } from "../../store/reducers";
 import { fetchContactCredentials } from "../../store/reducers/connectionsSlice";
@@ -98,8 +98,24 @@ const CredentialsTable = ({
     visibleRows,
   } = useTable(filterRows, "date");
 
-  const viewCredTemplate = (id: string) => {
-    nav(`${RoutePath.Credentials}/${id}`);
+  const viewCredTemplate = async (schemaId: string) => {
+    try {
+      const templates = await TemplateService.list();
+      const matchedTemplate = templates.find(
+        (template) => template.schemaId === schemaId
+      );
+
+      if (matchedTemplate) {
+        nav(RoutePath.TemplateDetail.replace(":id", matchedTemplate.id));
+        return;
+      }
+
+      triggerToast(i18n.t("pages.templates.messages.invalidTemplate"), "error");
+      nav(RoutePath.Templates);
+    } catch {
+      triggerToast(i18n.t("pages.templates.messages.fetchError"), "error");
+      nav(RoutePath.Templates);
+    }
   };
 
   const revokeCred = async () => {
@@ -239,7 +255,7 @@ const CredentialsTable = ({
                         label: i18n.t(
                           "pages.connectionDetails.table.menu.view"
                         ),
-                        action: () => viewCredTemplate(row.data.schema.$id),
+                        action: () => void viewCredTemplate(row.data.schema.$id),
                         icon: <BadgeOutlined />,
                         className: "icon-left",
                       },

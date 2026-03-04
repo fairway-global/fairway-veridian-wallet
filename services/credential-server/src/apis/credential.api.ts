@@ -1,7 +1,14 @@
 import { NextFunction, Request, Response } from "express";
 import { Operation, Saider, Serder, SignifyClient } from "signify-ts";
-import { ACDC_SCHEMAS_ID, ISSUER_NAME, LE_SCHEMA_SAID } from "../consts";
-import { getRegistry, OP_TIMEOUT, waitAndGetDoneOp } from "../utils/utils";
+import { config } from "../config";
+import { canonicalSchemaId, ISSUER_NAME, LE_SCHEMA_SAID } from "../consts";
+import { isSchemaIdKnown } from "../services/dashboardStore";
+import {
+  getRegistry,
+  OP_TIMEOUT,
+  resolveOobi,
+  waitAndGetDoneOp,
+} from "../utils/utils";
 import { QviCredential } from "../utils/utils.types";
 
 export const UNKNOW_SCHEMA_ID = "Unknow Schema ID: ";
@@ -14,6 +21,9 @@ interface IssueAcdcCredentialInput {
   aid: string;
   attribute?: Record<string, unknown>;
 }
+
+const SCHEMA_LOAD_TIMEOUT_MS = 10000;
+const SCHEMA_LOAD_POLL_INTERVAL_MS = 250;
 
 type CredentialRecord = {
   id?: string;
@@ -32,6 +42,126 @@ type CredentialRecord = {
   issAttachment?: unknown;
   [key: string]: unknown;
 };
+
+function ensureTrailingPath(baseUrl: string, schemaSaid: string): string {
+  return `${baseUrl.replace(/\/+$/, "")}/oobi/${schemaSaid}`;
+}
+
+function buildSchemaOobiCandidates(schemaSaid: string): string[] {
+  const rawBases = [
+    String(config.oobiEndpoint || "").trim(),
+    String(config.endpoint || "").trim(),
+    String(process.env.PUBLIC_OOBI_ENDPOINT || "").trim(),
+  ].filter(Boolean);
+
+  const withHostVariants = rawBases.flatMap((base) => {
+    try {
+      const parsed = new URL(base);
+      const variants = [base];
+
+      if (parsed.hostname === "localhost") {
+        const localhostVariant = new URL(base);
+        localhostVariant.hostname = "127.0.0.1";
+        variants.push(localhostVariant.toString());
+
+        const dockerVariant = new URL(base);
+        dockerVariant.hostname = "host.docker.internal";
+        variants.push(dockerVariant.toString());
+
+        const bridgeVariant = new URL(base);
+        bridgeVariant.hostname = "172.17.0.1";
+        variants.push(bridgeVariant.toString());
+      } else if (parsed.hostname === "127.0.0.1") {
+        const loopbackVariant = new URL(base);
+        loopbackVariant.hostname = "localhost";
+        variants.push(loopbackVariant.toString());
+
+        const dockerVariant = new URL(base);
+        dockerVariant.hostname = "host.docker.internal";
+        variants.push(dockerVariant.toString());
+
+        const bridgeVariant = new URL(base);
+        bridgeVariant.hostname = "172.17.0.1";
+        variants.push(bridgeVariant.toString());
+      }
+
+      return variants;
+    } catch {
+      return [base];
+    }
+  });
+
+  return Array.from(
+    new Set(withHostVariants.map((base) => ensureTrailingPath(base, schemaSaid)))
+  );
+}
+
+function isSchemaNotLoadedError(message: string, schemaSaid: string): boolean {
+  const normalized = String(message || "");
+  return (
+    normalized.includes(`Credential schema ${schemaSaid} not found`) ||
+    normalized.includes("must be loaded with data oobi before issuing credentials")
+  );
+}
+
+async function isSchemaLoaded(
+  client: SignifyClient,
+  schemaSaid: string
+): Promise<boolean> {
+  try {
+    await client.schemas().get(schemaSaid);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function waitForSchemaLoaded(
+  client: SignifyClient,
+  schemaSaid: string
+): Promise<boolean> {
+  const deadline = Date.now() + SCHEMA_LOAD_TIMEOUT_MS;
+  while (Date.now() <= deadline) {
+    if (await isSchemaLoaded(client, schemaSaid)) {
+      return true;
+    }
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, SCHEMA_LOAD_POLL_INTERVAL_MS)
+    );
+  }
+
+  return false;
+}
+
+async function ensureSchemaLoaded(
+  client: SignifyClient,
+  schemaSaid: string
+): Promise<void> {
+  if (await isSchemaLoaded(client, schemaSaid)) {
+    return;
+  }
+
+  const candidates = buildSchemaOobiCandidates(schemaSaid);
+
+  for (const candidate of candidates) {
+    try {
+      await resolveOobi(client, candidate);
+      const loaded = await waitForSchemaLoaded(client, schemaSaid);
+      if (loaded) {
+        return;
+      }
+    } catch {
+      // continue with next candidate
+    }
+  }
+
+  throw new Error(
+    `Credential schema ${schemaSaid} not loaded. Configure OOBI_ENDPOINT to a hostname reachable from KERIA (current: ${config.oobiEndpoint}). Tried OOBI URLs: ${candidates.join(
+      ", "
+    )}`
+  );
+}
 
 function toAttachment(value: unknown): string | undefined {
   if (Array.isArray(value)) {
@@ -60,7 +190,7 @@ function buildGrantAttachments(credential: CredentialRecord): {
   };
 }
 
-function getCredentialEntries(listResponse: unknown): CredentialRecord[] {
+export function getCredentialEntries(listResponse: unknown): CredentialRecord[] {
   if (Array.isArray(listResponse)) {
     return listResponse as CredentialRecord[];
   }
@@ -81,7 +211,7 @@ function getCredentialEntries(listResponse: unknown): CredentialRecord[] {
   return [];
 }
 
-function getCredentialId(credential: CredentialRecord): string {
+export function getCredentialId(credential: CredentialRecord): string {
   return String(credential.sad?.d || credential.id || "").trim();
 }
 
@@ -89,12 +219,16 @@ export async function issueCredentialAndGrant(
   client: SignifyClient,
   qviCredentialId: string,
   input: IssueAcdcCredentialInput
-): Promise<void> {
-  const { schemaSaid, aid, attribute } = input;
+): Promise<string> {
+  const requestedSchemaSaid = String(input.schemaSaid || "").trim();
+  const schemaSaid = canonicalSchemaId(requestedSchemaSaid);
+  const { aid, attribute } = input;
 
-  if (!ACDC_SCHEMAS_ID.some((schemaId) => schemaId === schemaSaid)) {
-    throw new Error(`${UNKNOW_SCHEMA_ID}${schemaSaid}`);
+  if (!isSchemaIdKnown(schemaSaid)) {
+    throw new Error(`${UNKNOW_SCHEMA_ID}${requestedSchemaSaid}`);
   }
+
+  await ensureSchemaLoaded(client, schemaSaid);
 
   const keriRegistryRegk = await getRegistry(client, ISSUER_NAME);
   const holderAid = await client.identifiers().get(ISSUER_NAME);
@@ -154,7 +288,19 @@ export async function issueCredentialAndGrant(
 
   const issuerName =
     schemaSaid === LE_SCHEMA_SAID ? holderAid.name : ISSUER_NAME;
-  const result = await client.credentials().issue(issuerName, issueParams);
+  let result;
+  try {
+    result = await client.credentials().issue(issuerName, issueParams);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!isSchemaNotLoadedError(message, schemaSaid)) {
+      throw error;
+    }
+
+    await ensureSchemaLoaded(client, schemaSaid);
+
+    result = await client.credentials().issue(issuerName, issueParams);
+  }
   await waitAndGetDoneOp(client, result.op, OP_TIMEOUT);
 
   const credential = await client.credentials().get(result.acdc.ked.d);
@@ -171,6 +317,8 @@ export async function issueCredentialAndGrant(
   await client
     .ipex()
     .submitGrant(grantParams.senderName, grant, gsigs, gend, [aid]);
+
+  return result.acdc.ked.d;
 }
 
 export async function issueAcdcCredential(
@@ -182,8 +330,9 @@ export async function issueAcdcCredential(
   const qviCredentialId = req.app.get("qviCredentialId");
 
   const { schemaSaid, aid, attribute } = req.body;
+  const normalizedSchemaSaid = canonicalSchemaId(String(schemaSaid || "").trim());
 
-  if (!ACDC_SCHEMAS_ID.some((schemaId) => schemaId === schemaSaid)) {
+  if (!isSchemaIdKnown(normalizedSchemaSaid)) {
     res.status(409).send({
       success: false,
       data: "",
@@ -192,7 +341,7 @@ export async function issueAcdcCredential(
   }
 
   await issueCredentialAndGrant(client, qviCredentialId, {
-    schemaSaid,
+    schemaSaid: normalizedSchemaSaid,
     aid,
     attribute,
   });
@@ -247,13 +396,11 @@ export async function contactCredentials(
   });
 }
 
-export async function revokeCredential(
-  req: Request,
-  res: Response
-): Promise<void> {
-  const client: SignifyClient = req.app.get("signifyClient");
-  const { credentialId, holder } = req.body;
-
+export async function revokeCredentialWithNotification(
+  client: SignifyClient,
+  credentialId: string,
+  holder?: string
+): Promise<{ alreadyRevoked: boolean }> {
   // Get the credential first
   let credential = await client
     .credentials()
@@ -261,26 +408,29 @@ export async function revokeCredential(
     .catch((error) => {
       const status = error.message.split(" - ")[1];
       if (/404/gi.test(status)) {
-        res.status(404).send({
-          success: false,
-          data: `${CREDENTIAL_NOT_FOUND} ${credentialId}`,
-        });
-      } else {
-        throw error;
+        return null;
       }
+
+      throw error;
     });
 
   if (!credential) {
-    return;
+    throw new Error(`${CREDENTIAL_NOT_FOUND} ${credentialId}`);
   }
 
   // Handle already revoked credential
   if (credential.status.s === "1") {
-    res.status(409).send({
-      success: false,
-      data: CREDENTIAL_REVOKED_ALREADY,
-    });
-    return;
+    return { alreadyRevoked: true };
+  }
+
+  const holderFromCredential = String(
+    (credential as { sad?: { a?: { i?: string } } })?.sad?.a?.i || ""
+  ).trim();
+  const holderDid = String(holder || holderFromCredential).trim();
+  if (!holderDid) {
+    throw new Error(
+      "holder is required when revocation notification recipient cannot be determined"
+    );
   }
 
   // Proceed with revocation
@@ -294,7 +444,7 @@ export async function revokeCredential(
   const datetime = new Date().toISOString().replace("Z", "000+00:00");
   const [grant, gsigs, gend] = await client.ipex().grant({
     senderName: ISSUER_NAME,
-    recipient: holder,
+    recipient: holderDid,
     acdc: new Serder(credential.sad),
     anc: new Serder(credential.anc),
     iss: new Serder(credential.iss),
@@ -303,13 +453,50 @@ export async function revokeCredential(
   });
   const submitGrantOp: Operation = await client
     .ipex()
-    .submitGrant(ISSUER_NAME, grant, gsigs, gend, [holder]);
+    .submitGrant(ISSUER_NAME, grant, gsigs, gend, [holderDid]);
   await waitAndGetDoneOp(client, submitGrantOp, OP_TIMEOUT);
 
-  res.status(200).send({
-    success: true,
-    data: "Revoke credential successfully",
-  });
+  return { alreadyRevoked: false };
+}
+
+export async function revokeCredential(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const client: SignifyClient = req.app.get("signifyClient");
+  const { credentialId, holder } = req.body;
+
+  try {
+    const { alreadyRevoked } = await revokeCredentialWithNotification(
+      client,
+      credentialId,
+      holder
+    );
+
+    if (alreadyRevoked) {
+      res.status(409).send({
+        success: false,
+        data: CREDENTIAL_REVOKED_ALREADY,
+      });
+      return;
+    }
+
+    res.status(200).send({
+      success: true,
+      data: "Revoke credential successfully",
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.startsWith(CREDENTIAL_NOT_FOUND)) {
+      res.status(404).send({
+        success: false,
+        data: message,
+      });
+      return;
+    }
+
+    throw error;
+  }
 }
 
 export async function deleteRevokedCredentials(

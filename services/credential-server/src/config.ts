@@ -45,12 +45,14 @@ const oobiEndpoint = process.env.OOBI_ENDPOINT ?? endpoint;
 const keriaUrl = process.env.KERIA_ENDPOINT ?? "http://127.0.0.1:3901";
 const keriaBootUrl = process.env.KERIA_BOOT_ENDPOINT ?? "http://127.0.0.1:3903";
 const jsonBodyLimit = process.env.JSON_BODY_LIMIT ?? "10mb";
+const dashboardApiToken = process.env.DASHBOARD_API_TOKEN ?? "";
 
 export const config = {
   endpoint: endpoint,
   oobiEndpoint: oobiEndpoint,
   port,
   jsonBodyLimit,
+  dashboardApiToken,
   keria: {
     url: keriaUrl,
     bootUrl: keriaBootUrl,
@@ -70,5 +72,12 @@ export const config = {
     deleteRevokedCredentials: "/deleteRevokedCredentials",
     deleteContact: "/deleteContact",
     schemas: "/schemas",
+    templates: "/api/templates",
+    templateById: "/api/templates/:id",
+    credentialsApi: "/api/credentials",
+    credentialById: "/api/credentials/:id",
+    issueCredentialApi: "/api/credentials/issue",
+    revokeCredentialApi: "/api/credentials/:id/revoke",
+    deleteCredentialApi: "/api/credentials/:id",
   },
 };

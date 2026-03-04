@@ -31,11 +31,15 @@ const SESSION_KEYS = {
 };
 
 type FaydaProfile = {
+  id?: string;
+  fayda_id?: string;
+  sub?: string;
   name?: string;
   email?: string;
   phone_number?: string;
   picture?: string;
   birthdate?: string;
+  gender?: string;
 };
 
 // eslint-disable-next-line no-console
@@ -167,19 +171,29 @@ export const FaydaCallback = () => {
     try {
       setIssuingCredential(true);
       setError(null);
-      setStatus("Issuing FaydaVerifiedFairwayId...");
+      setStatus("Issuing FaydaVerifiedAutoIssue...");
 
       // Avoid sending large base64 blobs (for example `picture`) to issuer API.
       const { picture: _ignoredPicture, ...faydaDataForCredential } =
         userInfo as FaydaProfile & Record<string, unknown>;
+      const normalizedFaydaData = {
+        ...faydaDataForCredential,
+        id:
+          String(
+            faydaDataForCredential.id ||
+              faydaDataForCredential.fayda_id ||
+              faydaDataForCredential.sub ||
+              ""
+          ).trim() || undefined,
+      };
 
       const issueResponse = await fetch(SAVE_FAYDA_DATA_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           aid: holderAid,
-          credentialName: "FaydaVerifiedFairwayId",
-          faydaData: faydaDataForCredential,
+          credentialName: "FaydaVerifiedAutoIssue",
+          faydaData: normalizedFaydaData,
         }),
       });
 
@@ -305,7 +319,7 @@ export const FaydaCallback = () => {
 
         <IonAlert
           isOpen={showIssuedModal}
-          header="FaydaVerifiedFairwayId issued"
+          header="FaydaVerifiedAutoIssue issued"
           message="Credential offer sent. Open Notifications and accept the credential."
           buttons={[
             {

@@ -37,6 +37,13 @@ const config = {
     requestDisclosure: "/requestDisclosure",
     revokeCredential: "/revokeCredential",
     schemas: "/schemas",
+    templates: "/api/templates",
+    templateById: "/api/templates/:id",
+    credentialsApi: "/api/credentials",
+    credentialById: "/api/credentials/:id",
+    issueCredentialApi: "/api/credentials/issue",
+    revokeCredentialApi: "/api/credentials/:id/revoke",
+    deleteCredentialApi: "/api/credentials/:id",
   },
 };
 

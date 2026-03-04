@@ -1,7 +1,8 @@
 import bodyParser from "body-parser";
 import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
-import { join } from "path";
+import { existsSync, statSync } from "fs";
+import { join, resolve } from "path";
 import { SignifyClient, ready as signifyReady, Tier } from "signify-ts";
 import { config } from "./config";
 import { ACDC_SCHEMAS_ID, ISSUER_NAME, QVI_NAME } from "./consts";
@@ -156,6 +157,40 @@ function stringifyForLog(value: unknown): string {
   }
 }
 
+function getSchemaStaticDirs(): string[] {
+  const envPath = String(process.env.SCHEMA_DIR_PATH || "").trim();
+  const candidates = Array.from(
+    new Set(
+      [
+        join(__dirname, "schemas"),
+        resolve(__dirname, "../src/schemas"),
+        resolve(process.cwd(), "src/schemas"),
+        resolve(process.cwd(), "build/schemas"),
+        resolve(process.cwd(), "services/credential-server/src/schemas"),
+        resolve(process.cwd(), "services/credential-server/build/schemas"),
+        envPath || "",
+      ]
+        .filter(Boolean)
+        .map((item) => resolve(item))
+    )
+  );
+
+  const [primaryDir, ...fallbackDirs] = candidates;
+  const existingFallbackDirs = fallbackDirs.filter((candidate) => {
+    if (!existsSync(candidate)) {
+      return false;
+    }
+
+    try {
+      return statSync(candidate).isDirectory();
+    } catch {
+      return false;
+    }
+  });
+
+  return [primaryDir, ...existingFallbackDirs];
+}
+
 async function startServer() {
   const app = express();
   app.use(cors());
@@ -219,14 +254,17 @@ async function startServer() {
     `);
   });
   app.use("/static", express.static("static"));
-  app.use(
-    "/oobi",
-    express.static(join(__dirname, "schemas"), {
-      setHeaders: (res) => {
-        res.setHeader("Content-Type", "application/schema+json");
-      },
-    })
-  );
+  const schemaStaticDirs = getSchemaStaticDirs();
+  for (const schemaStaticDir of schemaStaticDirs) {
+    app.use(
+      "/oobi",
+      express.static(schemaStaticDir, {
+        setHeaders: (res) => {
+          res.setHeader("Content-Type", "application/schema+json");
+        },
+      })
+    );
+  }
   app.use(router);
   app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error(
@@ -244,13 +282,37 @@ async function startServer() {
     const parsedError = err as Error & { status?: number; type?: string };
     if (parsedError.status === 413 || parsedError.type === "entity.too.large") {
       res.status(413).json({
+        success: false,
+        data: null,
         error:
           "request entity too large; remove very large fields (for example base64 picture) or increase JSON_BODY_LIMIT.",
       });
       return;
     }
 
+    const normalizedError = String(err.message || "").toLowerCase();
+    if (
+      normalizedError.includes(
+        "must be loaded with data oobi before issuing credentials"
+      ) ||
+      (normalizedError.includes("credential schema") &&
+        normalizedError.includes("not found")) ||
+      (normalizedError.includes("credential schema") &&
+        normalizedError.includes("not loaded"))
+    ) {
+      res.status(400).json({
+        success: false,
+        data: null,
+        error:
+          `${err.message} ` +
+          "Configure OOBI_ENDPOINT to a hostname KERIA can reach and restart the credential server.",
+      });
+      return;
+    }
+
     res.status(500).json({
+      success: false,
+      data: null,
       error: err.message ?? "Internal Server Error",
     });
   });

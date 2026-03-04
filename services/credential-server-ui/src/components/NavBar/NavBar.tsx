@@ -1,6 +1,8 @@
 import {
   Badge as BadgeFull,
   BadgeOutlined,
+  Description as DescriptionFull,
+  DescriptionOutlined,
   Group as GroupFull,
   GroupOutlined,
   Menu as MenuIcon,
@@ -58,8 +60,14 @@ const menuItems = [
     icons: [<GroupFull />, <GroupOutlined />],
   },
   {
+    key: "templates",
+    label: i18n.t("navbar.templates"),
+    path: RoutePath.Templates,
+    icons: [<DescriptionFull />, <DescriptionOutlined />],
+  },
+  {
     key: "credentials",
-    label: i18n.t("navbar.credentials"),
+    label: i18n.t("navbar.credentialsManagement"),
     path: RoutePath.Credentials,
     icons: [<BadgeFull />, <BadgeOutlined />],
   },
@@ -81,7 +89,7 @@ const NavBar = ({ window }: Props) => {
 
   const displayMenuItems = menuItems.filter((item) =>
     roleViewIndex !== RoleIndex.ISSUER
-      ? item.key !== "credentials"
+      ? !["templates", "credentials"].includes(item.key)
       : item.key !== "requestPresentation"
   );
 

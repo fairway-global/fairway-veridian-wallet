@@ -55,6 +55,38 @@ import {
 } from "./CredentialDetailModule.types";
 import { getBiometricsCache } from "../../../store/reducers/biometricsCache";
 
+const buildFallbackCredentialDetails = async (
+  id: string
+): Promise<ACDCDetails> => {
+  const shortDetails = await Agent.agent.credentials.getCredentialShortDetailsById(
+    id
+  );
+  const statusDate = shortDetails.issuanceDate || new Date().toISOString();
+
+  return {
+    id: shortDetails.id,
+    schema: shortDetails.schema,
+    status: shortDetails.status,
+    identifierId: shortDetails.identifierId,
+    identifierType: shortDetails.identifierType,
+    connectionId: shortDetails.connectionId,
+    i: shortDetails.connectionId || shortDetails.identifierId,
+    a: {
+      i: shortDetails.identifierId,
+      dt: statusDate,
+    },
+    s: {
+      title: shortDetails.credentialType || shortDetails.schema,
+      description: "",
+      version: "",
+    },
+    lastStatus: {
+      s: shortDetails.status === CredentialStatus.REVOKED ? "1" : "0",
+      dt: new Date(statusDate).toISOString(),
+    },
+  };
+};
+
 const CredentialDetailModule = ({
   pageId,
   id,
@@ -127,16 +159,29 @@ const CredentialDetailModule = ({
     try {
       const cardDetails =
         await Agent.agent.credentials.getCredentialDetailsById(id);
+      setCloudError(false);
       setCardData(cardDetails);
       getConnection(cardDetails.i);
     } catch (error) {
-      setCloudError(true);
       if (
-        !(error instanceof Error) ||
-        !error.message.includes(CredentialService.CREDENTIAL_NOT_FOUND)
+        error instanceof Error &&
+        error.message.includes(CredentialService.CREDENTIAL_NOT_FOUND)
       ) {
-        showError("Unable to get credential detail", error);
+        try {
+          const fallbackCardDetails = await buildFallbackCredentialDetails(id);
+          setCloudError(false);
+          setCardData(fallbackCardDetails);
+          if (fallbackCardDetails.connectionId) {
+            getConnection(fallbackCardDetails.connectionId);
+          }
+          return;
+        } catch (fallbackError) {
+          showError("Unable to load local credential details", fallbackError);
+        }
       }
+
+      setCloudError(true);
+      showError("Unable to get credential detail", error);
     }
   }, [credDetail, id, getConnection]);
 

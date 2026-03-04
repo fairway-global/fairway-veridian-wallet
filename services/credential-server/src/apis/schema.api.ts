@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
-import { ACDC_SCHEMAS } from "../consts";
+import { listAvailableSchemas } from "../services/dashboardStore";
 
 export async function schemaApi(req: Request, res: Response) {
+  const schemas = await listAvailableSchemas();
+
   res.status(200).send({
     success: true,
-    data: ACDC_SCHEMAS,
+    data: schemas,
   });
 }

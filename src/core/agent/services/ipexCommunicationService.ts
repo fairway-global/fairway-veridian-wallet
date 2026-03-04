@@ -56,6 +56,9 @@ class IpexCommunicationService extends AgentService {
   static readonly NO_CURRENT_IPEX_MSG_TO_JOIN =
     "Cannot join IPEX message as there is no current exn to join from the group leader";
   static readonly INVALID_HISTORY_TYPE = "Invalid history type";
+  static readonly SCHEMA_OOBI_RESOLVE_TIMEOUT_MS = 5000;
+  static readonly SCHEMA_LOOKUP_TIMEOUT_MS = 1200;
+  static readonly SCHEMA_INDEXER_FETCH_TIMEOUT_MS = 1500;
 
   static readonly SCHEMA_SAID_ROME_DEMO =
     "EMkpplwGGw3fwdktSibRph9NSy_o2MvKDKO8ZoONqTOt";
@@ -986,21 +989,37 @@ class IpexCommunicationService extends AgentService {
     said: string
   ): Promise<Omit<ACDCDetails, "identifierType">> {
     const exchange = await this.props.signifyClient.exchanges().get(said);
-    const credentialState = await this.props.signifyClient
+    const credentialStatePromise = this.props.signifyClient
       .credentials()
       .state(exchange.exn.e.acdc.ri, exchange.exn.e.acdc.d);
 
     const schemaSaid = exchange.exn.e.acdc.s;
-    const issuerOobi = await this.getIssuerOobi(exchange.exn.i);
-    await this.ensureSchemasResolved([schemaSaid], exchange.exn.i, issuerOobi);
-    const schema = await this.props.signifyClient
-      .schemas()
-      .get(schemaSaid)
-      .catch(() => ({
-        title: schemaSaid,
-        description: "",
-        version: "",
-      }));
+    const fallbackSchema = {
+      title: schemaSaid,
+      description: "",
+      version: "",
+    };
+    const schemaPromise = this.withTimeout(
+      (async () => {
+        const issuerOobi = await this.getIssuerOobi(exchange.exn.i);
+        await this.ensureSchemasResolved([schemaSaid], exchange.exn.i, issuerOobi);
+        return this.props.signifyClient
+          .schemas()
+          .get(schemaSaid)
+          .catch(() => fallbackSchema);
+      })(),
+      IpexCommunicationService.SCHEMA_LOOKUP_TIMEOUT_MS,
+      fallbackSchema
+    );
+
+    const [credentialState, schema] = await Promise.all([
+      credentialStatePromise,
+      schemaPromise,
+    ]);
+    const normalizedCredentialState = credentialState || {
+      et: Ilks.iss,
+      dt: new Date().toISOString(),
+    };
 
     return {
       id: exchange.exn.e.acdc.d,
@@ -1013,8 +1032,8 @@ class IpexCommunicationService extends AgentService {
         version: schema.version || "",
       },
       lastStatus: {
-        s: credentialState.et === Ilks.iss ? "0" : "1",
-        dt: new Date(credentialState.dt).toISOString(),
+        s: normalizedCredentialState.et === Ilks.iss ? "0" : "1",
+        dt: new Date(normalizedCredentialState.dt).toISOString(),
       },
       status: CredentialStatus.PENDING,
       identifierId: exchange.exn.rp,
@@ -1261,9 +1280,17 @@ class IpexCommunicationService extends AgentService {
 
       for (const schemaOobiCandidate of schemaOobiCandidates) {
         try {
-          await this.connections.resolveOobi(schemaOobiCandidate, true);
-          resolved = true;
-          break;
+          resolved = await this.withTimeout(
+            this.connections
+              .resolveOobi(schemaOobiCandidate, true)
+              .then(() => true)
+              .catch(() => false),
+            IpexCommunicationService.SCHEMA_OOBI_RESOLVE_TIMEOUT_MS,
+            false
+          );
+          if (resolved) {
+            break;
+          }
         } catch {
           // Best effort only: continue with next candidate.
         }
@@ -1298,13 +1325,66 @@ class IpexCommunicationService extends AgentService {
       .split("/agent")[0]
       .split("/controller")[0]
       .replace("http://keria:3902", "http://127.0.0.1:3902");
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      IpexCommunicationService.SCHEMA_INDEXER_FETCH_TIMEOUT_MS
+    );
 
-    const indexerOobiResult = await (
-      await fetch(`${agentBase}/indexer/${prefix}`)
-    ).text();
-    const schemaBase = indexerOobiResult.split('"url":"')[1].split('"')[0];
+    let indexerOobiResult = "";
+    try {
+      const response = await fetch(`${agentBase}/indexer/${prefix}`, {
+        signal: controller.signal,
+      });
+      if (typeof response.ok === "boolean" && !response.ok) {
+        throw new Error(
+          `${IpexCommunicationService.SCHEMA_NOT_FOUND}: ${response.status}`
+        );
+      }
+      indexerOobiResult = await response.text();
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    const schemaBase = indexerOobiResult.split("\"url\":\"")[1]?.split("\"")[0];
+    if (!schemaBase) {
+      throw new Error(IpexCommunicationService.SCHEMA_NOT_FOUND);
+    }
 
     return `${schemaBase}/oobi/${said}`;
+  }
+
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    fallback: T
+  ): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(fallback);
+        }
+      }, timeoutMs);
+
+      promise
+        .then((value) => {
+          if (!settled) {
+            settled = true;
+            clearTimeout(timer);
+            resolve(value);
+          }
+        })
+        .catch((error) => {
+          if (!settled) {
+            settled = true;
+            clearTimeout(timer);
+            reject(error);
+          }
+        });
+    });
   }
 
   private tryGetLocalSchemaUrl(schemaOobi: string): string | undefined {

@@ -14,6 +14,7 @@ import {
   IdentifierStorage,
   NotificationStorage,
 } from "../records";
+import { KeriaContactKeyPrefix } from "./connectionService.types";
 import {
   AcdcStateChangedEvent,
   CredentialRemovedEvent,
@@ -27,6 +28,8 @@ class CredentialService extends AgentService {
   static readonly CREDENTIAL_NOT_ARCHIVED = "Credential was not archived";
   static readonly CREDENTIAL_NOT_FOUND =
     "Credential with given SAID not found on KERIA";
+  private static readonly CREDENTIAL_CLOUD_RETRY_ATTEMPTS = 4;
+  private static readonly CREDENTIAL_CLOUD_RETRY_DELAY_MS = 250;
 
   private static isMissingCredentialCloudError(error: unknown): boolean {
     if (!(error instanceof Error)) {
@@ -96,22 +99,25 @@ class CredentialService extends AgentService {
   @OnlineOnly
   async getCredentialDetailsById(id: string): Promise<ACDCDetails> {
     const metadata = await this.getMetadataById(id);
-    const acdc = await this.props.signifyClient
-      .credentials()
-      .get(metadata.id)
-      .catch((error) => {
-        if (CredentialService.isMissingCredentialCloudError(error)) {
-          return undefined;
-        } else {
-          throw error;
-        }
-      });
+    const acdc = await this.getCredentialFromCloudWithRetry(metadata.id);
 
     if (!acdc) {
+      // Pending credentials can be briefly unavailable from cloud right after admit.
+      if (metadata.status === CredentialStatus.PENDING) {
+        return this.buildFallbackDetails(metadata);
+      }
+
+      const grantHistoryFallback =
+        await this.buildFallbackDetailsFromGrantHistory(metadata);
+      if (grantHistoryFallback) {
+        return grantHistoryFallback;
+      }
+
       throw new Error(CredentialService.CREDENTIAL_NOT_FOUND);
     }
 
     const credentialShortDetails = getCredentialShortDetails(metadata);
+    const statusDate = acdc.status?.dt || metadata.issuanceDate;
     return {
       id: credentialShortDetails.id,
       schema: credentialShortDetails.schema,
@@ -122,13 +128,13 @@ class CredentialService extends AgentService {
       i: acdc.sad.i,
       a: acdc.sad.a,
       s: {
-        title: acdc.schema.title,
-        description: acdc.schema.description,
-        version: acdc.schema.version,
+        title: acdc.schema?.title || metadata.credentialType || metadata.schema,
+        description: acdc.schema?.description || "",
+        version: acdc.schema?.version || "",
       },
       lastStatus: {
         s: acdc.status.s,
-        dt: new Date(acdc.status.dt).toISOString(),
+        dt: new Date(statusDate).toISOString(),
       },
     };
   }
@@ -211,6 +217,183 @@ class CredentialService extends AgentService {
       throw new Error(CredentialService.CREDENTIAL_MISSING_METADATA_ERROR_MSG);
     }
     return metadata;
+  }
+
+  private async getCredentialFromCloudWithRetry(
+    credentialId: string
+  ): Promise<any | undefined> {
+    for (
+      let attempt = 0;
+      attempt < CredentialService.CREDENTIAL_CLOUD_RETRY_ATTEMPTS;
+      attempt += 1
+    ) {
+      let credential;
+      try {
+        credential = await this.props.signifyClient
+          .credentials()
+          .get(credentialId);
+      } catch (error) {
+        if (CredentialService.isMissingCredentialCloudError(error)) {
+          credential = undefined;
+        } else {
+          throw error;
+        }
+      }
+
+      if (credential) {
+        return credential;
+      }
+
+      if (attempt < CredentialService.CREDENTIAL_CLOUD_RETRY_ATTEMPTS - 1) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, CredentialService.CREDENTIAL_CLOUD_RETRY_DELAY_MS)
+        );
+      }
+    }
+
+    return undefined;
+  }
+
+  private buildFallbackDetails(metadata: CredentialMetadataRecord): ACDCDetails {
+    const issuedAt = Number.isNaN(Date.parse(metadata.issuanceDate))
+      ? new Date().toISOString()
+      : new Date(metadata.issuanceDate).toISOString();
+
+    return {
+      id: metadata.id,
+      schema: metadata.schema,
+      status: metadata.status,
+      identifierId: metadata.identifierId,
+      identifierType: metadata.identifierType,
+      connectionId: metadata.connectionId,
+      i: metadata.connectionId,
+      a: {
+        i: metadata.identifierId,
+        dt: issuedAt,
+      },
+      s: {
+        title: metadata.credentialType || metadata.schema,
+        description: "",
+        version: "",
+      },
+      lastStatus: {
+        s: metadata.status === CredentialStatus.REVOKED ? "1" : "0",
+        dt: issuedAt,
+      },
+    };
+  }
+
+  private async buildFallbackDetailsFromGrantHistory(
+    metadata: CredentialMetadataRecord
+  ): Promise<ACDCDetails | undefined> {
+    if (!metadata.connectionId) {
+      return undefined;
+    }
+
+    let contact;
+    try {
+      contact = await this.props.signifyClient.contacts().get(metadata.connectionId);
+    } catch {
+      contact = undefined;
+    }
+
+    if (!contact || typeof contact !== "object") {
+      return undefined;
+    }
+
+    const ipexHistoryEntries = Object.entries(contact as Record<string, unknown>)
+      .filter(
+        ([key, value]) =>
+          key.startsWith(KeriaContactKeyPrefix.HISTORY_IPEX) &&
+          typeof value === "string"
+      )
+      .map(([, value]) => value as string);
+
+    for (const historyEntry of ipexHistoryEntries) {
+      let exchangeId = "";
+      try {
+        const parsed = JSON.parse(historyEntry) as { id?: unknown };
+        exchangeId =
+          typeof parsed.id === "string" ? parsed.id.trim() : "";
+      } catch {
+        continue;
+      }
+
+      if (!exchangeId) {
+        continue;
+      }
+
+      let exchange;
+      try {
+        exchange = await this.props.signifyClient.exchanges().get(exchangeId);
+      } catch {
+        exchange = undefined;
+      }
+
+      if (!exchange || exchange.exn?.r !== "/ipex/grant") {
+        continue;
+      }
+
+      const grantAcdc = exchange.exn?.e?.acdc;
+      if (!grantAcdc || grantAcdc.d !== metadata.id) {
+        continue;
+      }
+
+      const grantAttributes =
+        grantAcdc.a && typeof grantAcdc.a === "object"
+          ? (grantAcdc.a as Record<string, unknown>)
+          : {};
+      const rawStatusDate =
+        typeof grantAttributes.dt === "string"
+          ? grantAttributes.dt
+          : metadata.issuanceDate;
+      const statusDate = Number.isNaN(Date.parse(rawStatusDate))
+        ? new Date().toISOString()
+        : new Date(rawStatusDate).toISOString();
+      const schemaSaid =
+        typeof grantAcdc.s === "string" && grantAcdc.s
+          ? grantAcdc.s
+          : metadata.schema;
+
+      let schema;
+      try {
+        schema = await this.props.signifyClient.schemas().get(schemaSaid);
+      } catch {
+        schema = undefined;
+      }
+
+      return {
+        id: metadata.id,
+        schema: schemaSaid,
+        status: metadata.status,
+        identifierId: metadata.identifierId,
+        identifierType: metadata.identifierType,
+        connectionId: metadata.connectionId,
+        i:
+          typeof grantAcdc.i === "string" && grantAcdc.i
+            ? grantAcdc.i
+            : metadata.connectionId,
+        a: {
+          ...grantAttributes,
+          i:
+            typeof grantAttributes.i === "string" && grantAttributes.i
+              ? grantAttributes.i
+              : metadata.identifierId,
+          dt: statusDate,
+        },
+        s: {
+          title: schema?.title || metadata.credentialType || schemaSaid,
+          description: schema?.description || "",
+          version: schema?.version || "",
+        },
+        lastStatus: {
+          s: metadata.status === CredentialStatus.REVOKED ? "1" : "0",
+          dt: statusDate,
+        },
+      };
+    }
+
+    return undefined;
   }
 
   async syncKeriaCredentials(): Promise<void> {

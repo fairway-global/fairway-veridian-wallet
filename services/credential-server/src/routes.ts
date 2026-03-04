@@ -1,6 +1,13 @@
 import express, { Router } from "express";
 import { contactList, deleteContact } from "./apis/contact.api";
 import {
+  deleteCredentialByIdApi,
+  getCredentialByIdApi,
+  issueCredentialApi,
+  listCredentialsApi,
+  revokeCredentialByIdApi,
+} from "./apis/dashboardCredential.api";
+import {
   contactCredentials,
   deleteRevokedCredentials,
   issueAcdcCredential,
@@ -16,7 +23,15 @@ import { keriOobiApi } from "./apis/invitation.api";
 import { resolveOobi } from "./apis/oobi.api";
 import { ping } from "./apis/ping.api";
 import { schemaApi } from "./apis/schema.api";
+import {
+  createTemplateApi,
+  deleteTemplateApi,
+  getTemplateByIdApi,
+  listTemplatesApi,
+  updateTemplateApi,
+} from "./apis/template.api";
 import { config } from "./config";
+import { requireDashboardAuth } from "./middleware/auth.middleware";
 
 export const router: Router = express.Router();
 router.get(config.path.ping, ping);
@@ -35,3 +50,29 @@ router.post(config.path.requestDisclosure, requestDisclosure);
 router.post(config.path.revokeCredential, revokeCredential);
 router.delete(config.path.deleteRevokedCredentials, deleteRevokedCredentials);
 router.delete(config.path.deleteContact, deleteContact);
+router.get(config.path.templates, requireDashboardAuth, listTemplatesApi);
+router.get(config.path.templateById, requireDashboardAuth, getTemplateByIdApi);
+router.post(config.path.templates, requireDashboardAuth, createTemplateApi);
+router.put(config.path.templateById, requireDashboardAuth, updateTemplateApi);
+router.delete(config.path.templateById, requireDashboardAuth, deleteTemplateApi);
+router.get(config.path.credentialsApi, requireDashboardAuth, listCredentialsApi);
+router.get(
+  config.path.credentialById,
+  requireDashboardAuth,
+  getCredentialByIdApi
+);
+router.post(
+  config.path.issueCredentialApi,
+  requireDashboardAuth,
+  issueCredentialApi
+);
+router.put(
+  config.path.revokeCredentialApi,
+  requireDashboardAuth,
+  revokeCredentialByIdApi
+);
+router.delete(
+  config.path.deleteCredentialApi,
+  requireDashboardAuth,
+  deleteCredentialByIdApi
+);

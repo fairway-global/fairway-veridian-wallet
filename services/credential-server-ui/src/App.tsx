@@ -11,7 +11,6 @@ import { RoutePath } from "./const/route";
 import { Layout } from "./layouts/Layout";
 import { ConnectionDetails } from "./pages/ConnectionDetails/ConnectionDetails";
 import { Connections } from "./pages/Connections";
-import { Credentials } from "./pages/Credentials";
 import { NoPage } from "./pages/NoPage";
 import { Notifications } from "./pages/Notifications";
 import { Settings } from "./pages/Settings";
@@ -22,12 +21,22 @@ import {
 } from "./store/reducers/connectionsSlice";
 import "./styles/colors.scss";
 import { theme } from "./theme/theme"; // Import the theme
-import { CredentialDetails } from "./pages/CredentialDetails";
 import { RequestPresentation } from "./pages/RequestPresentation";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { fetchSchemas } from "./store/reducers/schemasSlice";
 import { ReduxError } from "./components/ReduxError/ReduxError";
+import {
+  CredentialDetail,
+  CredentialsList,
+  IssueCredentialForm,
+} from "./pages/CredentialsManagement";
+import {
+  TemplateCreate,
+  TemplateDetail,
+  TemplateEdit,
+  TemplatesList,
+} from "./pages/Templates";
 
 const App = () => {
   const MAX_TOAST_MESSAGES = 10;
@@ -91,16 +100,32 @@ const App = () => {
                   element={<ConnectionDetails />}
                 />
                 <Route
+                  path={RoutePath.Templates}
+                  element={<TemplatesList />}
+                />
+                <Route
+                  path={RoutePath.TemplateCreate}
+                  element={<TemplateCreate />}
+                />
+                <Route
+                  path={RoutePath.TemplateDetail}
+                  element={<TemplateDetail />}
+                />
+                <Route
+                  path={RoutePath.TemplateEdit}
+                  element={<TemplateEdit />}
+                />
+                <Route
                   path={RoutePath.Credentials}
-                  element={<Credentials />}
+                  element={<CredentialsList />}
+                />
+                <Route
+                  path={RoutePath.IssueCredential}
+                  element={<IssueCredentialForm />}
                 />
                 <Route
                   path={RoutePath.CredentialDetails}
-                  element={<CredentialDetails />}
-                />
-                <Route
-                  path={RoutePath.Credentials}
-                  element={<Credentials />}
+                  element={<CredentialDetail />}
                 />
                 <Route
                   path={RoutePath.Notifications}
