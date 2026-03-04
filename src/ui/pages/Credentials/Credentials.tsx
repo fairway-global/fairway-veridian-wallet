@@ -56,6 +56,46 @@ import "./Credentials.scss";
 import { CredentialsFilters } from "./Credentials.types";
 
 const CLEAR_STATE_DELAY = 1000;
+const CREDENTIAL_TYPE_ID_LIKE_PATTERN = /[A-Za-z0-9_-]{40,}/;
+const CREDENTIAL_SERVER_API_BASE = (
+  process.env.REACT_APP_CREDENTIAL_SERVER_API || "http://localhost:3001"
+)
+  .trim()
+  .replace(/\/+$/, "");
+
+type CredentialSchemaListResponse = {
+  success?: boolean;
+  data?: Array<{
+    id?: string;
+    name?: string;
+  }>;
+};
+
+const LOCAL_SCHEMA_NAME_FALLBACK: Record<string, string> = {
+  "EBfdlu8R27Fbx-ehrqwImnK-8Cm79sqbAQ4MmvEAYqao":
+    "Qualified vLEI Issuer Credential",
+  "EHYYZFJas0_cgo3nA1_BeeyWRIzyWqic3pM-LdYmL_R6": "FaydaVerifiedAutoIssue",
+  "EJxnJdxkHbRw2wVFNe4IUOPLt8fEtg9Sr3WyTjlgKoIb": "Rare EVO 2024 Attendee",
+  "EKgoX7j8AIkUv44WtJzcO_CvMbVuYH367hrivzaAKacm": "FaydaFairwayId",
+  "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO": "Foundation Employee",
+  "ENPXp1vQzRF6JwIuS-mp2U8Uf1MoADoP_GqQ62VsDZWY":
+    "Legal Entity vLEI Credential",
+};
+
+const shouldResolveCredentialName = (credential: CredentialShortDetails) => {
+  const credentialType = (credential.credentialType || "").trim();
+  const schemaSaid = (credential.schema || "").trim();
+
+  if (!credentialType) {
+    return true;
+  }
+
+  if (schemaSaid && credentialType === schemaSaid) {
+    return true;
+  }
+
+  return CREDENTIAL_TYPE_ID_LIKE_PATTERN.test(credentialType);
+};
 
 const AdditionalButtons = ({
   handleConnections,
@@ -96,6 +136,12 @@ const Credentials = () => {
   const [deletedPendingItem, setDeletePendingItem] =
     useState<CredentialShortDetails | null>(null);
   const [openDeletePendingAlert, setOpenDeletePendingAlert] = useState(false);
+  const [credentialNameOverrides, setCredentialNameOverrides] = useState<
+    Record<string, string>
+  >({});
+  const [schemaNamesById, setSchemaNamesById] = useState<Record<string, string>>(
+    {}
+  );
   const [individualCredentials, setIndividualCredentials] = useState<
     CredentialShortDetails[]
   >([]);
@@ -104,17 +150,199 @@ const Credentials = () => {
   >([]);
   const selectedFilter = credentialsFiltersCache ?? CredentialsFilters.All;
 
-  const revokedCreds = credsCache.filter(
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSchemaNames = async () => {
+      try {
+        const response = await fetch(`${CREDENTIAL_SERVER_API_BASE}/schemas`);
+        if (!response.ok) {
+          return;
+        }
+
+        const payload =
+          (await response.json()) as CredentialSchemaListResponse | null;
+        const schemaItems = Array.isArray(payload?.data) ? payload.data : [];
+        const schemaMap = schemaItems.reduce<Record<string, string>>(
+          (result, item) => {
+            const id = String(item?.id || "").trim();
+            const name = String(item?.name || "").trim();
+
+            if (!id || !name) {
+              return result;
+            }
+
+            result[id] = name;
+            return result;
+          },
+          {}
+        );
+
+        if (!cancelled && Object.keys(schemaMap).length > 0) {
+          setSchemaNamesById(schemaMap);
+        }
+      } catch {
+        // No-op: credentials page can still try other resolution paths.
+      }
+    };
+
+    void loadSchemaNames();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const applyCredentialNameOverride = useCallback(
+    (credential: CredentialShortDetails): CredentialShortDetails => {
+      const overrideName = credentialNameOverrides[credential.id];
+      if (!overrideName || overrideName === credential.credentialType) {
+        return credential;
+      }
+
+      return {
+        ...credential,
+        credentialType: overrideName,
+      };
+    },
+    [credentialNameOverrides]
+  );
+
+  const displayCreds = useMemo(
+    () => credsCache.map(applyCredentialNameOverride),
+    [credsCache, applyCredentialNameOverride]
+  );
+
+  const displayArchivedCreds = useMemo(
+    () => archivedCreds.map(applyCredentialNameOverride),
+    [archivedCreds, applyCredentialNameOverride]
+  );
+
+  const revokedCreds = displayCreds.filter(
     (item) => item.status === CredentialStatus.REVOKED
   );
-  const pendingCreds = credsCache.filter(
+  const pendingCreds = displayCreds.filter(
     (item) => item.status === CredentialStatus.PENDING
   );
   const confirmedCreds = useMemo(
     () =>
-      credsCache.filter((item) => item.status === CredentialStatus.CONFIRMED),
-    [credsCache]
+      displayCreds.filter((item) => item.status === CredentialStatus.CONFIRMED),
+    [displayCreds]
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const uniqueCredentials = new Map<string, CredentialShortDetails>();
+    [...displayCreds, ...displayArchivedCreds].forEach((credential) => {
+      if (uniqueCredentials.has(credential.id)) {
+        return;
+      }
+      uniqueCredentials.set(credential.id, credential);
+    });
+
+    const unresolvedCredentials = [...uniqueCredentials.values()].filter(
+      (credential) =>
+        shouldResolveCredentialName(credential) &&
+        !credentialNameOverrides[credential.id]
+    );
+
+    if (unresolvedCredentials.length === 0) {
+      return;
+    }
+
+    const resolveCredentialNames = async () => {
+      const schemaResolved = Object.fromEntries(
+        unresolvedCredentials
+          .map((credential) => {
+            const schemaId = String(credential.schema || "").trim();
+            const credentialType = String(credential.credentialType || "").trim();
+            const resolvedTitle =
+              schemaNamesById[schemaId] ||
+              schemaNamesById[credentialType] ||
+              LOCAL_SCHEMA_NAME_FALLBACK[schemaId] ||
+              LOCAL_SCHEMA_NAME_FALLBACK[credentialType];
+
+            if (!resolvedTitle || resolvedTitle === credential.credentialType) {
+              return undefined;
+            }
+
+            return [credential.id, resolvedTitle] as const;
+          })
+          .filter(
+            (entry): entry is readonly [string, string] => Boolean(entry)
+          )
+      );
+
+      const schemaResolvedIds = new Set(Object.keys(schemaResolved));
+      if (schemaResolvedIds.size > 0) {
+        setCredentialNameOverrides((current) => ({
+          ...current,
+          ...schemaResolved,
+        }));
+      }
+
+      const credentialsStillUnresolved = unresolvedCredentials.filter(
+        (credential) => !schemaResolvedIds.has(credential.id)
+      );
+
+      if (credentialsStillUnresolved.length === 0) {
+        return;
+      }
+
+      const resolvedEntries = await Promise.all(
+        credentialsStillUnresolved.map(async (credential) => {
+          try {
+            const details = await Agent.agent.credentials.getCredentialDetailsById(
+              credential.id
+            );
+            const resolvedTitle =
+              typeof details?.s?.title === "string"
+                ? details.s.title.trim()
+                : "";
+
+            if (!resolvedTitle || resolvedTitle === credential.credentialType) {
+              return undefined;
+            }
+
+            return [credential.id, resolvedTitle] as const;
+          } catch {
+            return undefined;
+          }
+        })
+      );
+
+      if (cancelled) {
+        return;
+      }
+
+      const updates = Object.fromEntries(
+        resolvedEntries.filter(
+          (entry): entry is readonly [string, string] => Boolean(entry)
+        )
+      );
+
+      if (Object.keys(updates).length === 0) {
+        return;
+      }
+
+      setCredentialNameOverrides((current) => ({
+        ...current,
+        ...updates,
+      }));
+    };
+
+    void resolveCredentialNames();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    displayCreds,
+    displayArchivedCreds,
+    credentialNameOverrides,
+    schemaNamesById,
+  ]);
 
   const fetchArchivedCreds = useCallback(async () => {
     try {
@@ -130,7 +358,7 @@ const Credentials = () => {
     return found ? found.time : null;
   };
 
-  const favouriteCredentials = credsCache.filter((cred) =>
+  const favouriteCredentials = displayCreds.filter((cred) =>
     favouriteCredentialsCache?.some((fav) => fav.id === cred.id)
   );
 
@@ -157,7 +385,7 @@ const Credentials = () => {
         (cred) => cred.identifierType !== IdentifierType.Individual
       )
     );
-  }, [confirmedCreds, credsCache, pendingCreds.length]);
+  }, [confirmedCreds, pendingCreds.length]);
 
   useOnlineStatusEffect(fetchArchivedCreds);
 
@@ -389,7 +617,7 @@ const Credentials = () => {
       />
       <ArchivedCredentials
         revokedCreds={revokedCreds}
-        archivedCreds={archivedCreds}
+        archivedCreds={displayArchivedCreds}
         archivedCredentialsIsOpen={archivedCredentialsIsOpen}
         setArchivedCredentialsIsOpen={handleArchivedCredentialsDisplayChange}
       />

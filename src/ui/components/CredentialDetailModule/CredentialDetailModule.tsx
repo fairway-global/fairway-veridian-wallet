@@ -1,6 +1,6 @@
 import { IonButton, IonCheckbox, IonIcon, IonSpinner } from "@ionic/react";
 import { ellipsisVertical, heart, heartOutline } from "ionicons/icons";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Agent } from "../../../core/agent/agent";
 import {
   ConnectionShortDetails,
@@ -54,6 +54,60 @@ import {
   CredentialDetailModuleProps,
 } from "./CredentialDetailModule.types";
 import { getBiometricsCache } from "../../../store/reducers/biometricsCache";
+
+const CREDENTIAL_TYPE_ID_LIKE_PATTERN = /[A-Za-z0-9_-]{40,}/;
+const CREDENTIAL_SERVER_API_BASE = (
+  process.env.REACT_APP_CREDENTIAL_SERVER_API || "http://localhost:3001"
+)
+  .trim()
+  .replace(/\/+$/, "");
+
+type CredentialSchemaListResponse = {
+  success?: boolean;
+  data?: Array<{
+    id?: string;
+    name?: string;
+  }>;
+};
+
+const LOCAL_SCHEMA_NAME_FALLBACK: Record<string, string> = {
+  "EBfdlu8R27Fbx-ehrqwImnK-8Cm79sqbAQ4MmvEAYqao":
+    "Qualified vLEI Issuer Credential",
+  "EHYYZFJas0_cgo3nA1_BeeyWRIzyWqic3pM-LdYmL_R6": "FaydaVerifiedAutoIssue",
+  "EJxnJdxkHbRw2wVFNe4IUOPLt8fEtg9Sr3WyTjlgKoIb": "Rare EVO 2024 Attendee",
+  "EKgoX7j8AIkUv44WtJzcO_CvMbVuYH367hrivzaAKacm": "FaydaFairwayId",
+  "EL9oOWU_7zQn_rD--Xsgi3giCWnFDaNvFMUGTOZx1ARO": "Foundation Employee",
+  "ENPXp1vQzRF6JwIuS-mp2U8Uf1MoADoP_GqQ62VsDZWY":
+    "Legal Entity vLEI Credential",
+};
+
+const resolveCredentialTitle = (
+  title: string,
+  schemaSaid: string,
+  schemaNamesById: Record<string, string>
+) => {
+  const normalizedTitle = String(title || "").trim();
+  const normalizedSchemaSaid = String(schemaSaid || "").trim();
+  const mappedTitle =
+    schemaNamesById[normalizedSchemaSaid] ||
+    schemaNamesById[normalizedTitle] ||
+    LOCAL_SCHEMA_NAME_FALLBACK[normalizedSchemaSaid] ||
+    LOCAL_SCHEMA_NAME_FALLBACK[normalizedTitle];
+
+  if (!normalizedTitle) {
+    return mappedTitle || normalizedSchemaSaid;
+  }
+
+  if (normalizedSchemaSaid && normalizedTitle === normalizedSchemaSaid) {
+    return mappedTitle || normalizedTitle;
+  }
+
+  if (CREDENTIAL_TYPE_ID_LIKE_PATTERN.test(normalizedTitle)) {
+    return mappedTitle || normalizedTitle;
+  }
+
+  return normalizedTitle;
+};
 
 const buildFallbackCredentialDetails = async (
   id: string
@@ -123,8 +177,78 @@ const CredentialDetailModule = ({
   const [connectionShortDetails, setConnectionShortDetails] = useState<
     ConnectionShortDetails | undefined
   >(undefined);
+  const [schemaNamesById, setSchemaNamesById] = useState<Record<string, string>>(
+    {}
+  );
 
   const isInactiveCred = (isArchived || isRevoked || cloudError) && !viewOnly;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSchemaNames = async () => {
+      try {
+        const response = await fetch(`${CREDENTIAL_SERVER_API_BASE}/schemas`);
+        if (!response.ok) {
+          return;
+        }
+
+        const payload =
+          (await response.json()) as CredentialSchemaListResponse | null;
+        const schemaItems = Array.isArray(payload?.data) ? payload.data : [];
+        const schemaMap = schemaItems.reduce<Record<string, string>>(
+          (result, item) => {
+            const id = String(item?.id || "").trim();
+            const name = String(item?.name || "").trim();
+
+            if (!id || !name) {
+              return result;
+            }
+
+            result[id] = name;
+            return result;
+          },
+          {}
+        );
+
+        if (!cancelled && Object.keys(schemaMap).length > 0) {
+          setSchemaNamesById(schemaMap);
+        }
+      } catch {
+        // No-op: local fallback map still resolves known schemas.
+      }
+    };
+
+    void loadSchemaNames();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const resolvedCardData = useMemo(() => {
+    if (!cardData) {
+      return undefined;
+    }
+
+    const resolvedTitle = resolveCredentialTitle(
+      cardData.s.title,
+      cardData.schema,
+      schemaNamesById
+    );
+
+    if (!resolvedTitle || resolvedTitle === cardData.s.title) {
+      return cardData;
+    }
+
+    return {
+      ...cardData,
+      s: {
+        ...cardData.s,
+        title: resolvedTitle,
+      },
+    };
+  }, [cardData, schemaNamesById]);
 
   const fetchArchivedCreds = useCallback(async () => {
     try {
@@ -469,6 +593,7 @@ const CredentialDetailModule = ({
 
   const resetOperation = () =>
     dispatch(setCurrentOperation(OperationType.IDLE));
+  const displayCardData = resolvedCardData || cardData;
 
   return openConnectionlModal && connectionShortDetails ? (
     <ConnectionDetails
@@ -516,7 +641,7 @@ const CredentialDetailModule = ({
             />
           }
         >
-          {!cardData ? (
+          {!displayCardData ? (
             <div
               className="cred-detail-spinner-container"
               data-testid="cred-detail-spinner-container"
@@ -532,9 +657,9 @@ const CredentialDetailModule = ({
               )}
               <CredentialCardTemplate
                 cardData={{
-                  ...cardData,
-                  issuanceDate: cardData.a.dt,
-                  credentialType: cardData.s.title || "",
+                  ...displayCardData,
+                  issuanceDate: displayCardData.a.dt,
+                  credentialType: displayCardData.s.title || "",
                 }}
                 isActive={false}
               />
@@ -544,7 +669,7 @@ const CredentialDetailModule = ({
               >
                 <CredentialContent
                   joinedCredRequestMembers={joinedCredRequestMembers}
-                  cardData={cardData}
+                  cardData={displayCardData}
                   connectionShortDetails={connectionShortDetails}
                   setOpenConnectionlModal={setOpenConnectionlModal}
                 />

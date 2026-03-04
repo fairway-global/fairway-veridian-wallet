@@ -30,6 +30,8 @@ class CredentialService extends AgentService {
     "Credential with given SAID not found on KERIA";
   private static readonly CREDENTIAL_CLOUD_RETRY_ATTEMPTS = 4;
   private static readonly CREDENTIAL_CLOUD_RETRY_DELAY_MS = 250;
+  private static readonly CREDENTIAL_TYPE_ID_LIKE_PATTERN =
+    /^[A-Za-z0-9_-]{40,}$/;
 
   private static isMissingCredentialCloudError(error: unknown): boolean {
     if (!(error instanceof Error)) {
@@ -85,6 +87,9 @@ class CredentialService extends AgentService {
     const listMetadatas = await this.credentialStorage.getAllCredentialMetadata(
       isGetArchive
     );
+
+    await this.resolveCredentialTypeFromSchema(listMetadatas);
+
     return listMetadatas.map((element: CredentialMetadataRecord) =>
       getCredentialShortDetails(element)
     );
@@ -252,6 +257,86 @@ class CredentialService extends AgentService {
     }
 
     return undefined;
+  }
+
+  private shouldResolveCredentialType(metadata: CredentialMetadataRecord): boolean {
+    const credentialType = (metadata.credentialType || "").trim();
+    const schemaSaid = (metadata.schema || "").trim();
+
+    if (!credentialType) {
+      return true;
+    }
+
+    if (schemaSaid && credentialType === schemaSaid) {
+      return true;
+    }
+
+    return CredentialService.CREDENTIAL_TYPE_ID_LIKE_PATTERN.test(
+      credentialType
+    );
+  }
+
+  private async resolveSchemaTitle(schemaSaid: string): Promise<string | undefined> {
+    try {
+      const schema = await this.props.signifyClient.schemas().get(schemaSaid);
+      const title =
+        schema && typeof schema.title === "string" ? schema.title.trim() : "";
+      return title || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async resolveCredentialTypeFromSchema(
+    metadatas: CredentialMetadataRecord[]
+  ): Promise<void> {
+    const schemaTitleCache = new Map<string, string | undefined>();
+
+    for (const metadata of metadatas) {
+      if (!this.shouldResolveCredentialType(metadata)) {
+        continue;
+      }
+
+      const schemaSaid = (metadata.schema || "").trim();
+      if (!schemaSaid) {
+        continue;
+      }
+
+      if (!schemaTitleCache.has(schemaSaid)) {
+        schemaTitleCache.set(
+          schemaSaid,
+          await this.resolveSchemaTitle(schemaSaid)
+        );
+      }
+
+      let resolvedTitle = schemaTitleCache.get(schemaSaid);
+      if (!resolvedTitle) {
+        try {
+          const cloudCredential = await this.getCredentialFromCloudWithRetry(
+            metadata.id
+          );
+          const cloudSchemaTitle =
+            typeof cloudCredential?.schema?.title === "string"
+              ? cloudCredential.schema.title.trim()
+              : "";
+          resolvedTitle = cloudSchemaTitle || undefined;
+          if (resolvedTitle) {
+            schemaTitleCache.set(schemaSaid, resolvedTitle);
+          }
+        } catch {
+          resolvedTitle = undefined;
+        }
+      }
+
+      if (!resolvedTitle || resolvedTitle === metadata.credentialType) {
+        continue;
+      }
+
+      metadata.credentialType = resolvedTitle;
+      await this.credentialStorage.updateCredentialMetadata(metadata.id, {
+        credentialType: resolvedTitle,
+      });
+    }
   }
 
   private buildFallbackDetails(metadata: CredentialMetadataRecord): ACDCDetails {

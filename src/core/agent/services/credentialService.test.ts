@@ -28,6 +28,7 @@ let getCredentialMock = jest.fn();
 const revokeCredentialMock = jest.fn();
 let deleteCredentialMock = jest.fn();
 const credentialStateMock = jest.fn();
+const schemasGetMock = jest.fn();
 
 const signifyClient = jest.mocked({
   connect: jest.fn(),
@@ -80,6 +81,9 @@ const signifyClient = jest.mocked({
     revoke: revokeCredentialMock,
     delete: deleteCredentialMock,
     state: credentialStateMock,
+  }),
+  schemas: () => ({
+    get: schemasGetMock,
   }),
   exchanges: () => ({
     get: jest.fn(),
@@ -209,6 +213,86 @@ describe("Credential service of agent", () => {
       .mockResolvedValue([]);
 
     expect(await credentialService.getCredentials()).toStrictEqual([]);
+  });
+
+  test("can resolve schema title when credential type is id-like", async () => {
+    const unresolvedRecord = new CredentialMetadataRecord({
+      ...credentialMetadataProps,
+      id: "id-with-unresolved-title",
+      credentialType: "EHYYZFJas0_cgo3nA1_BeeyWRIzyWqic3pM-LdYmL_R6",
+      schema: "EHYYZFJas0_cgo3nA1_BeeyWRIzyWqic3pM-LdYmL_R6",
+    });
+
+    credentialStorage.getAllCredentialMetadata = jest
+      .fn()
+      .mockResolvedValue([unresolvedRecord]);
+    schemasGetMock.mockResolvedValueOnce({
+      title: "FaydaVerifiedAutoIssue",
+    });
+
+    const result = await credentialService.getCredentials();
+
+    expect(schemasGetMock).toBeCalledWith(
+      "EHYYZFJas0_cgo3nA1_BeeyWRIzyWqic3pM-LdYmL_R6"
+    );
+    expect(credentialStorage.updateCredentialMetadata).toBeCalledWith(
+      "id-with-unresolved-title",
+      {
+        credentialType: "FaydaVerifiedAutoIssue",
+      }
+    );
+    expect(result[0].credentialType).toBe("FaydaVerifiedAutoIssue");
+  });
+
+  test("keeps credential type when schema title cannot be resolved", async () => {
+    const unresolvedRecord = new CredentialMetadataRecord({
+      ...credentialMetadataProps,
+      id: "id-schema-lookup-fails",
+      credentialType: "EJxnJdxkHbRw2wVFNe4IUOPLt8fEtg9Sr3WyTjlgKoIb",
+      schema: "EJxnJdxkHbRw2wVFNe4IUOPLt8fEtg9Sr3WyTjlgKoIb",
+    });
+
+    credentialStorage.getAllCredentialMetadata = jest
+      .fn()
+      .mockResolvedValue([unresolvedRecord]);
+    schemasGetMock.mockRejectedValueOnce(new Error("404"));
+    getCredentialMock.mockRejectedValueOnce(new Error("404"));
+
+    const result = await credentialService.getCredentials();
+
+    expect(result[0].credentialType).toBe(
+      "EJxnJdxkHbRw2wVFNe4IUOPLt8fEtg9Sr3WyTjlgKoIb"
+    );
+    expect(credentialStorage.updateCredentialMetadata).not.toBeCalled();
+  });
+
+  test("can resolve title from cloud credential when schema lookup fails", async () => {
+    const unresolvedRecord = new CredentialMetadataRecord({
+      ...credentialMetadataProps,
+      id: "id-cloud-title-fallback",
+      credentialType: "EHYYZFJas0_cgo3nA1_BeeyWRIzyWqic3pM-LdYmL_R6",
+      schema: "EHYYZFJas0_cgo3nA1_BeeyWRIzyWqic3pM-LdYmL_R6",
+    });
+
+    credentialStorage.getAllCredentialMetadata = jest
+      .fn()
+      .mockResolvedValue([unresolvedRecord]);
+    schemasGetMock.mockRejectedValueOnce(new Error("404"));
+    getCredentialMock.mockResolvedValueOnce({
+      schema: {
+        title: "FaydaVerifiedAutoIssue",
+      },
+    });
+
+    const result = await credentialService.getCredentials();
+
+    expect(credentialStorage.updateCredentialMetadata).toBeCalledWith(
+      "id-cloud-title-fallback",
+      {
+        credentialType: "FaydaVerifiedAutoIssue",
+      }
+    );
+    expect(result[0].credentialType).toBe("FaydaVerifiedAutoIssue");
   });
 
   test("can archive any credential (re-archiving does nothing)", async () => {

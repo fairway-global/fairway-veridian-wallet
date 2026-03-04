@@ -123,6 +123,10 @@ const CredentialContent = ({
   connectionShortDetails,
   setOpenConnectionlModal,
 }: CredentialContentProps) => {
+  const issuedAt = `${formatShortDate(cardData.a.dt)} - ${formatTimeToSec(
+    cardData.a.dt
+  )} (${getUTCOffset(cardData.a.dt)})`;
+
   return (
     <>
       <ListHeader title={i18n.t("tabs.credentials.details.about")} />
@@ -137,6 +141,43 @@ const CredentialContent = ({
           icon={informationCircleOutline}
           mask={false}
           fullText={false}
+        />
+      </CardBlock>
+      <CardBlock
+        flatBorder={FlatBorderType.TOP}
+        testId="credential-details-about-summary"
+      >
+        <CardDetailsItem
+          keyValue={`${i18n.t("tabs.credentials.details.name")}:`}
+          info={cardData.s.title}
+          testId="credential-about-name"
+          mask={false}
+          fullText={true}
+        />
+        <CardDetailsItem
+          keyValue={`${i18n.t("tabs.credentials.details.id")}:`}
+          info={cardData.id}
+          testId="credential-about-id"
+          mask={false}
+          fullText={true}
+        />
+        <CardDetailsItem
+          keyValue={`${i18n.t("tabs.credentials.details.issuer")}:`}
+          info={
+            connectionShortDetails
+              ? connectionShortDetails.label
+              : i18n.t("connections.unknown")
+          }
+          testId="credential-about-issuer"
+          mask={false}
+          fullText={true}
+        />
+        <CardDetailsItem
+          keyValue={`${i18n.t("tabs.credentials.details.status.issued")}:`}
+          info={issuedAt}
+          testId="credential-about-issued"
+          mask={false}
+          fullText={true}
         />
       </CardBlock>
       <CardBlock
@@ -176,9 +217,7 @@ const CredentialContent = ({
       >
         <CardDetailsItem
           keyValue={formatShortDate(cardData.a.dt)}
-          info={`${formatTimeToSec(cardData.a.dt)} (${getUTCOffset(
-            cardData.a.dt
-          )})`}
+          info={`${formatTimeToSec(cardData.a.dt)} (${getUTCOffset(cardData.a.dt)})`}
           testId={"credential-issued-section"}
           icon={calendarNumberOutline}
           className="credential-issued-section"

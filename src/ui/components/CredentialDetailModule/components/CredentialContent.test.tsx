@@ -99,7 +99,23 @@ describe("Creds content", () => {
     expect(
       getByText(EN_TRANSLATIONS.tabs.credentials.details.about)
     ).toBeVisible();
-    expect(getByText(credsFixAcdc[0].s.title)).toBeVisible();
+    expect(getByTestId("credential-details-type-text-value").innerHTML).toBe(
+      credsFixAcdc[0].s.title
+    );
+    expect(getByTestId("credential-about-name-text-value").innerHTML).toBe(
+      credsFixAcdc[0].s.title
+    );
+    expect(getByTestId("credential-about-id-text-value").innerHTML).toBe(
+      credsFixAcdc[0].id
+    );
+    expect(getByTestId("credential-about-issuer-text-value").innerHTML).toBe(
+      connectionDetailsFix.label
+    );
+    expect(getByTestId("credential-about-issued-text-value").innerHTML).toBe(
+      `${formatShortDate(credsFixAcdc[0].a.dt)} - ${formatTimeToSec(
+        credsFixAcdc[0].a.dt
+      )} (${getUTCOffset(credsFixAcdc[0].a.dt)})`
+    );
     expect(getByTestId("read-more")).toBeVisible();
     expect(
       getByText(EN_TRANSLATIONS.tabs.credentials.details.attributes.label)
@@ -121,7 +137,9 @@ describe("Creds content", () => {
     expect(
       getByText(EN_TRANSLATIONS.tabs.credentials.details.issuer)
     ).toBeVisible();
-    expect(getByText(connectionDetailsFix.label)).toBeVisible();
+    expect(getByTestId("credential-details-issuer-text-value").innerHTML).toBe(
+      connectionDetailsFix.label
+    );
     expect(
       getByText(EN_TRANSLATIONS.tabs.credentials.details.id)
     ).toBeVisible();

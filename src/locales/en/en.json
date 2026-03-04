@@ -625,6 +625,7 @@
         "restore": "Restore",
         "delete": "Delete",
         "type": "Type",
+        "name": "Name",
         "about": "About",
         "credentialdetails": "Credential details",
         "description": "Description",
