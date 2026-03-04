@@ -1,15 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import { Serder, SignifyClient } from "signify-ts";
-<<<<<<< Updated upstream
-import { FAYDA_FAIRWAY_ID_SCHEMA_SAID, ISSUER_NAME } from "../consts";
-=======
 import {
   canonicalSchemaId,
   FAYDA_AUTO_VERIFIED_SCHEMA_SAID,
   FAYDA_FAIRWAY_ID_SCHEMA_SAID,
   ISSUER_NAME,
 } from "../consts";
->>>>>>> Stashed changes
 import { issueCredentialAndGrant, UNKNOW_SCHEMA_ID } from "./credential.api";
 import { OP_TIMEOUT, waitAndGetDoneOp } from "../utils/utils";
 
@@ -197,13 +193,8 @@ function getCredentialEntries(listResponse: unknown): GenericCredential[] {
   return [];
 }
 
-<<<<<<< Updated upstream
-function getCredentialSad(credential: any): Record<string, any> {
-  return credential?.sad || credential?.acdc?.sad || credential?.acdc || {};
-=======
 function getCredentialSad(credential: GenericCredential): Record<string, unknown> {
   return credential.sad || credential.acdc?.sad || credential.acdc || {};
->>>>>>> Stashed changes
 }
 
 function getCredentialId(credential: GenericCredential): string {
@@ -276,14 +267,9 @@ function getSchemaSaid(
   payloadSchemaSaid: string | undefined,
   fallbackSchema: string
 ): string {
-<<<<<<< Updated upstream
-  return String(
-    payloadSchemaSaid || process.env.FAYDA_SCHEMA_SAID || fallbackSchema
-  ).trim();
-=======
   return canonicalSchemaId(
     String(
-    payloadSchemaSaid || process.env.FAYDA_SCHEMA_SAID || fallbackSchema
+      payloadSchemaSaid || process.env.FAYDA_SCHEMA_SAID || fallbackSchema
     ).trim()
   );
 }
@@ -349,7 +335,6 @@ async function verifyFaydaIdentifierForAutoIssue(
   }
 
   return {};
->>>>>>> Stashed changes
 }
 
 export async function getFaydaDataStatus(
@@ -575,13 +560,9 @@ export async function deleteFaydaData(
       const sad = getCredentialSad(credential);
       const issuerAid = toTrimmedString(sad?.i);
       return (
-<<<<<<< Updated upstream
-        sad?.a?.i === aid && sad?.s === schemaSaid && sad?.i === issuer.prefix
-=======
         holderAid === aid &&
         credentialSchemaSaid === schemaSaid &&
         issuerAid === issuer.prefix
->>>>>>> Stashed changes
       );
     });
 

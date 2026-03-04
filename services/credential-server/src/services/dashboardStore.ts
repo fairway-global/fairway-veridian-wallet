@@ -33,6 +33,11 @@ interface SchemaListItem {
   name: string;
 }
 
+type DashboardStoreMutator<T> = (data: DashboardStoreData) => Promise<T> | T;
+
+let dashboardStoreWriteQueue: Promise<void> = Promise.resolve();
+let dashboardStoreReadyPromise: Promise<void> | null = null;
+
 function uniquePaths(paths: string[]): string[] {
   return Array.from(new Set(paths.map((item) => path.resolve(item))));
 }
@@ -425,26 +430,70 @@ function getEmptyStoreData(): DashboardStoreData {
 }
 
 async function ensureDashboardStoreFile(): Promise<void> {
+  if (dashboardStoreReadyPromise) {
+    await dashboardStoreReadyPromise;
+    return;
+  }
+
+  dashboardStoreReadyPromise = (async () => {
+    const dataDir = path.dirname(DASHBOARD_DB_PATH);
+    if (!existsSync(dataDir)) {
+      mkdirSync(dataDir, { recursive: true });
+    }
+
+    if (existsSync(DASHBOARD_DB_PATH)) {
+      return;
+    }
+
+    const defaultTemplates = await buildDefaultTemplates();
+    const initialState: DashboardStoreData = {
+      templates: defaultTemplates,
+      credentials: [],
+    };
+
+    await writeFile(DASHBOARD_DB_PATH, JSON.stringify(initialState, null, 2));
+  })();
+
+  try {
+    await dashboardStoreReadyPromise;
+  } finally {
+    dashboardStoreReadyPromise = null;
+  }
+}
+
+async function withDashboardStoreUpdate<T>(
+  mutator: DashboardStoreMutator<T>
+): Promise<T> {
+  let result!: T;
+  let thrownError: unknown;
+
+  const runUpdate = async () => {
+    await ensureDashboardStoreFile();
+    const db = await readDashboardStoreFromDisk();
+
+    try {
+      result = await mutator(db);
+      await writeDashboardStore(db);
+    } catch (error) {
+      thrownError = error;
+    }
+  };
+
+  dashboardStoreWriteQueue = dashboardStoreWriteQueue.then(runUpdate, runUpdate);
+  await dashboardStoreWriteQueue;
+
+  if (thrownError) {
+    throw thrownError;
+  }
+
+  return result;
+}
+
+async function readDashboardStoreFromDisk(): Promise<DashboardStoreData> {
   const dataDir = path.dirname(DASHBOARD_DB_PATH);
   if (!existsSync(dataDir)) {
     mkdirSync(dataDir, { recursive: true });
   }
-
-  if (existsSync(DASHBOARD_DB_PATH)) {
-    return;
-  }
-
-  const defaultTemplates = await buildDefaultTemplates();
-  const initialState: DashboardStoreData = {
-    templates: defaultTemplates,
-    credentials: [],
-  };
-
-  await writeFile(DASHBOARD_DB_PATH, JSON.stringify(initialState, null, 2));
-}
-
-async function readDashboardStore(): Promise<DashboardStoreData> {
-  await ensureDashboardStoreFile();
   let persistStore = false;
   let parsedStore: DashboardStoreData = getEmptyStoreData();
 
@@ -469,6 +518,20 @@ async function readDashboardStore(): Promise<DashboardStoreData> {
   if (persistStore || addedDefaultTemplates) {
     await writeDashboardStore(data);
   }
+
+  return data;
+}
+
+async function readDashboardStore(): Promise<DashboardStoreData> {
+  await ensureDashboardStoreFile();
+
+  let data!: DashboardStoreData;
+  const readFromDisk = async () => {
+    data = await readDashboardStoreFromDisk();
+  };
+
+  dashboardStoreWriteQueue = dashboardStoreWriteQueue.then(readFromDisk, readFromDisk);
+  await dashboardStoreWriteQueue;
 
   return data;
 }
@@ -540,26 +603,27 @@ export async function createTemplate(
     throw new Error(error);
   }
 
-  const db = await readDashboardStore();
-  const timestamp = nowIso();
-  const schemaId = String(input.schemaId || "").trim()
-    ? canonicalSchemaId(String(input.schemaId || "").trim())
-    : await createSchemaForTemplate(input.name, input.attributes);
-  const attributes =
-    input.attributes.length > 0 ? input.attributes : parseSchemaAttributes(schemaId);
-  const newTemplate: TemplateRecord = normalizeTemplateRecord({
-    id: randomUUID(),
-    name: input.name,
-    schemaId,
-    attributes,
-    createdAt: timestamp,
-    updatedAt: timestamp,
+  return withDashboardStoreUpdate(async (db) => {
+    const timestamp = nowIso();
+    const schemaId = String(input.schemaId || "").trim()
+      ? canonicalSchemaId(String(input.schemaId || "").trim())
+      : await createSchemaForTemplate(input.name, input.attributes);
+    const attributes =
+      input.attributes.length > 0
+        ? input.attributes
+        : parseSchemaAttributes(schemaId);
+    const newTemplate: TemplateRecord = normalizeTemplateRecord({
+      id: randomUUID(),
+      name: input.name,
+      schemaId,
+      attributes,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+
+    db.templates.push(newTemplate);
+    return newTemplate;
   });
-
-  db.templates.push(newTemplate);
-  await writeDashboardStore(db);
-
-  return newTemplate;
 }
 
 export async function updateTemplate(
@@ -573,41 +637,37 @@ export async function updateTemplate(
     throw new Error(error);
   }
 
-  const db = await readDashboardStore();
-  const currentTemplate = db.templates.find((item) => item.id === templateId);
-  if (!currentTemplate) {
-    return null;
-  }
+  return withDashboardStoreUpdate((db) => {
+    const currentTemplate = db.templates.find((item) => item.id === templateId);
+    if (!currentTemplate) {
+      return null;
+    }
 
-  const updatedTemplate: TemplateRecord = normalizeTemplateRecord({
-    ...currentTemplate,
-    name: input.name,
-    schemaId: canonicalSchemaId(input.schemaId),
-    attributes:
-      input.attributes.length > 0
-        ? input.attributes
-        : parseSchemaAttributes(canonicalSchemaId(input.schemaId)),
-    updatedAt: nowIso(),
+    const updatedTemplate: TemplateRecord = normalizeTemplateRecord({
+      ...currentTemplate,
+      name: input.name,
+      schemaId: canonicalSchemaId(input.schemaId),
+      attributes:
+        input.attributes.length > 0
+          ? input.attributes
+          : parseSchemaAttributes(canonicalSchemaId(input.schemaId)),
+      updatedAt: nowIso(),
+    });
+
+    db.templates = db.templates.map((template) =>
+      template.id === templateId ? updatedTemplate : template
+    );
+
+    return updatedTemplate;
   });
-
-  db.templates = db.templates.map((template) =>
-    template.id === templateId ? updatedTemplate : template
-  );
-  await writeDashboardStore(db);
-
-  return updatedTemplate;
 }
 
 export async function deleteTemplate(templateId: string): Promise<boolean> {
-  const db = await readDashboardStore();
-  const originalLength = db.templates.length;
-  db.templates = db.templates.filter((template) => template.id !== templateId);
-  if (db.templates.length === originalLength) {
-    return false;
-  }
-
-  await writeDashboardStore(db);
-  return true;
+  return withDashboardStoreUpdate((db) => {
+    const originalLength = db.templates.length;
+    db.templates = db.templates.filter((template) => template.id !== templateId);
+    return db.templates.length !== originalLength;
+  });
 }
 
 export async function listIssuedCredentialRecords(): Promise<IssuedCredentialRecord[]> {
@@ -625,52 +685,52 @@ export async function getIssuedCredentialRecordById(
 export async function upsertIssuedCredentialRecord(
   record: IssuedCredentialRecord
 ): Promise<IssuedCredentialRecord> {
-  const db = await readDashboardStore();
-  const existingIndex = db.credentials.findIndex((item) => item.id === record.id);
+  return withDashboardStoreUpdate((db) => {
+    const existingIndex = db.credentials.findIndex((item) => item.id === record.id);
 
-  if (existingIndex >= 0) {
-    db.credentials[existingIndex] = {
-      ...db.credentials[existingIndex],
-      ...record,
-      updatedAt: nowIso(),
-    };
-  } else {
-    db.credentials.push({
-      ...record,
-      createdAt: record.createdAt || nowIso(),
-      updatedAt: record.updatedAt || nowIso(),
-    });
-  }
+    if (existingIndex >= 0) {
+      db.credentials[existingIndex] = {
+        ...db.credentials[existingIndex],
+        ...record,
+        updatedAt: nowIso(),
+      };
+    } else {
+      db.credentials.push({
+        ...record,
+        createdAt: record.createdAt || nowIso(),
+        updatedAt: record.updatedAt || nowIso(),
+      });
+    }
 
-  await writeDashboardStore(db);
-  return record;
+    return record;
+  });
 }
 
 export async function markIssuedCredentialStatus(
   credentialId: string,
   status: IssuedCredentialRecord["status"]
 ): Promise<IssuedCredentialRecord | null> {
-  const db = await readDashboardStore();
-  const current = db.credentials.find((item) => item.id === credentialId);
-  if (!current) {
-    return null;
-  }
+  return withDashboardStoreUpdate((db) => {
+    const current = db.credentials.find((item) => item.id === credentialId);
+    if (!current) {
+      return null;
+    }
 
-  const timestamp = nowIso();
-  const updated: IssuedCredentialRecord = {
-    ...current,
-    status,
-    updatedAt: timestamp,
-    revokedAt: status === "revoked" ? timestamp : current.revokedAt,
-    deletedAt: status === "deleted" ? timestamp : current.deletedAt,
-  };
+    const timestamp = nowIso();
+    const updated: IssuedCredentialRecord = {
+      ...current,
+      status,
+      updatedAt: timestamp,
+      revokedAt: status === "revoked" ? timestamp : current.revokedAt,
+      deletedAt: status === "deleted" ? timestamp : current.deletedAt,
+    };
 
-  db.credentials = db.credentials.map((item) =>
-    item.id === credentialId ? updated : item
-  );
-  await writeDashboardStore(db);
+    db.credentials = db.credentials.map((item) =>
+      item.id === credentialId ? updated : item
+    );
 
-  return updated;
+    return updated;
+  });
 }
 
 export async function findTemplateBySchemaId(
