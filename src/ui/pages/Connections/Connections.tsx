@@ -55,7 +55,14 @@ import { ConnectionDetails } from "../ConnectionDetails";
 import { CreateIdentifier } from "../../components/CreateIdentifier";
 import { SearchInput } from "./components/SearchInput";
 import { FaydaModal } from "../faydaFlow/faydaModal";
+import { setFaydaVerified } from "../../../store/reducers/faydaVerifiedCache";
 import { selectFaydaVerified } from "../../../store/selectors/faydaVerifiedSelectors";
+
+const FAYDA_STATUS_API_BASE = (
+  process.env.REACT_APP_FAYDA_ISSUER_API || "http://localhost:3001"
+)
+  .trim()
+  .replace(/\/+$/, "");
 
 const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
   ({ showConnections, setShowConnections }, ref) => {
@@ -202,8 +209,59 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
       dispatch(setCurrentOperation(OperationType.SCAN_CONNECTION));
     };
 
+    const syncFaydaVerificationStatus = useCallback(async (): Promise<boolean> => {
+      const primaryIdentifier = availableIdentifiers.find(
+        (identifier) =>
+          identifier.creationStatus === CreationStatus.COMPLETE &&
+          !identifier.groupMetadata &&
+          !identifier.groupMemberPre
+      );
+
+      if (!primaryIdentifier?.id || typeof fetch !== "function") {
+        dispatch(setFaydaVerified(false));
+        return false;
+      }
+
+      const aid = primaryIdentifier.id;
+      sessionStorage.setItem("fayda_holder_aid", aid);
+      let pendingIssuerAid = "";
+      try {
+        pendingIssuerAid = String(
+          window.localStorage.getItem("fayda_pending_connection_id") || ""
+        ).trim();
+      } catch {
+        pendingIssuerAid = "";
+      }
+
+      try {
+        const params = new URLSearchParams({
+          aid,
+        });
+        if (pendingIssuerAid) {
+          params.set("issuerAid", pendingIssuerAid);
+        }
+
+        const response = await fetch(
+          `${FAYDA_STATUS_API_BASE}/saveFayda?${params.toString()}`
+        );
+
+        if (!response.ok) {
+          dispatch(setFaydaVerified(false));
+          return false;
+        }
+
+        const payload = await response.json();
+        const verified = Boolean(payload?.data?.verified);
+        dispatch(setFaydaVerified(verified));
+        return verified;
+      } catch {
+        dispatch(setFaydaVerified(false));
+        return false;
+      }
+    }, [availableIdentifiers, dispatch]);
+
     useEffect(() => {
-      if (faydaVerified || verifiedWithFayda || !showConnections) {
+      if (verifiedWithFayda || !showConnections) {
         return;
       }
 
@@ -231,21 +289,36 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
         return;
       }
 
-      try {
-        window.localStorage.setItem(
-          "fayda_pending_connection_label",
-          pendingConnection.label || ""
-        );
-      } catch {
-        // no-op
-      }
-      setLastPromptedPendingConnectionId(pendingConnectionId);
-      setVerifiedWithFayda(true);
+      let cancelled = false;
+
+      const verifyAndPrompt = async () => {
+        const canFinalizeConnection = await syncFaydaVerificationStatus();
+        if (cancelled || canFinalizeConnection) {
+          return;
+        }
+
+        try {
+          window.localStorage.setItem(
+            "fayda_pending_connection_label",
+            pendingConnection.label || ""
+          );
+        } catch {
+          // no-op
+        }
+        setLastPromptedPendingConnectionId(pendingConnectionId);
+        setVerifiedWithFayda(true);
+      };
+
+      void verifyAndPrompt();
+
+      return () => {
+        cancelled = true;
+      };
     }, [
       connectionsCache,
-      faydaVerified,
       lastPromptedPendingConnectionId,
       showConnections,
+      syncFaydaVerificationStatus,
       verifiedWithFayda,
     ]);
 

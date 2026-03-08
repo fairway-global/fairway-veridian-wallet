@@ -14,7 +14,7 @@ import {
   TableRow,
   Tooltip,
 } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { AppTable, useTable } from "../../components/AppTable";
 import { AppTableHeader } from "../../components/AppTable/AppTable.types";
@@ -95,7 +95,7 @@ const CredentialsList = () => {
     return payloadError || fallback;
   };
 
-  const fetchCredentials = async () => {
+  const fetchCredentials = useCallback(async () => {
     try {
       setLoading(true);
       const list = await ManagedCredentialService.list();
@@ -108,11 +108,25 @@ const CredentialsList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void fetchCredentials();
-  }, []);
+  }, [fetchCredentials]);
+
+  useEffect(() => {
+    const refreshHandler = () => {
+      void fetchCredentials();
+    };
+
+    window.addEventListener("dashboard:credentials-refresh", refreshHandler);
+    return () => {
+      window.removeEventListener(
+        "dashboard:credentials-refresh",
+        refreshHandler
+      );
+    };
+  }, [fetchCredentials]);
 
   const rows = useMemo<CredentialRow[]>(
     () =>

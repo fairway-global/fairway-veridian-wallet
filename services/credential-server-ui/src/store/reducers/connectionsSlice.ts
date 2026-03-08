@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import axios from "axios";
 import { config } from "../../config";
 import { Contact } from "../../pages/Connections/components/ConnectionsTable/ConnectionsTable.types";
 import { Credential, PresentationRequestData } from "./connectionsSlice.types";
+import { httpInstance } from "../../services/http";
 
 interface ConnectionsState {
   contacts: Contact[];
@@ -23,9 +23,7 @@ const initialState: ConnectionsState = {
 export const fetchContacts = createAsyncThunk(
   "connections/fetchContacts",
   async () => {
-    const response = await axios.get(
-      `${config.endpoint}${config.path.contacts}`
-    );
+    const response = await httpInstance.get(config.path.contacts);
     return response.data.data;
   }
 );
@@ -33,8 +31,8 @@ export const fetchContacts = createAsyncThunk(
 export const fetchContactCredentials = createAsyncThunk(
   "connections/fetchContactCredentials",
   async (contactId: string) => {
-    const response = await axios.get(
-      `${config.endpoint}${config.path.contactCredentials}`,
+    const response = await httpInstance.get(
+      config.path.contactCredentials,
       {
         params: { contactId },
       }

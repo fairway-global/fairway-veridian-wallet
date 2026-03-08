@@ -279,7 +279,7 @@ function buildGeneratedSchemaDocument(
   return saidifiedSchemaDocument;
 }
 
-async function createSchemaForTemplate(
+export async function createSchemaForTemplate(
   templateName: string,
   attributes: TemplateAttribute[]
 ): Promise<string> {

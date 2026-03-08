@@ -65,6 +65,7 @@ const TemplateEdit = () => {
     name: template.name,
     schemaId: template.schemaId,
     attributes: template.attributes,
+    autoIssue: Boolean(template.autoIssue),
   };
 
   return (

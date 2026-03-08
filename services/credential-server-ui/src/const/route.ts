@@ -1,5 +1,10 @@
 export const RoutePath = {
+  Login: "/login",
+  AdminLogin: "/admin/login",
+  VerifierLogin: "/verifier/login",
   Connections: "/",
+  AdminUsers: "/admin/users",
+  AdminRequests: "/admin/requests",
   ConnectionDetails: "/connections/:id",
   Templates: "/templates",
   TemplateCreate: "/templates/new",

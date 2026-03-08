@@ -10,16 +10,10 @@ const CredentialService = {
     });
   },
   issue: async (data: CredentialIssueRequest) => {
-    return httpInstance.post(
-      `${config.endpoint}${config.path.issueAcdcCredential}`,
-      data
-    );
+    return httpInstance.post(config.path.issueAcdcCredential, data);
   },
   requestPresentation: (data: CredentialIssueRequest) => {
-    return httpInstance.post(
-      `${config.endpoint}${config.path.requestDisclosure}`,
-      data
-    );
+    return httpInstance.post(config.path.requestDisclosure, data);
   },
 };
 

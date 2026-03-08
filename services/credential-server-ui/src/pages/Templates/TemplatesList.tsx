@@ -33,6 +33,7 @@ interface TemplateRow {
   id: string;
   name: string;
   schemaId: string;
+  autoIssue: boolean;
   attributes: number;
   createdAt: number;
 }
@@ -49,6 +50,10 @@ const headers: AppTableHeader<TemplateRow>[] = [
   {
     id: "attributes",
     label: i18n.t("pages.templates.table.headers.attributes"),
+  },
+  {
+    id: "autoIssue",
+    label: i18n.t("pages.templates.table.headers.autoIssue"),
   },
   {
     id: "createdAt",
@@ -89,6 +94,7 @@ const TemplatesList = () => {
         id: template.id,
         name: template.name,
         schemaId: template.schemaId,
+        autoIssue: Boolean(template.autoIssue),
         attributes: template.attributes.length,
         createdAt: new Date(template.createdAt).getTime(),
       })),
@@ -180,6 +186,9 @@ const TemplatesList = () => {
                 </Tooltip>
               </TableCell>
               <TableCell>{row.attributes}</TableCell>
+              <TableCell>
+                {row.autoIssue ? "Yes" : "No"}
+              </TableCell>
               <TableCell>{formatDate(new Date(row.createdAt))}</TableCell>
               <TableCell align="left">
                 <DropdownMenu

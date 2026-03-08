@@ -97,7 +97,7 @@ import {
 import { useActivityTimer } from "./hooks/useActivityTimer";
 
 const FAYDA_STATUS_API_BASE = (
-  process.env.REACT_APP_CREDENTIAL_SERVER_API || "http://localhost:3001"
+  process.env.REACT_APP_FAYDA_ISSUER_API || "http://localhost:3001"
 ).trim().replace(/\/+$/, "");
 const FAYDA_VERIFIED_STORAGE_KEY = "fayda_verified";
 const FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY = "fayda_pending_connection_id";
@@ -409,6 +409,9 @@ const AppWrapper = (props: { children: ReactNode }) => {
 
       const aid = primaryIdentifier.id;
       sessionStorage.setItem("fayda_holder_aid", aid);
+      const pendingIssuerAid = String(
+        getLocalStorageItem(FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY) || ""
+      ).trim();
 
       if (typeof fetch !== "function") {
         dispatch(setFaydaVerified(false));
@@ -416,10 +419,15 @@ const AppWrapper = (props: { children: ReactNode }) => {
       }
 
       try {
+        const params = new URLSearchParams({
+          aid,
+        });
+        if (pendingIssuerAid) {
+          params.set("issuerAid", pendingIssuerAid);
+        }
+
         const response = await fetch(
-          `${FAYDA_STATUS_API_BASE}/saveFayda?aid=${encodeURIComponent(
-            aid
-          )}`
+          `${FAYDA_STATUS_API_BASE}/saveFayda?${params.toString()}`
         );
 
         if (!response.ok) {

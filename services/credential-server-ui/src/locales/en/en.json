@@ -44,8 +44,8 @@
         "title": "Add Connection",
         "modal": {
           "title": "Add a Connection",
-          "descriptionStepOne": "<bold>Step 1 - Establish a connection from an individual ID to the issuer's ID.</bold> Scan the below QR code using the wallet you wish to establish a connection with or copy and send the Connection URL.",
-          "descriptionStepTwo": "<bold>Step 2 - Complete by connecting the issuer’s ID with the individual ID.</bold> Scan the QR code of the individual ID you want to establish the connection with or paste their Connection URL in the input field.",
+          "descriptionStepOne": "<bold>Option 1 - Connect by sharing your Connection ID.</bold> Scan the QR code below using the wallet you want to connect, or copy and share the Connection URL.",
+          "descriptionStepTwo": "<bold>Option 2 - Connect by pasting/scanning the other party's Connection ID.</bold> Scan the other wallet QR code or paste their Connection URL in the input field.",
           "errorOnRequest": "Unable to fetch a connection ID. Please try again later.",
           "learnMore": "Learn more",
           "showLess": "Show less",
@@ -55,7 +55,7 @@
             "copyConnectionId": "Copy Connection ID",
             "retry": "Retry",
             "copied": "Copied",
-            "next": "Next",
+            "next": "Use option 2",
             "back": "Back",
             "complete": "Complete",
             "errorMessage": "Please paste a valid connection URL",
@@ -243,6 +243,7 @@
           "name": "Template name",
           "schemaId": "Schema ID",
           "attributes": "Attributes",
+          "autoIssue": "Auto issue",
           "createdAt": "Created date"
         }
       },
@@ -252,7 +253,8 @@
           "schemaId": "Schema ID",
           "createdAt": "Created at",
           "updatedAt": "Updated at",
-          "attributes": "Attributes"
+          "attributes": "Attributes",
+          "autoIssue": "Auto issue after Fayda"
         },
         "issued": {
           "title": "Issued credentials ({{number}})",
@@ -281,6 +283,8 @@
           "schemaId": "Schema ID",
           "selectSchema": "Select schema",
           "autoSchema": "Auto-generate schema SAID",
+          "autoIssue": "Auto issue after Fayda verification",
+          "autoIssueHint": "Only one template can be auto-issued at a time. Saving this as auto-issue will disable auto-issue on other templates.",
           "attributes": "Attributes",
           "attributeName": "Attribute name",
           "required": "Required"
@@ -421,7 +425,31 @@
       }
     },
     "notifications": {
-      "title": "Notifications"
+      "title": "Notifications",
+      "empty": "No notifications yet.",
+      "routeUnknown": "Unknown route",
+      "actions": {
+        "markRead": "Mark as read",
+        "markAllRead": "Mark all as read"
+      },
+      "badges": {
+        "new": "New"
+      },
+      "events": {
+        "connectionCreated": "New connection created",
+        "credentialIssued": "Credential issued",
+        "credentialAccepted": "Credential accepted by wallet user",
+        "credentialStatusChanged": "Credential status changed",
+        "credentialEvent": "Credential event",
+        "presentationEvent": "Presentation event",
+        "generic": "New notification"
+      },
+      "messages": {
+        "connectionCreated": "Connection with {{name}} has been added.",
+        "credentialIssued": "{{template}} credential was issued to {{holder}}.",
+        "credentialStatusChanged": "Credential {{id}} changed status to {{status}}.",
+        "agentEvent": "Agent notification received: {{route}}."
+      }
     },
     "settings": {
       "title": "Settings"
@@ -432,3 +460,4 @@
     "fetchSchemaDetail": "Unable to get schema detail"
   }
 }
+

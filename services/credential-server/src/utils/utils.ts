@@ -102,10 +102,11 @@ export async function waitAndGetDoneOp(
 export async function createQVICredential(
   client: SignifyClient,
   clientIssuer: SignifyClient,
-  keriIssuerRegistryRegk: string
+  keriIssuerRegistryRegk: string,
+  holderAidName = ISSUER_NAME
 ): Promise<string> {
   const issuerAid = await clientIssuer.identifiers().get(QVI_NAME);
-  const holderAid = await client.identifiers().get(ISSUER_NAME);
+  const holderAid = await client.identifiers().get(holderAidName);
 
   const issuerAidOobi = await getOobi(clientIssuer, issuerAid.name);
   const holderAidOobi = await getOobi(client, holderAid.name);

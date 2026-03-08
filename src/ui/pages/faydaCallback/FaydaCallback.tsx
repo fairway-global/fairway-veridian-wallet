@@ -14,21 +14,24 @@ import * as jose from "jose";
 import "./FaydaCallback.scss";
 
 // ===== CONFIG =====
-const API_BASE = process.env.REACT_APP_BACKEND_API || "http://localhost:3001";
-const CREDENTIAL_ISSUER_API = (
-  process.env.REACT_APP_CREDENTIAL_SERVER_API || "http://localhost:3001"
-)
-  .trim()
-  .replace(/\/+$/, "");
+const FAYDA_AUTH_API_BASE = (
+  process.env.REACT_APP_FAYDA_AUTH_API ||
+  process.env.REACT_APP_BACKEND_API ||
+  "http://localhost:3001"
+).trim().replace(/\/+$/, "");
+const FAYDA_ISSUER_API_BASE = (
+  process.env.REACT_APP_FAYDA_ISSUER_API || "http://localhost:3001"
+).trim().replace(/\/+$/, "");
 
-const TOKEN_ENDPOINT = `${API_BASE}/token`;
-const USERINFO_ENDPOINT = `${API_BASE}/userinfo`;
-const SAVE_FAYDA_DATA_ENDPOINT = `${CREDENTIAL_ISSUER_API}/saveFayda`;
+const TOKEN_ENDPOINT = `${FAYDA_AUTH_API_BASE}/token`;
+const USERINFO_ENDPOINT = `${FAYDA_AUTH_API_BASE}/userinfo`;
+const SAVE_FAYDA_DATA_ENDPOINT = `${FAYDA_ISSUER_API_BASE}/saveFayda`;
 
 const SESSION_KEYS = {
   state: "fayda_state",
   verifier: "fayda_pkce_verifier",
 };
+const FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY = "fayda_pending_connection_id";
 
 type FaydaProfile = {
   id?: string;
@@ -160,6 +163,15 @@ export const FaydaCallback = () => {
     }
 
     const holderAid = (sessionStorage.getItem("fayda_holder_aid") || "").trim();
+    let pendingIssuerAid = "";
+    try {
+      pendingIssuerAid = String(
+        window.localStorage.getItem(FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY) ||
+          ""
+      ).trim();
+    } catch {
+      pendingIssuerAid = "";
+    }
 
     if (!holderAid) {
       setError(
@@ -192,30 +204,44 @@ export const FaydaCallback = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           aid: holderAid,
+          issuerAid: pendingIssuerAid || undefined,
           credentialName: "FaydaVerifiedAutoIssue",
           faydaData: normalizedFaydaData,
         }),
       });
 
+      let issuePayload: any = null;
+      try {
+        issuePayload = await issueResponse.json();
+      } catch {
+        issuePayload = null;
+      }
+
       if (!issueResponse.ok) {
         let backendMessage = "Credential issuance failed";
-        try {
-          const backendBody = await issueResponse.json();
-          if (backendBody?.data) {
-            backendMessage =
-              typeof backendBody.data === "string"
-                ? backendBody.data
-                : JSON.stringify(backendBody.data);
-          }
-        } catch {
-          // Ignore JSON parsing errors and use default error message.
+        const backendBody = issuePayload;
+        if (backendBody?.data) {
+          backendMessage =
+            typeof backendBody.data === "string"
+              ? backendBody.data
+              : JSON.stringify(backendBody.data);
         }
         throw new Error(backendMessage);
       }
 
-      dispatch(setFaydaVerified(true));
-      setShowIssuedModal(true);
-      setStatus("Credential offer was sent to your wallet.");
+      const issueData = issuePayload?.data || {};
+      const hasIssuedCredential = Boolean(
+        issueData?.autoIssued || issueData?.alreadyIssued || issueData?.credentialId
+      );
+      const canFinalizeConnection = Boolean(issueData?.verified);
+
+      dispatch(setFaydaVerified(canFinalizeConnection));
+      setShowIssuedModal(hasIssuedCredential);
+      setStatus(
+        hasIssuedCredential
+          ? "Credential offer was sent to your wallet."
+          : "Fayda verification completed. No auto-issued credential is configured for this issuer."
+      );
 
       try {
         window.localStorage.removeItem("fayda_pending_connection_label");

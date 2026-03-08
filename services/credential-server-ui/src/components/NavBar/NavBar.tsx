@@ -5,9 +5,13 @@ import {
   DescriptionOutlined,
   Group as GroupFull,
   GroupOutlined,
+  ManageAccounts,
+  ManageAccountsOutlined,
   Menu as MenuIcon,
   Notifications as NotificationsFull,
   NotificationsOutlined,
+  Rule,
+  RuleOutlined,
   Settings as SettingsFull,
   SettingsOutlined,
   SwapHorizontalCircle,
@@ -31,21 +35,27 @@ import LogoLong from "../../assets/fairway-logo-long.png";
 import LogoSmall from "../../assets/fairway-logo-small.png";
 import { RoutePath } from "../../const/route";
 import { i18n } from "../../i18n";
-import { SwitchAccount } from "../SwitchAccount";
 import { DrawerContent } from "./components/DrawerContent";
 import "./NavBar.scss";
 import { isActivePath } from "./helper";
-import { useAppSelector } from "../../store/hooks";
-import { getRoleView } from "../../store/reducers";
-import { RoleIndex } from "./constants/roles";
+import { AuthService } from "../../services";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import {
+  clearSession,
+  DashboardMode,
+  getCurrentUser,
+  getRefreshToken,
+} from "../../store/reducers/authSlice";
+import { getUnreadNotificationsCount } from "../../store/reducers/notificationsSlice";
 
 interface Props {
+  mode: DashboardMode;
   window?: () => Window;
 }
 
 const drawerWidth = 240;
 
-const menuItems = [
+const issuerMenuItems = [
   // TODO: Removing until Overview is ready to be implemented
   // {
   //   key: "overview",
@@ -71,6 +81,15 @@ const menuItems = [
     path: RoutePath.Credentials,
     icons: [<BadgeFull />, <BadgeOutlined />],
   },
+];
+
+const verifierMenuItems = [
+  {
+    key: "connections",
+    label: i18n.t("navbar.connections"),
+    path: RoutePath.Connections,
+    icons: [<GroupFull />, <GroupOutlined />],
+  },
   {
     key: "requestPresentation",
     label: i18n.t("navbar.requestPresentation"),
@@ -79,22 +98,52 @@ const menuItems = [
   },
 ];
 
+const adminMenuItems = [
+  {
+    key: "adminUsers",
+    label: "Users",
+    path: RoutePath.AdminUsers,
+    icons: [<ManageAccounts />, <ManageAccountsOutlined />],
+  },
+  {
+    key: "adminRequests",
+    label: "Requests",
+    path: RoutePath.AdminRequests,
+    icons: [<Rule />, <RuleOutlined />],
+  },
+];
+
 const getIcon = (icons: React.ReactElement[], isActive: boolean) =>
   isActive ? icons[0] : icons[1];
 
-const NavBar = ({ window }: Props) => {
+const NavBar = ({ mode, window }: Props) => {
+  const dispatch = useAppDispatch();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const roleViewIndex = useAppSelector(getRoleView) as RoleIndex;
-
-  const displayMenuItems = menuItems.filter((item) =>
-    roleViewIndex !== RoleIndex.ISSUER
-      ? !["templates", "credentials"].includes(item.key)
-      : item.key !== "requestPresentation"
-  );
+  const user = useAppSelector(getCurrentUser);
+  const refreshToken = useAppSelector(getRefreshToken);
+  const unreadNotificationsCount = useAppSelector(getUnreadNotificationsCount);
+  const displayMenuItems =
+    mode === "admin"
+      ? adminMenuItems
+      : mode === "verifier"
+        ? verifierMenuItems
+        : issuerMenuItems;
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
+  };
+
+  const handleLogout = async () => {
+    try {
+      if (refreshToken) {
+        await AuthService.logout(refreshToken);
+      }
+    } catch {
+      // ignore logout errors and always clear local session
+    } finally {
+      dispatch(clearSession());
+    }
   };
 
   const container =
@@ -126,7 +175,7 @@ const NavBar = ({ window }: Props) => {
             </IconButton>
             <Button
               component={Link}
-              to={"/"}
+              to={RoutePath.Connections}
               className="logo-button"
               disableRipple
             >
@@ -170,7 +219,7 @@ const NavBar = ({ window }: Props) => {
           >
             <Button
               component={Link}
-              to={"/"}
+              to={RoutePath.Connections}
               disableRipple
               className="logo-button"
             >
@@ -204,45 +253,64 @@ const NavBar = ({ window }: Props) => {
             className="nav-right"
             sx={{ display: { xs: "none", sm: "flex" } }}
           >
-            <IconButton
-              size="large"
-              aria-label="show new notifications"
-              color="inherit"
-              component={Link}
-              to={"/notifications"}
-              disableRipple
-              className={location.pathname === "/notifications" ? "active" : ""}
+            <Typography
+              variant="body2"
+              sx={{ alignSelf: "center", marginRight: 1 }}
             >
-              <Badge
-                badgeContent={0}
-                color="error"
-              >
-                {location.pathname === "/notifications" ? (
-                  <NotificationsFull />
-                ) : (
-                  <NotificationsOutlined />
-                )}
-              </Badge>
-            </IconButton>
-            <IconButton
-              size="large"
-              aria-label="show settings"
-              color="inherit"
-              component={Link}
-              to={"/settings"}
-              disableRipple
-              className={location.pathname === "/settings" ? "active" : ""}
+              {user
+                ? mode === "admin"
+                  ? "Admin dashboard"
+                  : `${mode === "verifier" ? "Verifier" : "Issuer"} dashboard - ${user.issuerCode} / ${user.role}`
+                : ""}
+            </Typography>
+            <Button
+              variant="text"
+              onClick={handleLogout}
             >
-              <Badge>
-                {location.pathname === "/settings" ? (
-                  <SettingsFull />
-                ) : (
-                  <SettingsOutlined />
-                )}
-              </Badge>
-            </IconButton>
+              Logout
+            </Button>
+            {mode !== "admin" && (
+              <>
+                <IconButton
+                  size="large"
+                  aria-label="show new notifications"
+                  color="inherit"
+                  component={Link}
+                  to={"/notifications"}
+                  disableRipple
+                  className={location.pathname === "/notifications" ? "active" : ""}
+                >
+                  <Badge
+                    badgeContent={unreadNotificationsCount}
+                    color="error"
+                  >
+                    {location.pathname === "/notifications" ? (
+                      <NotificationsFull />
+                    ) : (
+                      <NotificationsOutlined />
+                    )}
+                  </Badge>
+                </IconButton>
+                <IconButton
+                  size="large"
+                  aria-label="show settings"
+                  color="inherit"
+                  component={Link}
+                  to={"/settings"}
+                  disableRipple
+                  className={location.pathname === "/settings" ? "active" : ""}
+                >
+                  <Badge>
+                    {location.pathname === "/settings" ? (
+                      <SettingsFull />
+                    ) : (
+                      <SettingsOutlined />
+                    )}
+                  </Badge>
+                </IconButton>
+              </>
+            )}
           </Box>
-          <SwitchAccount />
         </Toolbar>
       </Container>
     </AppBar>

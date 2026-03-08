@@ -1,10 +1,15 @@
 import { Outlet } from "react-router";
 import { NavBar } from "../../components/NavBar/NavBar";
+import { DashboardMode } from "../../store/reducers/authSlice";
 
-const Layout = () => {
+interface LayoutProps {
+  mode: DashboardMode;
+}
+
+const Layout = ({ mode }: LayoutProps) => {
   return (
     <>
-      <NavBar />
+      <NavBar mode={mode} />
       <main>
         <Outlet />
       </main>

@@ -23,6 +23,11 @@ import {
   TemplateRecord,
 } from "../services/dashboardStore.types";
 import { sendError, sendSuccess } from "../utils/apiResponse";
+import {
+  getIssuerAliasFromRequest,
+  getQviCredentialIdFromRequest,
+  getSignifyClientFromRequest,
+} from "../utils/requestContext";
 
 interface CredentialIssueRequestBody {
   templateId?: string;
@@ -130,9 +135,10 @@ async function syncCredentialRecordFromCloud(
 }
 
 async function getIssuerCredentials(
-  client: SignifyClient
+  client: SignifyClient,
+  issuerAlias: string
 ): Promise<SignifyCredentialRecord[]> {
-  const issuer = await client.identifiers().get("issuer");
+  const issuer = await client.identifiers().get(issuerAlias);
   const listResult = await client.credentials().list({
     filter: {
       "-i": issuer.prefix,
@@ -144,11 +150,12 @@ async function getIssuerCredentials(
 
 export async function listCredentialsApi(_: Request, res: Response): Promise<void> {
   // OpenAPI: GET /api/credentials
-  const client: SignifyClient = res.app.get("signifyClient");
+  const client = getSignifyClientFromRequest(res);
+  const issuerAlias = getIssuerAliasFromRequest(res);
   const templates = await listTemplates();
   const templateMap = new Map(templates.map((template) => [template.id, template]));
 
-  const cloudCredentials = await getIssuerCredentials(client);
+  const cloudCredentials = await getIssuerCredentials(client, issuerAlias);
   const syncedRecords = (
     await Promise.all(cloudCredentials.map((credential) => syncCredentialRecordFromCloud(credential)))
   ).filter((item): item is IssuedCredentialRecord => item !== null);
@@ -166,7 +173,7 @@ export async function getCredentialByIdApi(
   res: Response
 ): Promise<void> {
   // OpenAPI: GET /api/credentials/:id
-  const client: SignifyClient = req.app.get("signifyClient");
+  const client = getSignifyClientFromRequest(req);
   const credentialId = String(req.params.id || "").trim();
   if (!credentialId) {
     sendError(res, 400, "Credential id is required");
@@ -213,8 +220,9 @@ export async function issueCredentialApi(
   res: Response
 ): Promise<void> {
   // OpenAPI: POST /api/credentials/issue
-  const client: SignifyClient = req.app.get("signifyClient");
-  const qviCredentialId: string = req.app.get("qviCredentialId");
+  const client = getSignifyClientFromRequest(req);
+  const qviCredentialId = getQviCredentialIdFromRequest(req);
+  const issuerAlias = getIssuerAliasFromRequest(req);
 
   const templateId = String(req.body.templateId || "").trim();
   const connectionId = String(req.body.connectionId || "").trim();
@@ -270,6 +278,8 @@ export async function issueCredentialApi(
       schemaSaid: template.schemaId,
       aid: connectionId,
       attribute: attributePayload,
+    }, {
+      issuerName: issuerAlias,
     });
 
     const now = new Date().toISOString();
@@ -315,7 +325,8 @@ export async function revokeCredentialByIdApi(
   res: Response
 ): Promise<void> {
   // OpenAPI: PUT /api/credentials/:id/revoke
-  const client: SignifyClient = req.app.get("signifyClient");
+  const client = getSignifyClientFromRequest(req);
+  const issuerAlias = getIssuerAliasFromRequest(req);
   const credentialId = String(req.params.id || "").trim();
 
   if (!credentialId) {
@@ -331,7 +342,10 @@ export async function revokeCredentialByIdApi(
     const { alreadyRevoked } = await revokeCredentialWithNotification(
       client,
       credentialId,
-      holderDid
+      holderDid,
+      {
+        issuerName: issuerAlias,
+      }
     );
 
     if (alreadyRevoked) {
@@ -362,7 +376,8 @@ export async function deleteCredentialByIdApi(
   res: Response
 ): Promise<void> {
   // OpenAPI: DELETE /api/credentials/:id
-  const client: SignifyClient = req.app.get("signifyClient");
+  const client = getSignifyClientFromRequest(req);
+  const issuerAlias = getIssuerAliasFromRequest(req);
   const credentialId = String(req.params.id || "").trim();
   if (!credentialId) {
     sendError(res, 400, "Credential id is required");
@@ -391,7 +406,9 @@ export async function deleteCredentialByIdApi(
       undefined;
 
     try {
-      await revokeCredentialWithNotification(client, credentialId, holderDid);
+      await revokeCredentialWithNotification(client, credentialId, holderDid, {
+        issuerName: issuerAlias,
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (message.startsWith(CREDENTIAL_NOT_FOUND)) {

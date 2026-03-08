@@ -1,17 +1,42 @@
 import { NextFunction, Request, Response } from "express";
-import { SignifyClient } from "signify-ts";
 import { LOCAL_IDENTIFIER_CONTACT_ERROR } from "../utils/utils";
+import { getSignifyClientFromRequest } from "../utils/requestContext";
+import { RealtimeEventService } from "../services/realtimeEventService";
 
 export async function contactList(
-  _: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
-  const client: SignifyClient = res.app.get("signifyClient");
+  const client = getSignifyClientFromRequest(req);
+  const localAidPrefix = String(req.issuerRuntime?.aidPrefix || "").trim();
 
   // @TODO - foconnor: Temporary hack to add createdAt after one-way scan, doing this now
   // to avoid updating keripy and making a change which might make backwards compatability or migrations harder later.
-  const contacts = await client.contacts().list();
+  const rawContacts = await client.contacts().list();
+  const contacts = rawContacts.filter((contact: { id?: string; alias?: string }) => {
+    const contactId = String(contact?.id || "").trim();
+    const contactAlias = String(contact?.alias || "").trim();
+    if (!contactId) {
+      return false;
+    }
+
+    // Keria may return local/self identifier entries (often 0AA...).
+    if (contactId.startsWith("0AA")) {
+      return false;
+    }
+    if (contactAlias.startsWith("0AA")) {
+      return false;
+    }
+
+    // Do not show the issuer/verifier's own AID as a remote connection.
+    if (localAidPrefix && contactId === localAidPrefix) {
+      return false;
+    }
+
+    return true;
+  });
+
   for (const contact of contacts) {
     if (!contact.createdAt) {
       contact.createdAt = new Date();
@@ -39,10 +64,25 @@ export async function deleteContact(
   res: Response,
   next: NextFunction
 ) {
-  const client: SignifyClient = res.app.get("signifyClient");
+  const client = getSignifyClientFromRequest(req);
   const { id } = req.query;
+  const issuerId = String(req.authUser?.issuerId || req.issuerRuntime?.issuerId || "").trim();
+  const realtimeService = req.app.get(
+    "realtimeEventService"
+  ) as RealtimeEventService | null;
 
   const data = await client.contacts().delete(id as string);
+  if (issuerId && realtimeService) {
+    realtimeService.publishToIssuer(issuerId, {
+      type: "connections.refresh",
+      notification: {
+        title: "Connection removed",
+        message: `Connection ${String(id || "").trim()} was removed.`,
+        level: "warning",
+      },
+    });
+  }
+
   res.status(200).send({
     success: true,
     data,

@@ -3,6 +3,7 @@ import { Operation, Saider, Serder, SignifyClient } from "signify-ts";
 import { config } from "../config";
 import { canonicalSchemaId, ISSUER_NAME, LE_SCHEMA_SAID } from "../consts";
 import { isSchemaIdKnown } from "../services/dashboardStore";
+import { RealtimeEventService } from "../services/realtimeEventService";
 import {
   getRegistry,
   OP_TIMEOUT,
@@ -10,6 +11,11 @@ import {
   waitAndGetDoneOp,
 } from "../utils/utils";
 import { QviCredential } from "../utils/utils.types";
+import {
+  getIssuerAliasFromRequest,
+  getQviCredentialIdFromRequest,
+  getSignifyClientFromRequest,
+} from "../utils/requestContext";
 
 export const UNKNOW_SCHEMA_ID = "Unknow Schema ID: ";
 export const CREDENTIAL_NOT_FOUND = "Not found credential with ID: ";
@@ -20,6 +26,10 @@ interface IssueAcdcCredentialInput {
   schemaSaid: string;
   aid: string;
   attribute?: Record<string, unknown>;
+}
+
+function getRealtimeEventService(req: Request): RealtimeEventService | null {
+  return req.app.get("realtimeEventService") as RealtimeEventService | null;
 }
 
 const SCHEMA_LOAD_TIMEOUT_MS = 10000;
@@ -218,11 +228,16 @@ export function getCredentialId(credential: CredentialRecord): string {
 export async function issueCredentialAndGrant(
   client: SignifyClient,
   qviCredentialId: string,
-  input: IssueAcdcCredentialInput
+  input: IssueAcdcCredentialInput,
+  options?: {
+    issuerName?: string;
+    registryRegk?: string;
+  }
 ): Promise<string> {
   const requestedSchemaSaid = String(input.schemaSaid || "").trim();
   const schemaSaid = canonicalSchemaId(requestedSchemaSaid);
   const { aid, attribute } = input;
+  const issuerName = String(options?.issuerName || ISSUER_NAME).trim();
 
   if (!isSchemaIdKnown(schemaSaid)) {
     throw new Error(`${UNKNOW_SCHEMA_ID}${requestedSchemaSaid}`);
@@ -230,8 +245,9 @@ export async function issueCredentialAndGrant(
 
   await ensureSchemaLoaded(client, schemaSaid);
 
-  const keriRegistryRegk = await getRegistry(client, ISSUER_NAME);
-  const holderAid = await client.identifiers().get(ISSUER_NAME);
+  const keriRegistryRegk =
+    options?.registryRegk || (await getRegistry(client, issuerName));
+  const holderAid = await client.identifiers().get(issuerName);
 
   let issueParams: any;
   let grantParams: any;
@@ -281,16 +297,16 @@ export async function issueCredentialAndGrant(
     };
 
     grantParams = {
-      senderName: ISSUER_NAME,
+      senderName: issuerName,
       recipient: aid,
     };
   }
 
-  const issuerName =
-    schemaSaid === LE_SCHEMA_SAID ? holderAid.name : ISSUER_NAME;
+  const issueIssuerName =
+    schemaSaid === LE_SCHEMA_SAID ? holderAid.name : issuerName;
   let result;
   try {
-    result = await client.credentials().issue(issuerName, issueParams);
+    result = await client.credentials().issue(issueIssuerName, issueParams);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (!isSchemaNotLoadedError(message, schemaSaid)) {
@@ -299,7 +315,7 @@ export async function issueCredentialAndGrant(
 
     await ensureSchemaLoaded(client, schemaSaid);
 
-    result = await client.credentials().issue(issuerName, issueParams);
+    result = await client.credentials().issue(issueIssuerName, issueParams);
   }
   await waitAndGetDoneOp(client, result.op, OP_TIMEOUT);
 
@@ -326,8 +342,9 @@ export async function issueAcdcCredential(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const client: SignifyClient = req.app.get("signifyClient");
-  const qviCredentialId = req.app.get("qviCredentialId");
+  const client = getSignifyClientFromRequest(req);
+  const qviCredentialId = getQviCredentialIdFromRequest(req);
+  const issuerAlias = getIssuerAliasFromRequest(req);
 
   const { schemaSaid, aid, attribute } = req.body;
   const normalizedSchemaSaid = canonicalSchemaId(String(schemaSaid || "").trim());
@@ -344,6 +361,8 @@ export async function issueAcdcCredential(
     schemaSaid: normalizedSchemaSaid,
     aid,
     attribute,
+  }, {
+    issuerName: issuerAlias,
   });
 
   res.status(200).send({
@@ -357,16 +376,34 @@ export async function requestDisclosure(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const client: SignifyClient = req.app.get("signifyClient");
+  const client = getSignifyClientFromRequest(req);
+  const issuerAlias = getIssuerAliasFromRequest(req);
   const { schemaSaid, aid, attributes } = req.body;
 
   const [apply, sigs] = await client.ipex().apply({
-    senderName: ISSUER_NAME,
+    senderName: issuerAlias,
     recipient: aid,
     schemaSaid,
     attributes,
   });
-  await client.ipex().submitApply(ISSUER_NAME, apply, sigs, [aid]);
+  await client.ipex().submitApply(issuerAlias, apply, sigs, [aid]);
+  const issuerId = String(req.authUser?.issuerId || req.issuerRuntime?.issuerId || "").trim();
+  const realtimeService = getRealtimeEventService(req);
+  if (issuerId && realtimeService) {
+    realtimeService.publishToIssuer(issuerId, {
+      type: "notifications.new",
+      payload: {
+        action: "request_presentation",
+        aid,
+        schemaSaid,
+      },
+      notification: {
+        title: "Presentation request sent",
+        message: `A presentation request was sent to ${aid}.`,
+        level: "info",
+      },
+    });
+  }
 
   res.status(200).send({
     success: true,
@@ -378,10 +415,11 @@ export async function contactCredentials(
   req: Request,
   res: Response
 ): Promise<void> {
-  const client: SignifyClient = req.app.get("signifyClient");
+  const client = getSignifyClientFromRequest(req);
+  const issuerAlias = getIssuerAliasFromRequest(req);
   const { contactId } = req.query;
 
-  const issuer = await client.identifiers().get(ISSUER_NAME);
+  const issuer = await client.identifiers().get(issuerAlias);
 
   const data = await client.credentials().list({
     filter: {
@@ -399,8 +437,12 @@ export async function contactCredentials(
 export async function revokeCredentialWithNotification(
   client: SignifyClient,
   credentialId: string,
-  holder?: string
+  holder?: string,
+  options?: {
+    issuerName?: string;
+  }
 ): Promise<{ alreadyRevoked: boolean }> {
+  const issuerName = String(options?.issuerName || ISSUER_NAME).trim();
   // Get the credential first
   let credential = await client
     .credentials()
@@ -434,7 +476,7 @@ export async function revokeCredentialWithNotification(
   }
 
   // Proceed with revocation
-  await client.credentials().revoke(ISSUER_NAME, credentialId);
+  await client.credentials().revoke(issuerName, credentialId);
 
   while (credential.status.s !== "1") {
     credential = await client.credentials().get(credentialId);
@@ -443,7 +485,7 @@ export async function revokeCredentialWithNotification(
 
   const datetime = new Date().toISOString().replace("Z", "000+00:00");
   const [grant, gsigs, gend] = await client.ipex().grant({
-    senderName: ISSUER_NAME,
+    senderName: issuerName,
     recipient: holderDid,
     acdc: new Serder(credential.sad),
     anc: new Serder(credential.anc),
@@ -453,7 +495,7 @@ export async function revokeCredentialWithNotification(
   });
   const submitGrantOp: Operation = await client
     .ipex()
-    .submitGrant(ISSUER_NAME, grant, gsigs, gend, [holderDid]);
+    .submitGrant(issuerName, grant, gsigs, gend, [holderDid]);
   await waitAndGetDoneOp(client, submitGrantOp, OP_TIMEOUT);
 
   return { alreadyRevoked: false };
@@ -463,14 +505,18 @@ export async function revokeCredential(
   req: Request,
   res: Response
 ): Promise<void> {
-  const client: SignifyClient = req.app.get("signifyClient");
+  const client = getSignifyClientFromRequest(req);
+  const issuerAlias = getIssuerAliasFromRequest(req);
   const { credentialId, holder } = req.body;
 
   try {
     const { alreadyRevoked } = await revokeCredentialWithNotification(
       client,
       credentialId,
-      holder
+      holder,
+      {
+        issuerName: issuerAlias,
+      }
     );
 
     if (alreadyRevoked) {
@@ -503,13 +549,14 @@ export async function deleteRevokedCredentials(
   req: Request,
   res: Response
 ): Promise<void> {
-  const client: SignifyClient = req.app.get("signifyClient");
+  const client = getSignifyClientFromRequest(req);
+  const issuerAlias = getIssuerAliasFromRequest(req);
   const holder = String(req.query.holder || req.body?.holder || "").trim();
   const schemaSaid = String(
     req.query.schemaSaid || req.body?.schemaSaid || ""
   ).trim();
 
-  const issuer = await client.identifiers().get(ISSUER_NAME);
+  const issuer = await client.identifiers().get(issuerAlias);
   const filter: Record<string, unknown> = {
     "-i": issuer.prefix,
   };

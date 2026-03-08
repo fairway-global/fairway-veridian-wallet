@@ -25,7 +25,22 @@ export const fetchSchemas = createAsyncThunk(
   "schemas/fetchSchema",
   async () => {
     const responses = await SchemaService.getSchemas();
-    return responses.data.data;
+    const rawItems = Array.isArray(responses.data?.data)
+      ? responses.data.data
+      : [];
+
+    return rawItems
+      .map((item: Record<string, unknown>) => {
+        const id = String(
+          item.id || item.said || item.$id || item.schemaId || ""
+        ).trim();
+        const name = String(
+          item.name || item.title || item.id || item.said || item.$id || ""
+        ).trim();
+
+        return { id, name };
+      })
+      .filter((schema: { id: string; name: string }) => Boolean(schema.id));
   }
 );
 

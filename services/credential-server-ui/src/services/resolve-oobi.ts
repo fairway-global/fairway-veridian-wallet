@@ -1,10 +1,11 @@
 import axios from "axios";
 import { config } from "../config";
+import { httpInstance } from "./http";
 
 export const resolveOobi = async (oobi: string) => {
   try {
-    const response = await axios.post(
-      `${config.endpoint}${config.path.resolveOobi}`,
+    const response = await httpInstance.post(
+      config.path.resolveOobi,
       { oobi },
       {
         headers: {

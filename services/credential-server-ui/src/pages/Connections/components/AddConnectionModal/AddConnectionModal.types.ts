@@ -1,7 +1,7 @@
 interface AddConnectionModalProps {
   openModal: boolean;
   setOpenModal: (value: boolean) => void;
-  handleGetContacts: () => void;
+  handleGetContacts: () => Promise<void> | void;
 }
 
 export type { AddConnectionModalProps };

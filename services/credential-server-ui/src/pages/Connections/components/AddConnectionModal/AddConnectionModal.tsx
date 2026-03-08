@@ -18,7 +18,6 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-import axios from "axios";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useSnackbar, VariantType } from "notistack";
 import { QRCodeSVG } from "qrcode.react";
@@ -29,6 +28,8 @@ import { PopupModal } from "../../../../components/PopupModal";
 import { config } from "../../../../config";
 import { i18n } from "../../../../i18n";
 import { resolveOobi } from "../../../../services/resolve-oobi";
+import { httpInstance } from "../../../../services/http";
+import { useAppSelector } from "../../../../store/hooks";
 import { isValidConnectionUrl } from "../../../../utils/urlChecker";
 import "./AddConnectionModal.scss";
 import { AddConnectionModalProps } from "./AddConnectionModal.types";
@@ -59,8 +60,11 @@ const AddConnectionModal = ({
   );
   const [canReset, setCanReset] = useState(false);
   const [showInput, setShowInput] = useState(false);
+  const [watchForConnection, setWatchForConnection] = useState(false);
+  const [initialContactIds, setInitialContactIds] = useState<string[]>([]);
   const RESET_TIMEOUT = 1000;
   const { enqueueSnackbar } = useSnackbar();
+  const contacts = useAppSelector((state) => state.connections.contacts);
 
   const triggerToast = (message: string, variant: VariantType) => {
     enqueueSnackbar(message, {
@@ -81,6 +85,35 @@ const AddConnectionModal = ({
     setTouched(false);
     handleReset();
   }, [currentStage]);
+
+  useEffect(() => {
+    if (!openModal) {
+      setWatchForConnection(false);
+      return;
+    }
+    setInitialContactIds(contacts.map((contact) => String(contact.id || "")));
+  }, [openModal]);
+
+  useEffect(() => {
+    if (!openModal || !watchForConnection) {
+      return;
+    }
+
+    const knownIds = new Set(initialContactIds);
+    const hasNewContact = contacts.some(
+      (contact) => !knownIds.has(String(contact.id || ""))
+    );
+    if (!hasNewContact) {
+      return;
+    }
+
+    setWatchForConnection(false);
+    triggerToast(
+      i18n.t("pages.connections.addConnection.modal.toast.success"),
+      "success"
+    );
+    resetModal();
+  }, [contacts, initialContactIds, openModal, watchForConnection]);
 
   const isCameraRendered = useRef<boolean>(false);
   const elementRef = useRef<HTMLDivElement | null>(null);
@@ -197,7 +230,6 @@ const AddConnectionModal = ({
   };
 
   const handleShowQr = async () => {
-    const url = `${config.endpoint}${config.path.keriOobi}`;
     try {
       setShowQR(false);
       setLoading(true);
@@ -205,7 +237,7 @@ const AddConnectionModal = ({
       setOobi("");
 
       try {
-        const response = await axios(url);
+        const response = await httpInstance.get(config.path.keriOobi);
         setOobi(response.data.data);
         setLoading(false);
         setShowQR(true);
@@ -224,11 +256,16 @@ const AddConnectionModal = ({
   const handleCopyLink = () => {
     if (oobi) {
       setCopied(true);
+      setInitialContactIds(contacts.map((contact) => String(contact.id || "")));
+      setWatchForConnection(true);
       navigator.clipboard.writeText(oobi);
+      void handleGetContacts();
     }
   };
 
   const resetModal = () => {
+    setWatchForConnection(false);
+    setInitialContactIds([]);
     setOpenModal(false);
     if (scannerRef.current) {
       scannerRef.current.clear().catch((error) => {
@@ -301,6 +338,7 @@ const AddConnectionModal = ({
                 disabled={!oobi || errorOnRequest}
                 onClick={() => {
                   setCurrentStage(2);
+                  setWatchForConnection(false);
                   if (scannerRef.current) {
                     scannerRef.current.pause();
                   }
@@ -334,8 +372,8 @@ const AddConnectionModal = ({
               <Button
                 variant="contained"
                 className="primary-button"
-                onClick={() => handleResolveOobi(inputValue || oobi)}
-                disabled={!(isInputValid && oobi && oobi.includes("oobi"))}
+                onClick={() => handleResolveOobi(inputValue)}
+                disabled={!isInputValid}
               >
                 {i18n.t(
                   "pages.connections.addConnection.modal.button.complete"

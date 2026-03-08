@@ -15,6 +15,7 @@ export interface CredentialTemplate {
   name: string;
   schemaId: string;
   attributes: TemplateAttribute[];
+  autoIssue: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +45,7 @@ export interface TemplateUpsertInput {
   name: string;
   schemaId: string;
   attributes: TemplateAttribute[];
+  autoIssue: boolean;
 }
 
 export interface IssueCredentialPayload {

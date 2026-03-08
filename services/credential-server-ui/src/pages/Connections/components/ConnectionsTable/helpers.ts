@@ -1,10 +1,10 @@
 import { Contact, Credential, Data } from "./ConnectionsTable.types";
-import axios from "axios";
-import { config } from "../../../../config";
 import { fetchContacts } from "../../../../store/reducers/connectionsSlice";
 import { AppDispatch } from "../../../../store";
 import { VariantType } from "notistack";
 import { i18n } from "../../../../i18n";
+import { config } from "../../../../config";
+import { httpInstance } from "../../../../services/http";
 
 const generateRows = (
   filteredContacts: Contact[],
@@ -29,8 +29,8 @@ const handleDeleteContact = async (
   triggerToast: (message: string, variant: VariantType) => void
 ) => {
   try {
-    const response = await axios.delete(
-      `${config.endpoint}${config.path.deleteContact}?id=${id}`
+    const response = await httpInstance.delete(
+      `${config.path.deleteContact}?id=${id}`
     );
     if (response.status === 200) {
       triggerToast(

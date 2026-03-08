@@ -37,6 +37,7 @@ const defaultTemplateState: TemplateFormState = {
   name: "",
   schemaId: "",
   attributes: [],
+  autoIssue: false,
 };
 
 const TemplateForm = ({
@@ -55,19 +56,32 @@ const TemplateForm = ({
   const [autoFilledSchemaId, setAutoFilledSchemaId] = useState<string | null>(
     null
   );
+  const normalizedSchemas = useMemo(
+    () =>
+      schemas
+        .map((schema) => ({
+          id: String(schema.id || "").trim(),
+          name: String(schema.name || "").trim(),
+        }))
+        .filter((schema) => schema.id),
+    [schemas]
+  );
   const hasSchemaId = Boolean(form.schemaId.trim());
   const schemaDetail = useSchemaDetail(hasSchemaId ? form.schemaId : undefined);
   const isKnownSchemaId = useMemo(
     () =>
       !hasSchemaId ||
-      schemas.some((schema) => schema.id === form.schemaId) ||
+      normalizedSchemas.some((schema) => schema.id === form.schemaId) ||
       Boolean(initialValue?.schemaId === form.schemaId),
-    [form.schemaId, hasSchemaId, initialValue?.schemaId, schemas]
+    [form.schemaId, hasSchemaId, initialValue?.schemaId, normalizedSchemas]
   );
 
   const schemaAttributes = useMemo<TemplateAttribute[]>(() => {
     const attributeSchema = schemaDetail?.properties?.a?.oneOf?.[1];
-    const properties = attributeSchema?.properties || {};
+    const properties = (attributeSchema?.properties || {}) as Record<
+      string,
+      { type?: string }
+    >;
     const requiredFields = new Set(attributeSchema?.required || []);
 
     return Object.keys(properties)
@@ -186,6 +200,7 @@ const TemplateForm = ({
       ...form,
       name: form.name.trim(),
       schemaId: form.schemaId.trim(),
+      autoIssue: Boolean(form.autoIssue),
       attributes: form.attributes.map((attribute) => ({
         ...attribute,
         name: attribute.name.trim(),
@@ -224,6 +239,22 @@ const TemplateForm = ({
               : undefined
           }
           fullWidth
+          SelectProps={{
+            displayEmpty: true,
+            renderValue: (selected) => {
+              const selectedSchemaId = String(selected || "").trim();
+              if (!selectedSchemaId) {
+                return isCreateMode
+                  ? i18n.t("pages.templates.form.fields.autoSchema")
+                  : i18n.t("pages.templates.form.fields.selectSchema");
+              }
+
+              const selectedSchema = normalizedSchemas.find(
+                (schema) => schema.id === selectedSchemaId
+              );
+              return selectedSchema?.name || selectedSchemaId;
+            },
+          }}
         >
           <MenuItem value="">
             {isCreateMode
@@ -235,15 +266,35 @@ const TemplateForm = ({
               {form.schemaId}
             </MenuItem>
           )}
-          {schemas.map((schema) => (
+          {normalizedSchemas.map((schema) => (
             <MenuItem
               key={schema.id}
               value={schema.id}
             >
-              {schema.name}
+              {schema.name || schema.id}
             </MenuItem>
           ))}
         </TextField>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={Boolean(form.autoIssue)}
+              onChange={(event) =>
+                setForm((currentValue) => ({
+                  ...currentValue,
+                  autoIssue: event.target.checked,
+                }))
+              }
+            />
+          }
+          label={i18n.t("pages.templates.form.fields.autoIssue")}
+        />
+        <Typography
+          variant="body2"
+          color="text.secondary"
+        >
+          {i18n.t("pages.templates.form.fields.autoIssueHint")}
+        </Typography>
         <Stack spacing={1}>
           <Typography variant="subtitle1">
             {i18n.t("pages.templates.form.fields.attributes")}

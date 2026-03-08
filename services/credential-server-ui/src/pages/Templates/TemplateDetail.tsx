@@ -214,6 +214,10 @@ const TemplateDetail = () => {
                 )
                 .join(", ")}
             </Typography>
+            <Typography variant="body1">
+              <strong>{i18n.t("pages.templates.detail.fields.autoIssue")}:</strong>{" "}
+              {template.autoIssue ? "Yes" : "No"}
+            </Typography>
           </Stack>
         </Paper>
       )}

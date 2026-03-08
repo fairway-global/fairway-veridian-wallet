@@ -38,6 +38,24 @@ services:
       - 5646:5646
       - 5647:5647
 
+  postgres:
+    container_name: cred-issuance-postgres
+    restart: unless-stopped
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=credential_server
+    ports:
+      - 5432:5432
+    volumes:
+      - cred-issuance-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d credential_server"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   cred-issuance:
     container_name: cred-issuance
     build:
@@ -45,7 +63,11 @@ services:
       dockerfile: Dockerfile
       network: host
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/credential_server
       - OOBI_ENDPOINT=http://cred-issuance:3001
       - KERIA_ENDPOINT=http://keria:3901
       - KERIA_BOOT_ENDPOINT=http://keria:3903
@@ -63,8 +85,9 @@ services:
     environment:
       - VITE_SERVER_URL=${VITE_SERVER_URL:-http://localhost:3001}
     ports:
-      - 3000:80
+      - 3002:80
 
 volumes:
   keria-data:
   issuer-server-data:
+  cred-issuance-postgres-data:

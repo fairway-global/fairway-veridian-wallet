@@ -6,10 +6,15 @@ import { join, resolve } from "path";
 import { SignifyClient, ready as signifyReady, Tier } from "signify-ts";
 import { config } from "./config";
 import { ACDC_SCHEMAS_ID, ISSUER_NAME, QVI_NAME } from "./consts";
+import { runMigrations } from "./db";
 import { log } from "./log";
 import { openApiDocument } from "./openapi";
 import { router } from "./routes";
 import { EndRole } from "./server.types";
+import { IssuerSignifyService } from "./services/issuerSignifyService";
+import { RealtimeEventService } from "./services/realtimeEventService";
+import { bootstrapDefaultIssuer } from "./services/tenantBootstrapService";
+import { getIssuerByCode } from "./services/tenantStore";
 import { PollingService } from "./services/pollingService";
 import {
   createQVICredential,
@@ -192,12 +197,39 @@ function getSchemaStaticDirs(): string[] {
 }
 
 async function startServer() {
+  await runMigrations();
+  await signifyReady();
+
+  const brans = await loadBrans();
+  await bootstrapDefaultIssuer({
+    defaultIssuerBran: brans.bran,
+  });
+
+  const globalQviClient = await getSignifyClient(brans.issuerBran);
+  await ensureIdentifierExists(globalQviClient, QVI_NAME);
+  await ensureEndRoles(globalQviClient, QVI_NAME);
+  await ensureRegistryExists(globalQviClient, QVI_NAME);
+
+  const issuerSignifyService = new IssuerSignifyService(globalQviClient);
+  const realtimeEventService = new RealtimeEventService(issuerSignifyService);
+  const defaultIssuer = await getIssuerByCode(config.defaultIssuerCode);
+  if (!defaultIssuer) {
+    throw new Error("Default issuer not found after bootstrap");
+  }
+  const defaultRuntime = await issuerSignifyService.getRuntimeByIssuerId(
+    defaultIssuer.id
+  );
+
   const app = express();
   app.use(cors());
   app.use(bodyParser.json({ limit: config.jsonBodyLimit }));
   app.use((req: Request, res: Response, next: NextFunction) => {
     const startedAt = Date.now();
-    const queryLog = stringifyForLog(req.query);
+    const safeQuery = { ...(req.query as Record<string, unknown>) };
+    if (Object.prototype.hasOwnProperty.call(safeQuery, "accessToken")) {
+      safeQuery.accessToken = "***";
+    }
+    const queryLog = stringifyForLog(safeQuery);
     const bodyLog = stringifyForLog(req.body);
 
     log(
@@ -265,11 +297,24 @@ async function startServer() {
       })
     );
   }
+
+  app.set("issuerSignifyService", issuerSignifyService);
+  app.set("realtimeEventService", realtimeEventService);
+  app.set("globalQviClient", globalQviClient);
+  app.set("signifyClient", defaultRuntime.client);
+  app.set("qviCredentialId", defaultRuntime.qviCredentialId);
+  app.set("legacyIssuerName", defaultRuntime.aidAlias);
+
   app.use(router);
   app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    const safeQuery = { ...(req.query as Record<string, unknown>) };
+    if (Object.prototype.hasOwnProperty.call(safeQuery, "accessToken")) {
+      safeQuery.accessToken = "***";
+    }
+
     console.error(
       `[ERR] ${req.method} ${req.originalUrl} query=${stringifyForLog(
-        req.query
+        safeQuery
       )} body=${stringifyForLog(req.body)}`,
       err?.stack ?? err
     );
@@ -326,33 +371,6 @@ async function startServer() {
         `[WARN] OOBI_ENDPOINT (${config.oobiEndpoint}) points to localhost while KERIA_ENDPOINT (${config.keria.url}) is remote. The KERIA service cannot resolve localhost OOBIs.`
       );
     }
-
-    await signifyReady();
-    const brans = await loadBrans();
-
-    const signifyClient = await getSignifyClient(brans.bran);
-    const signifyClientIssuer = await getSignifyClient(brans.issuerBran);
-
-    // Ensure identifiers exist first
-    await ensureIdentifierExists(signifyClient, ISSUER_NAME);
-    await ensureIdentifierExists(signifyClientIssuer, QVI_NAME);
-
-    // Add end roles before creating registries (KERIA bug workaround)
-    await ensureEndRoles(signifyClient, ISSUER_NAME);
-    await ensureEndRoles(signifyClientIssuer, QVI_NAME);
-
-    // Now create registries
-    await ensureRegistryExists(signifyClient, ISSUER_NAME);
-    await ensureRegistryExists(signifyClientIssuer, QVI_NAME);
-
-    app.set("signifyClient", signifyClient);
-    app.set("signifyClientIssuer", signifyClientIssuer);
-
-    const qviCredentialId = await initializeCredentials(
-      signifyClient,
-      signifyClientIssuer
-    );
-    app.set("qviCredentialId", qviCredentialId);
 
     log(`Listening on port ${config.port}`);
   });
