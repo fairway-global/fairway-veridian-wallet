@@ -167,6 +167,7 @@ function getSchemaStaticDirs(): string[] {
   const candidates = Array.from(
     new Set(
       [
+        resolve(process.cwd(), "data/schemas"),
         join(__dirname, "schemas"),
         resolve(__dirname, "../src/schemas"),
         resolve(process.cwd(), "src/schemas"),

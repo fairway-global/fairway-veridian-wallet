@@ -14,9 +14,17 @@ import {
 } from "../utils/requestContext";
 import { config } from "../config";
 import {
+  ensureGeneratedSchemaForTemplate,
+  getSchemaAttributesForSchemaId,
+} from "../services/dashboardStore";
+import { TemplateAttribute } from "../services/dashboardStore.types";
+import {
+  deleteFaydaVerificationByHolderAidForIssuer,
+  getFaydaVerificationByHolderAidForIssuer,
   getAutoIssueTemplateByIssuer,
   getIssuerByAidPrefix,
   getIssuerByCode,
+  upsertFaydaVerificationForIssuer,
 } from "../services/tenantStore";
 import { IssuerTemplateRecord } from "../services/tenantStore.types";
 import { RealtimeEventService } from "../services/realtimeEventService";
@@ -76,13 +84,6 @@ type GenericCredential = {
   [key: string]: unknown;
 };
 
-const REQUIRED_FAYDA_FIELDS = [
-  "name",
-  "email",
-  "phone_number",
-  "birthdate",
-  "gender",
-] as const;
 const FAYDA_ID_KEYS = [
   "fayda_id",
   "id",
@@ -96,11 +97,42 @@ const STATUS_DEFAULT_SCHEMA_SAIDS = [
   FAYDA_FAIRWAY_ID_SCHEMA_SAID,
 ];
 
+const FAYDA_ATTRIBUTE_ALIASES: Record<string, string[]> = {
+  address: ["address"],
+  birthdate: ["birthdate", "dateofbirth", "dob"],
+  country: ["nationality", "country", "citizenship"],
+  dateofbirth: ["birthdate", "dateofbirth", "dob"],
+  dob: ["birthdate", "dateofbirth", "dob"],
+  email: ["email", "emailaddress", "mail"],
+  emailaddress: ["email", "emailaddress", "mail"],
+  faydaid: ["faydaid", "id", "sub", "nationalid"],
+  fullname: ["name", "fullname", "displayname"],
+  gender: ["gender", "sex"],
+  id: ["faydaid", "id", "sub", "nationalid"],
+  name: ["name", "fullname", "displayname"],
+  nationalid: ["faydaid", "id", "sub", "nationalid"],
+  nationality: ["nationality", "country", "citizenship"],
+  phone: ["phonenumber", "phone", "mobile", "mobilenumber"],
+  phonenumber: ["phonenumber", "phone", "mobile", "mobilenumber"],
+  region: ["region"],
+  sex: ["gender", "sex"],
+  sub: ["faydaid", "id", "sub", "nationalid"],
+  woreda: ["woreda"],
+  zone: ["zone"],
+};
+
 type ResolvedFaydaRequestContext = {
   issuerId: string;
   client: SignifyClient;
   issuerAlias: string;
   qviCredentialId: string;
+};
+
+type FaydaAttributeMappingResult = {
+  attribute: Record<string, unknown>;
+  faydaId: string;
+  missingRequiredFields: string[];
+  mappedFields: string[];
 };
 
 function toTrimmedString(value: unknown): string {
@@ -112,6 +144,152 @@ function toTrimmedString(value: unknown): string {
 
 function isBase64DataUri(value: unknown): boolean {
   return typeof value === "string" && /^data:[^;]+;base64,/i.test(value);
+}
+
+function normalizeLookupKey(value: unknown): string {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function hasMeaningfulValue(value: unknown): boolean {
+  if (value === undefined || value === null) {
+    return false;
+  }
+
+  if (typeof value === "string") {
+    return Boolean(value.trim());
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+
+  if (typeof value === "object") {
+    return Object.keys(value as Record<string, unknown>).length > 0;
+  }
+
+  return true;
+}
+
+function formatAddress(value: unknown): string {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return "";
+  }
+
+  const address = value as Record<string, unknown>;
+  return [address.zone, address.woreda, address.region]
+    .map((item) => toTrimmedString(item))
+    .filter(Boolean)
+    .join(", ");
+}
+
+function addLookupValue(
+  lookup: Map<string, unknown>,
+  key: string,
+  value: unknown
+): void {
+  const normalizedKey = normalizeLookupKey(key);
+  if (!normalizedKey || lookup.has(normalizedKey) || !hasMeaningfulValue(value)) {
+    return;
+  }
+
+  lookup.set(normalizedKey, value);
+}
+
+function buildFaydaLookup(faydaData: FaydaData): Map<string, unknown> {
+  const lookup = new Map<string, unknown>();
+
+  Object.entries(faydaData).forEach(([key, value]) => {
+    if (
+      key === "picture" ||
+      key === "additionalProp1" ||
+      isBase64DataUri(value) ||
+      !hasMeaningfulValue(value)
+    ) {
+      return;
+    }
+
+    addLookupValue(lookup, key, value);
+  });
+
+  const faydaId = extractFaydaId(faydaData);
+  if (faydaId) {
+    ["fayda_id", "faydaId", "id", "sub", "national_id", "nationalId"].forEach(
+      (key) => addLookupValue(lookup, key, faydaId)
+    );
+  }
+
+  const addressValue = (faydaData as Record<string, unknown>).address;
+  if (addressValue && typeof addressValue === "object" && !Array.isArray(addressValue)) {
+    const address = addressValue as Record<string, unknown>;
+    addLookupValue(lookup, "address", formatAddress(address));
+    addLookupValue(lookup, "zone", address.zone);
+    addLookupValue(lookup, "woreda", address.woreda);
+    addLookupValue(lookup, "region", address.region);
+  }
+
+  return lookup;
+}
+
+function getAttributeAliasCandidates(attributeName: string): string[] {
+  const normalizedAttribute = normalizeLookupKey(attributeName);
+  return Array.from(
+    new Set([
+      normalizedAttribute,
+      ...(FAYDA_ATTRIBUTE_ALIASES[normalizedAttribute] || []),
+    ])
+  );
+}
+
+function toTemplateAttributeValue(
+  rawValue: unknown,
+  attribute: TemplateAttribute
+): string | number | boolean | undefined {
+  if (!hasMeaningfulValue(rawValue)) {
+    return undefined;
+  }
+
+  if (attribute.type === "integer") {
+    const parsed = Number.parseInt(String(rawValue).trim(), 10);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  if (attribute.type === "number") {
+    const parsed = Number(String(rawValue).trim());
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  if (attribute.type === "boolean") {
+    if (typeof rawValue === "boolean") {
+      return rawValue;
+    }
+
+    const normalized = toTrimmedString(rawValue).toLowerCase();
+    if (!normalized) {
+      return undefined;
+    }
+    if (["true", "1", "yes"].includes(normalized)) {
+      return true;
+    }
+    if (["false", "0", "no"].includes(normalized)) {
+      return false;
+    }
+
+    return undefined;
+  }
+
+  if (typeof rawValue === "object") {
+    const formattedAddress = formatAddress(rawValue);
+    if (formattedAddress) {
+      return formattedAddress;
+    }
+    return JSON.stringify(rawValue);
+  }
+
+  const normalized = toTrimmedString(rawValue);
+  return normalized || undefined;
 }
 
 function extractFaydaIdFromRecord(record: Record<string, unknown>): string {
@@ -143,7 +321,10 @@ function extractFaydaId(faydaData: FaydaData): string {
   return "";
 }
 
-function buildAttribute(faydaData: FaydaData): Record<string, unknown> {
+function mapFaydaDataToTemplateAttributes(
+  attributes: TemplateAttribute[],
+  faydaData: FaydaData
+): FaydaAttributeMappingResult {
   const issuedAt = new Date().toISOString();
   const faydaId = extractFaydaId(faydaData);
 
@@ -153,45 +334,36 @@ function buildAttribute(faydaData: FaydaData): Record<string, unknown> {
     );
   }
 
-  const normalized = {
-    name: toTrimmedString(faydaData.name),
-    email: toTrimmedString(faydaData.email),
-    phone_number: toTrimmedString(faydaData.phone_number),
-    birthdate: toTrimmedString(faydaData.birthdate),
-    gender: toTrimmedString(faydaData.gender),
+  const lookup = buildFaydaLookup(faydaData);
+  const attributePayload: Record<string, unknown> = {
+    dt: issuedAt,
   };
+  const missingRequiredFields: string[] = [];
+  const mappedFields: string[] = [];
 
-  const missingFields = REQUIRED_FAYDA_FIELDS.filter(
-    (field) => !normalized[field]
-  );
+  for (const attribute of attributes) {
+    const candidates = getAttributeAliasCandidates(attribute.name);
+    const rawValue = candidates
+      .map((candidate) => lookup.get(candidate))
+      .find((value) => hasMeaningfulValue(value));
 
-  if (missingFields.length > 0) {
-    throw new Error(
-      `Missing required Fayda fields: ${missingFields.join(", ")}`
-    );
+    const typedValue = toTemplateAttributeValue(rawValue, attribute);
+    if (typedValue === undefined) {
+      if (attribute.required) {
+        missingRequiredFields.push(attribute.name);
+      }
+      continue;
+    }
+
+    attributePayload[attribute.name] = typedValue;
+    mappedFields.push(attribute.name);
   }
 
-  const extraFields = Object.fromEntries(
-    Object.entries(faydaData).filter(([key, value]) => {
-      return (
-        !REQUIRED_FAYDA_FIELDS.includes(
-          key as (typeof REQUIRED_FAYDA_FIELDS)[number]
-        ) &&
-        !FAYDA_ID_KEYS.includes(key as (typeof FAYDA_ID_KEYS)[number]) &&
-        key !== "picture" &&
-        key !== "additionalProp1" &&
-        !isBase64DataUri(value) &&
-        value !== undefined &&
-        value !== null
-      );
-    })
-  );
-
   return {
-    dt: issuedAt,
-    fayda_id: faydaId,
-    ...normalized,
-    ...extraFields,
+    attribute: attributePayload,
+    faydaId,
+    missingRequiredFields,
+    mappedFields,
   };
 }
 
@@ -387,6 +559,41 @@ async function getAutoIssueTemplateForRequest(
   return getAutoIssueTemplateByIssuer(resolvedIssuerId);
 }
 
+function getFaydaTemplateAttributes(
+  template: IssuerTemplateRecord | null,
+  schemaSaid: string
+): TemplateAttribute[] {
+  if (template?.attributes?.length) {
+    return template.attributes;
+  }
+
+  return getSchemaAttributesForSchemaId(schemaSaid);
+}
+
+function getFaydaSchemaCandidates(
+  requestedSchema: string,
+  autoIssueTemplate: IssuerTemplateRecord | null
+): string[] {
+  if (requestedSchema) {
+    return [
+      getSchemaSaid(
+        requestedSchema,
+        autoIssueTemplate?.schemaId || DEFAULT_FAYDA_SCHEMA_SAID
+      ),
+    ];
+  }
+
+  const candidates = [
+    autoIssueTemplate ? canonicalSchemaId(autoIssueTemplate.schemaId) : "",
+    DEFAULT_FAYDA_SCHEMA_SAID,
+    ...STATUS_DEFAULT_SCHEMA_SAIDS,
+  ]
+    .map((item) => canonicalSchemaId(String(item || "").trim()))
+    .filter(Boolean);
+
+  return Array.from(new Set(candidates));
+}
+
 type FaydaVerificationResult = {
   alreadyIssuedCredentialId?: string;
   conflictingCredentialId?: string;
@@ -474,6 +681,13 @@ export async function getFaydaDataStatus(
       issuerId
     );
     const autoIssueTemplate = await getAutoIssueTemplateForRequest(req, issuerId);
+    if (autoIssueTemplate) {
+      await ensureGeneratedSchemaForTemplate({
+        schemaId: autoIssueTemplate.schemaId,
+        name: autoIssueTemplate.name,
+        attributes: autoIssueTemplate.attributes,
+      }).catch(() => false);
+    }
     const autoIssueConfigured = Boolean(autoIssueTemplate);
     const schemaSaid = requestedSchema
       ? getSchemaSaid(
@@ -483,12 +697,10 @@ export async function getFaydaDataStatus(
       : autoIssueTemplate
         ? canonicalSchemaId(autoIssueTemplate.schemaId)
         : "";
-    const schemaCandidates =
-      requestedSchema && schemaSaid
-        ? [schemaSaid]
-        : autoIssueTemplate
-          ? [canonicalSchemaId(autoIssueTemplate.schemaId)]
-          : STATUS_DEFAULT_SCHEMA_SAIDS;
+    const schemaCandidates = getFaydaSchemaCandidates(
+      requestedSchema,
+      autoIssueTemplate
+    );
 
     const issuer = await client.identifiers().get(issuerAlias);
     const credentialsResponse = await client.credentials().list({
@@ -497,6 +709,9 @@ export async function getFaydaDataStatus(
       },
     });
     const credentials = getCredentialEntries(credentialsResponse);
+    const storedVerification = issuerId
+      ? await getFaydaVerificationByHolderAidForIssuer(issuerId, aid)
+      : null;
 
     const verifiedCredential = credentials.find((credential) => {
       const holderAid = getCredentialHolderAid(credential);
@@ -511,16 +726,38 @@ export async function getFaydaDataStatus(
         !isCredentialRevoked(credential)
       );
     });
+    const verifiedCredentialId = verifiedCredential
+      ? getCredentialId(verifiedCredential)
+      : null;
+    const persistedVerificationStatus =
+      storedVerification?.status === "credential_issued" &&
+      !verifiedCredential
+        ? null
+        : storedVerification?.status || null;
+    const verificationStatus = verifiedCredential
+      ? "credential_issued"
+      : persistedVerificationStatus;
+    const hasPersistedVerification = Boolean(
+      persistedVerificationStatus &&
+        persistedVerificationStatus !== "credential_issued"
+    );
 
     res.status(200).send({
       success: true,
       data: {
         aid,
         schemaSaid: schemaSaid || null,
-        verified: Boolean(verifiedCredential),
+        verified: Boolean(verifiedCredential || hasPersistedVerification),
         verifiedSchemaSaid: verifiedCredential
           ? getCredentialSchemaSaid(verifiedCredential)
           : null,
+        verificationStatus,
+        pendingManualReview: verificationStatus === "pending_manual_review",
+        missingFields:
+          verificationStatus === "pending_manual_review"
+            ? storedVerification?.missingFields || []
+            : [],
+        credentialId: verifiedCredentialId || null,
         autoIssueConfigured,
         autoIssueTemplateId: autoIssueTemplate?.id || null,
       },
@@ -552,6 +789,13 @@ export async function saveFaydaData(
     const { client, qviCredentialId, issuerAlias } =
       await resolveFaydaRequestContext(req, issuerId);
     const autoIssueTemplate = await getAutoIssueTemplateForRequest(req, issuerId);
+    if (autoIssueTemplate) {
+      await ensureGeneratedSchemaForTemplate({
+        schemaId: autoIssueTemplate.schemaId,
+        name: autoIssueTemplate.name,
+        attributes: autoIssueTemplate.attributes,
+      }).catch(() => false);
+    }
     const autoIssueConfigured = Boolean(autoIssueTemplate);
     const schemaSaid = requestedSchema
       ? getSchemaSaid(
@@ -562,11 +806,52 @@ export async function saveFaydaData(
         ? canonicalSchemaId(autoIssueTemplate.schemaId)
         : "";
     const faydaData = body.faydaData || {};
+    const faydaId = extractFaydaId(faydaData);
     const credentialName = String(
       body.credentialName || autoIssueTemplate?.name || "FaydaVerifiedAutoIssue"
     ).trim();
+    const realtimeService = getRealtimeEventService(req);
+
+    if (!faydaId) {
+      res.status(400).send({
+        success: false,
+        data:
+          "Missing required Fayda identifier. Provide faydaData.id, faydaData.fayda_id, or faydaData.sub.",
+      });
+      return;
+    }
 
     if (!schemaSaid) {
+      await upsertFaydaVerificationForIssuer({
+        issuerId,
+        holderAid: aid,
+        faydaId,
+        templateId: null,
+        credentialId: null,
+        status: "verified",
+        missingFields: [],
+        mappedData: {},
+        faydaData,
+      });
+
+      if (realtimeService && issuerId) {
+        realtimeService.publishToIssuer(issuerId, {
+          type: "fayda.verified",
+          payload: {
+            action: "verified_without_auto_issue",
+            holderDid: aid,
+            faydaId,
+          },
+          notification: {
+            title: "Fayda verified",
+            message:
+              `${aid} completed Fayda verification. ` +
+              "No auto-issue template is configured for this issuer.",
+            level: "info",
+          },
+        });
+      }
+
       res.status(200).send({
         success: true,
         data: {
@@ -575,19 +860,19 @@ export async function saveFaydaData(
           credentialName: null,
           holderAid: aid,
           schemaSaid: null,
-          faydaId: extractFaydaId(faydaData) || null,
+          faydaId,
           credentialId: null,
           alreadyIssued: false,
           autoIssueConfigured,
           autoIssued: false,
-          verified: false,
+          verified: true,
+          pendingManualReview: false,
+          verificationStatus: "verified",
+          missingFields: [],
         },
       });
       return;
     }
-
-    const attribute = buildAttribute(faydaData);
-    const faydaId = toTrimmedString(attribute.fayda_id);
     const verification = await verifyFaydaIdentifierForAutoIssue(
       client,
       issuerAlias,
@@ -614,6 +899,18 @@ export async function saveFaydaData(
     }
 
     if (verification.alreadyIssuedCredentialId) {
+      await upsertFaydaVerificationForIssuer({
+        issuerId,
+        holderAid: aid,
+        faydaId,
+        templateId: autoIssueTemplate?.id || null,
+        credentialId: verification.alreadyIssuedCredentialId,
+        status: "credential_issued",
+        missingFields: [],
+        mappedData: {},
+        faydaData,
+      });
+
       res.status(200).send({
         success: true,
         data: {
@@ -627,19 +924,105 @@ export async function saveFaydaData(
           autoIssueConfigured,
           autoIssued: false,
           verified: true,
+          pendingManualReview: false,
+          verificationStatus: "credential_issued",
+          missingFields: [],
         },
       });
       return;
     }
 
-    const credentialId = await issueCredentialAndGrant(client, qviCredentialId, {
-      schemaSaid,
-      aid,
-      attribute,
-    }, {
-      issuerName: issuerAlias,
+    const templateAttributes = getFaydaTemplateAttributes(
+      autoIssueTemplate,
+      schemaSaid
+    );
+    const attributeMapping = mapFaydaDataToTemplateAttributes(
+      templateAttributes,
+      faydaData
+    );
+
+    if (attributeMapping.missingRequiredFields.length > 0) {
+      await upsertFaydaVerificationForIssuer({
+        issuerId,
+        holderAid: aid,
+        faydaId,
+        templateId: autoIssueTemplate?.id || null,
+        credentialId: null,
+        status: "pending_manual_review",
+        missingFields: attributeMapping.missingRequiredFields,
+        mappedData: attributeMapping.attribute,
+        faydaData,
+      });
+
+      if (realtimeService && issuerId) {
+        realtimeService.publishToIssuer(issuerId, {
+          type: "fayda.manual_review_required",
+          payload: {
+            action: "manual_review_required",
+            holderDid: aid,
+            faydaId,
+            templateId: autoIssueTemplate?.id || null,
+            schemaSaid,
+            missingFields: attributeMapping.missingRequiredFields,
+            mappedFields: attributeMapping.mappedFields,
+          },
+          notification: {
+            title: "Fayda credential needs manual completion",
+            message:
+              `${credentialName} for ${aid} is waiting for manual input. ` +
+              `Missing required fields: ${attributeMapping.missingRequiredFields.join(", ")}.`,
+            level: "warning",
+          },
+        });
+      }
+
+      res.status(200).send({
+        success: true,
+        data: {
+          message:
+            "Fayda verification succeeded, but the auto-issue template is missing required fields. The issuer must complete this credential manually.",
+          credentialName,
+          holderAid: aid,
+          schemaSaid,
+          faydaId,
+          credentialId: null,
+          alreadyIssued: false,
+          autoIssueConfigured,
+          autoIssued: false,
+          verified: true,
+          pendingManualReview: true,
+          verificationStatus: "pending_manual_review",
+          missingFields: attributeMapping.missingRequiredFields,
+          mappedFields: attributeMapping.mappedFields,
+        },
+      });
+      return;
+    }
+
+    const credentialId = await issueCredentialAndGrant(
+      client,
+      qviCredentialId,
+      {
+        schemaSaid,
+        aid,
+        attribute: attributeMapping.attribute,
+      },
+      {
+        issuerName: issuerAlias,
+      }
+    );
+    await upsertFaydaVerificationForIssuer({
+      issuerId,
+      holderAid: aid,
+      faydaId,
+      templateId: autoIssueTemplate?.id || null,
+      credentialId,
+      status: "credential_issued",
+      missingFields: [],
+      mappedData: attributeMapping.attribute,
+      faydaData,
     });
-    const realtimeService = getRealtimeEventService(req);
+
     if (realtimeService && issuerId) {
       realtimeService.publishToIssuer(issuerId, {
         type: "credentials.refresh",
@@ -671,6 +1054,9 @@ export async function saveFaydaData(
         autoIssueConfigured,
         autoIssued: true,
         verified: true,
+        pendingManualReview: false,
+        verificationStatus: "credential_issued",
+        missingFields: [],
       },
     });
   } catch (error: unknown) {
@@ -718,14 +1104,11 @@ export async function deleteFaydaData(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const client = getSignifyClientFromRequest(req);
-  const issuerAlias = getIssuerAliasFromRequest(req);
   const aid = String(req.query.aid || req.body?.aid || "").trim();
-  const schemaSaid = getSchemaSaid(
+  const requestedSchema = toTrimmedString(
     typeof req.query.schemaSaid === "string"
       ? req.query.schemaSaid
-      : undefined,
-    DEFAULT_FAYDA_SCHEMA_SAID
+      : req.body?.schemaSaid
   );
 
   if (!aid) {
@@ -737,6 +1120,24 @@ export async function deleteFaydaData(
   }
 
   try {
+    const issuerId = await resolveIssuerIdForFaydaRequest(req);
+    const { client, issuerAlias } = await resolveFaydaRequestContext(
+      req,
+      issuerId
+    );
+    const autoIssueTemplate = await getAutoIssueTemplateForRequest(req, issuerId);
+    const schemaCandidates = getFaydaSchemaCandidates(
+      requestedSchema,
+      autoIssueTemplate
+    );
+    const responseSchemaSaid = requestedSchema
+      ? getSchemaSaid(
+          requestedSchema,
+          autoIssueTemplate?.schemaId || DEFAULT_FAYDA_SCHEMA_SAID
+        )
+      : autoIssueTemplate
+        ? canonicalSchemaId(autoIssueTemplate.schemaId)
+        : DEFAULT_FAYDA_SCHEMA_SAID;
     const issuer = await client.identifiers().get(issuerAlias);
     const credentialsResponse = await client.credentials().list({
       filter: {
@@ -751,15 +1152,22 @@ export async function deleteFaydaData(
       const issuerAid = toTrimmedString(sad?.i);
       return (
         holderAid === aid &&
-        credentialSchemaSaid === schemaSaid &&
+        schemaCandidates.includes(credentialSchemaSaid) &&
         issuerAid === issuer.prefix
       );
     });
 
     if (targetCredentials.length === 0) {
-      res.status(404).send({
-        success: false,
-        data: `No credential found for aid=${aid} and schemaSaid=${schemaSaid}`,
+      await deleteFaydaVerificationByHolderAidForIssuer(issuerId, aid);
+      res.status(200).send({
+        success: true,
+        data: {
+          aid,
+          schemaSaid: responseSchemaSaid,
+          schemaCandidates,
+          revokedCredentialIds: [],
+          alreadyRevokedCredentialIds: [],
+        },
       });
       return;
     }
@@ -811,11 +1219,14 @@ export async function deleteFaydaData(
       revokedCredentialIds.push(credentialId);
     }
 
+    await deleteFaydaVerificationByHolderAidForIssuer(issuerId, aid);
+
     res.status(200).send({
       success: true,
       data: {
         aid,
-        schemaSaid,
+        schemaSaid: responseSchemaSaid,
+        schemaCandidates,
         revokedCredentialIds,
         alreadyRevokedCredentialIds,
       },

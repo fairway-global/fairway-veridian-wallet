@@ -32,7 +32,6 @@ import {
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import LogoLong from "../../assets/fairway-logo-long.png";
-import LogoSmall from "../../assets/fairway-logo-small.png";
 import { RoutePath } from "../../const/route";
 import { i18n } from "../../i18n";
 import { DrawerContent } from "./components/DrawerContent";
@@ -156,7 +155,10 @@ const NavBar = ({ mode, window }: Props) => {
       sx={{ boxShadow: 0, backgroundColor: "background.default" }}
     >
       <Container maxWidth="xl">
-        <Toolbar disableGutters>
+        <Toolbar
+          disableGutters
+          className="dashboard-toolbar"
+        >
           <Box
             className="nav-tablet"
             sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}
@@ -176,13 +178,13 @@ const NavBar = ({ mode, window }: Props) => {
             <Button
               component={Link}
               to={RoutePath.Connections}
-              className="logo-button"
+              className="logo-button mobile-logo-button"
               disableRipple
             >
               <img
                 className="header-logo"
-                alt="fairway-logo-small"
-                src={LogoSmall}
+                alt="fairway-logo"
+                src={LogoLong}
               />
             </Button>
           </Box>
@@ -255,6 +257,7 @@ const NavBar = ({ mode, window }: Props) => {
           >
             <Typography
               variant="body2"
+              className="nav-user-copy"
               sx={{ alignSelf: "center", marginRight: 1 }}
             >
               {user

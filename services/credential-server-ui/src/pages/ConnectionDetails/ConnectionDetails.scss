@@ -4,6 +4,7 @@
   .connection-details-page-container {
     display: flex;
     gap: 2.5rem;
+    min-width: 0;
   }
 
   .page-header {
@@ -15,8 +16,10 @@
     border-radius: 1rem;
     box-shadow: 0.25rem 0.25rem 1.25rem 0 rgba(var(--text-color-rgb), 0.16);
     width: 18.75rem;
+    max-width: 100%;
     height: fit-content;
     background-color: var(--color-neutral-100);
+    box-sizing: border-box;
 
     .info-card-header {
       display: flex;
@@ -46,11 +49,13 @@
 
   .credential-table-container {
     flex: 1;
+    min-width: 0;
   }
 
   .credentials-table {
     border-radius: 1rem;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     box-shadow: 0.25rem 0.25rem 1.25rem 0 rgba(var(--text-color-rgb), 0.16);
     flex: 1;
 
@@ -76,15 +81,22 @@
   @media screen and (max-width: 1060px) {
     .connection-details-page-container {
       flex-direction: column;
+      gap: 1rem;
     }
 
     .info-card {
       width: auto;
-      min-width: 300;
+      min-width: 0;
 
       .info-card-header .header-name {
         max-width: 48rem;
       }
+    }
+  }
+
+  @media screen and (max-width: 600px) {
+    .info-card {
+      padding: 1rem;
     }
   }
 }

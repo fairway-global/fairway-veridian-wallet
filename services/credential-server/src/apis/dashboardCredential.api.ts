@@ -10,6 +10,7 @@ import {
   revokeCredentialWithNotification,
 } from "./credential.api";
 import {
+  ensureGeneratedSchemaForTemplate,
   findTemplateBySchemaId,
   getIssuedCredentialRecordById,
   isSchemaIdKnown,
@@ -242,6 +243,14 @@ export async function issueCredentialApi(
   if (!template) {
     sendError(res, 404, "Template not found");
     return;
+  }
+
+  if (!isSchemaIdKnown(template.schemaId)) {
+    await ensureGeneratedSchemaForTemplate({
+      schemaId: template.schemaId,
+      name: template.name,
+      attributes: template.attributes,
+    });
   }
 
   if (!isSchemaIdKnown(template.schemaId)) {

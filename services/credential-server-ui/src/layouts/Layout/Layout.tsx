@@ -10,7 +10,7 @@ const Layout = ({ mode }: LayoutProps) => {
   return (
     <>
       <NavBar mode={mode} />
-      <main>
+      <main className="dashboard-main">
         <Outlet />
       </main>
     </>

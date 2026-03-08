@@ -9,7 +9,10 @@ import {
   revokeCredentialWithNotification,
   UNKNOW_SCHEMA_ID,
 } from "./credential.api";
-import { isSchemaIdKnown } from "../services/dashboardStore";
+import {
+  ensureGeneratedSchemaForTemplate,
+  isSchemaIdKnown,
+} from "../services/dashboardStore";
 import {
   findTemplateBySchemaIdForIssuer,
   getIssuedCredentialByIdForIssuer,
@@ -241,6 +244,13 @@ export async function issueCredentialApiV2(
   if (!template) {
     sendError(res, 404, "Template not found");
     return;
+  }
+  if (!isSchemaIdKnown(template.schemaId)) {
+    await ensureGeneratedSchemaForTemplate({
+      schemaId: template.schemaId,
+      name: template.name,
+      attributes: template.attributes,
+    });
   }
   if (!isSchemaIdKnown(template.schemaId)) {
     sendError(res, 400, `Template schemaId is unsupported: ${template.schemaId}`);

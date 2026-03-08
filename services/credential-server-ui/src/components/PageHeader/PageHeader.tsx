@@ -24,6 +24,7 @@ export const PageHeader = ({ title, onBack, action, sx }: PageHeaderProps) => {
         sx={(theme) => ({
           display: "flex",
           alignItems: "center",
+          minWidth: 0,
           [theme.breakpoints.down("sm")]: {
             marginBottom: "1rem",
           },
@@ -38,11 +39,33 @@ export const PageHeader = ({ title, onBack, action, sx }: PageHeaderProps) => {
         <Typography
           variant="h1"
           component="h1"
+          sx={{
+            wordBreak: "break-word",
+          }}
         >
           {title}
         </Typography>
       </Box>
-      <Box>{action}</Box>
+      <Box
+        sx={(theme) => ({
+          display: "flex",
+          alignItems: "center",
+          minWidth: 0,
+          [theme.breakpoints.down("sm")]: {
+            width: "100%",
+            "& > *": {
+              maxWidth: "100%",
+            },
+            "& > .MuiBox-root": {
+              width: "100%",
+              display: "flex",
+              flexWrap: "wrap",
+            },
+          },
+        })}
+      >
+        {action}
+      </Box>
     </Box>
   );
 };

@@ -9,6 +9,7 @@ import {
   AuthRefreshTokenRecord,
   CreateIssuerTemplateInput,
   IssuerCredentialRecord,
+  IssuerFaydaVerificationRecord,
   IssuerRecord,
   IssuerSignifyAccountRecord,
   IssuerTemplateRecord,
@@ -192,6 +193,49 @@ function mapCredentialRow(row: Record<string, unknown>): IssuerCredentialRecord 
     updatedAt: toIso(row.updated_at),
     revokedAt: row.revoked_at ? toIso(row.revoked_at) : undefined,
     deletedAt: row.deleted_at ? toIso(row.deleted_at) : undefined,
+  };
+}
+
+function parseStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item || "").trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) => String(item || "").trim())
+          .filter(Boolean);
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+function mapFaydaVerificationRow(
+  row: Record<string, unknown>
+): IssuerFaydaVerificationRecord {
+  return {
+    id: String(row.id),
+    issuerId: String(row.issuer_id),
+    holderAid: String(row.holder_aid),
+    faydaId: String(row.fayda_id || ""),
+    templateId: row.template_id ? String(row.template_id) : null,
+    credentialId: row.credential_id ? String(row.credential_id) : null,
+    status: String(row.status) as IssuerFaydaVerificationRecord["status"],
+    missingFields: parseStringArray(row.missing_fields),
+    mappedData: parseCredentialData(row.mapped_data),
+    faydaData: parseCredentialData(row.fayda_data),
+    verifiedAt: toIso(row.verified_at),
+    createdAt: toIso(row.created_at),
+    updatedAt: toIso(row.updated_at),
   };
 }
 
@@ -985,4 +1029,99 @@ export async function markIssuedCredentialStatusForIssuer(
     [issuerId, credentialId, status]
   );
   return rows[0] ? mapCredentialRow(rows[0]) : null;
+}
+
+export async function getFaydaVerificationByHolderAidForIssuer(
+  issuerId: string,
+  holderAid: string
+): Promise<IssuerFaydaVerificationRecord | null> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT *
+      FROM issuer_fayda_verifications
+      WHERE issuer_id = $1 AND holder_aid = $2
+      LIMIT 1
+    `,
+    [issuerId, String(holderAid || "").trim()]
+  );
+
+  return rows[0] ? mapFaydaVerificationRow(rows[0]) : null;
+}
+
+export async function upsertFaydaVerificationForIssuer(input: {
+  id?: string;
+  issuerId: string;
+  holderAid: string;
+  faydaId: string;
+  templateId?: string | null;
+  credentialId?: string | null;
+  status: IssuerFaydaVerificationRecord["status"];
+  missingFields?: string[];
+  mappedData?: Record<string, unknown>;
+  faydaData?: Record<string, unknown>;
+  verifiedAt?: string;
+}): Promise<IssuerFaydaVerificationRecord> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      INSERT INTO issuer_fayda_verifications(
+        id,
+        issuer_id,
+        holder_aid,
+        fayda_id,
+        template_id,
+        credential_id,
+        status,
+        missing_fields,
+        mapped_data,
+        fayda_data,
+        verified_at,
+        created_at,
+        updated_at
+      )
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+      ON CONFLICT(issuer_id, holder_aid)
+      DO UPDATE SET
+        fayda_id = EXCLUDED.fayda_id,
+        template_id = EXCLUDED.template_id,
+        credential_id = EXCLUDED.credential_id,
+        status = EXCLUDED.status,
+        missing_fields = EXCLUDED.missing_fields,
+        mapped_data = EXCLUDED.mapped_data,
+        fayda_data = EXCLUDED.fayda_data,
+        verified_at = EXCLUDED.verified_at,
+        updated_at = NOW()
+      RETURNING *
+    `,
+    [
+      input.id || randomUUID(),
+      input.issuerId,
+      String(input.holderAid || "").trim(),
+      String(input.faydaId || "").trim(),
+      input.templateId || null,
+      input.credentialId || null,
+      input.status,
+      JSON.stringify(input.missingFields || []),
+      JSON.stringify(input.mappedData || {}),
+      JSON.stringify(input.faydaData || {}),
+      input.verifiedAt || new Date().toISOString(),
+    ]
+  );
+
+  return mapFaydaVerificationRow(rows[0]);
+}
+
+export async function deleteFaydaVerificationByHolderAidForIssuer(
+  issuerId: string,
+  holderAid: string
+): Promise<boolean> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      DELETE FROM issuer_fayda_verifications
+      WHERE issuer_id = $1 AND holder_aid = $2
+      RETURNING id
+    `,
+    [issuerId, String(holderAid || "").trim()]
+  );
+
+  return Boolean(rows.length);
 }

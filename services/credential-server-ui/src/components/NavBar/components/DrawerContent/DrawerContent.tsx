@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
+import LogoSmall from "../../../../assets/fairway-logo-small.png";
 import { i18n } from "../../../../i18n";
 import { isActivePath } from "../../helper";
 import { DrawerContentProps } from "./DrawerContent.types";
@@ -27,12 +28,27 @@ const DrawerContent = ({
       color="text.primary"
       bgcolor="background.default"
     >
-      <Typography
-        variant="h6"
-        sx={{ my: 2 }}
-      >
-        {i18n.t("navbar.menu")}
-      </Typography>
+      <Box className="drawer-header">
+        <img
+          className="drawer-logo"
+          src={LogoSmall}
+          alt="fairway logo"
+        />
+        <Box className="drawer-copy">
+          <Typography
+            variant="overline"
+            className="drawer-eyebrow"
+          >
+            Fairway
+          </Typography>
+          <Typography
+            variant="h6"
+            className="drawer-title"
+          >
+            {i18n.t("navbar.menu")}
+          </Typography>
+        </Box>
+      </Box>
       <List>
         {menuItems.map((item) => {
           const isActive = isActivePath(item.path, location.pathname);

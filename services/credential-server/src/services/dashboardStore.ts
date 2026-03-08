@@ -16,6 +16,10 @@ const DEFAULT_DASHBOARD_DB_PATH = path.resolve(
   __dirname,
   "../../data/dashboard-db.json"
 );
+const GENERATED_SCHEMA_DIR_PATH = path.resolve(
+  process.cwd(),
+  "data/schemas"
+);
 const DASHBOARD_DB_PATH = path.resolve(
   process.env.DASHBOARD_DB_PATH || DEFAULT_DASHBOARD_DB_PATH
 );
@@ -47,6 +51,7 @@ function getSchemaDirCandidates(): string[] {
 
   return uniquePaths(
     [
+      GENERATED_SCHEMA_DIR_PATH,
       ACTIVE_SCHEMA_DIR_PATH,
       path.resolve(__dirname, "../../src/schemas"),
       path.resolve(process.cwd(), "src/schemas"),
@@ -121,12 +126,12 @@ function normalizeTemplateRecord(template: TemplateRecord): TemplateRecord {
 }
 
 function schemaFilePath(schemaId: string): string {
-  return path.join(ACTIVE_SCHEMA_DIR_PATH, canonicalSchemaId(schemaId));
+  return path.join(GENERATED_SCHEMA_DIR_PATH, canonicalSchemaId(schemaId));
 }
 
-function ensureSchemaDirectoryExists(): void {
-  if (!existsSync(ACTIVE_SCHEMA_DIR_PATH)) {
-    mkdirSync(ACTIVE_SCHEMA_DIR_PATH, { recursive: true });
+function ensureSchemaDirectoryExists(dirPath = GENERATED_SCHEMA_DIR_PATH): void {
+  if (!existsSync(dirPath)) {
+    mkdirSync(dirPath, { recursive: true });
   }
 }
 
@@ -279,24 +284,69 @@ function buildGeneratedSchemaDocument(
   return saidifiedSchemaDocument;
 }
 
+async function persistGeneratedSchemaDocument(
+  schemaId: string,
+  schemaDocument: Record<string, unknown>
+): Promise<void> {
+  const targetDirs = uniquePaths([
+    GENERATED_SCHEMA_DIR_PATH,
+    ACTIVE_SCHEMA_DIR_PATH,
+  ]);
+
+  await Promise.all(
+    targetDirs.map(async (dirPath) => {
+      ensureSchemaDirectoryExists(dirPath);
+      const filePath = path.join(dirPath, canonicalSchemaId(schemaId));
+      if (!existsSync(filePath)) {
+        await writeFile(filePath, JSON.stringify(schemaDocument, null, 2));
+      }
+    })
+  );
+}
+
 export async function createSchemaForTemplate(
   templateName: string,
   attributes: TemplateAttribute[]
 ): Promise<string> {
-  ensureSchemaDirectoryExists();
-
   const schemaDocument = buildGeneratedSchemaDocument(templateName, attributes);
   const schemaId = String(schemaDocument["$id"] || "").trim();
   if (!schemaId) {
     throw new Error("Unable to generate schema SAID");
   }
 
-  const filePath = schemaFilePath(schemaId);
-  if (!existsSync(filePath)) {
-    await writeFile(filePath, JSON.stringify(schemaDocument, null, 2));
-  }
+  await persistGeneratedSchemaDocument(schemaId, schemaDocument);
 
   return schemaId;
+}
+
+export async function ensureGeneratedSchemaForTemplate(input: {
+  schemaId: string;
+  name: string;
+  attributes: TemplateAttribute[];
+}): Promise<boolean> {
+  const normalizedSchemaId = canonicalSchemaId(String(input.schemaId || "").trim());
+  if (!normalizedSchemaId) {
+    return false;
+  }
+
+  if (isSchemaIdKnown(normalizedSchemaId)) {
+    return true;
+  }
+
+  const schemaDocument = buildGeneratedSchemaDocument(
+    String(input.name || "").trim(),
+    Array.isArray(input.attributes) ? input.attributes : []
+  );
+  const regeneratedSchemaId = canonicalSchemaId(
+    String(schemaDocument["$id"] || "").trim()
+  );
+
+  if (!regeneratedSchemaId || regeneratedSchemaId !== normalizedSchemaId) {
+    return false;
+  }
+
+  await persistGeneratedSchemaDocument(regeneratedSchemaId, schemaDocument);
+  return isSchemaIdKnown(regeneratedSchemaId);
 }
 
 function getSchemaTitle(schemaId: string): string {
@@ -459,6 +509,12 @@ async function ensureDashboardStoreFile(): Promise<void> {
   } finally {
     dashboardStoreReadyPromise = null;
   }
+}
+
+export function getSchemaAttributesForSchemaId(
+  schemaId: string
+): TemplateAttribute[] {
+  return parseSchemaAttributes(schemaId);
 }
 
 async function withDashboardStoreUpdate<T>(

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { Agent } from "../../../core/agent/agent";
 import { useAppDispatch } from "../../../store/hooks";
 import { setFaydaVerified } from "../../../store/reducers/faydaVerifiedCache";
+import { setNotificationsCache } from "../../../store/reducers/notificationsCache";
 import { useLocation, useHistory } from "react-router-dom";
 import {
   IonAlert,
@@ -58,6 +60,44 @@ export const FaydaCallback = () => {
   const [userInfo, setUserInfo] = useState<FaydaProfile | null>(null);
   const [issuingCredential, setIssuingCredential] = useState(false);
   const [showIssuedModal, setShowIssuedModal] = useState(false);
+
+  const waitForGrantNotification = async (
+    issuerAid: string,
+    knownNotificationIds: Set<string>
+  ): Promise<boolean> => {
+    const timeoutAt = Date.now() + 8000;
+
+    while (Date.now() < timeoutAt) {
+      const notifications = await Agent.agent.keriaNotifications
+        .getNotifications()
+        .catch(() => []);
+
+      dispatch(setNotificationsCache(notifications));
+
+      const hasMatchingGrant = notifications.some((notification) => {
+        const route = String(notification.a?.r || "").trim();
+        if (route !== "/exn/ipex/grant") {
+          return false;
+        }
+        if (knownNotificationIds.has(notification.id)) {
+          return false;
+        }
+        if (issuerAid && notification.connectionId !== issuerAid) {
+          return false;
+        }
+
+        return true;
+      });
+
+      if (hasMatchingGrant) {
+        return true;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    return false;
+  };
 
   // ===== GET QUERY PARAMS =====
   const params = new URLSearchParams(location.search);
@@ -184,6 +224,13 @@ export const FaydaCallback = () => {
       setIssuingCredential(true);
       setError(null);
       setStatus("Issuing FaydaVerifiedAutoIssue...");
+      const existingNotificationIds = new Set(
+        (
+          await Agent.agent.keriaNotifications
+            .getNotifications()
+            .catch(() => [])
+        ).map((notification) => notification.id)
+      );
 
       // Avoid sending large base64 blobs (for example `picture`) to issuer API.
       const { picture: _ignoredPicture, ...faydaDataForCredential } =
@@ -234,13 +281,28 @@ export const FaydaCallback = () => {
         issueData?.autoIssued || issueData?.alreadyIssued || issueData?.credentialId
       );
       const canFinalizeConnection = Boolean(issueData?.verified);
+      const backendMessage = String(issueData?.message || "").trim();
+      let grantNotificationVisible = !hasIssuedCredential;
+
+      if (hasIssuedCredential) {
+        setStatus("Credential issued. Waiting for wallet notification sync...");
+        grantNotificationVisible = await waitForGrantNotification(
+          pendingIssuerAid,
+          existingNotificationIds
+        );
+      }
 
       dispatch(setFaydaVerified(canFinalizeConnection));
-      setShowIssuedModal(hasIssuedCredential);
+      setShowIssuedModal(hasIssuedCredential && grantNotificationVisible);
       setStatus(
-        hasIssuedCredential
-          ? "Credential offer was sent to your wallet."
-          : "Fayda verification completed. No auto-issued credential is configured for this issuer."
+        grantNotificationVisible
+          ? backendMessage ||
+              (hasIssuedCredential
+                ? "Credential offer was sent to your wallet."
+                : issueData?.pendingManualReview
+                  ? "Fayda verification completed. The issuer must finish this credential manually."
+                  : "Fayda verification completed. No auto-issued credential is configured for this issuer.")
+          : "Credential was issued on the server, but the wallet has not synced the grant notification yet. Stay online and open Notifications again in a moment."
       );
 
       try {

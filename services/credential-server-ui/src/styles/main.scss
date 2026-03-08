@@ -1,7 +1,8 @@
 @use "./colors.scss";
 
 body {
-  margin: 0 auto;
+  margin: 0;
+  min-width: 320px;
   font-size: 16px;
   text-align: center;
   font-family: "Manrope", sans-serif;
@@ -10,9 +11,19 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 
-  main {
+  .dashboard-main {
     margin: 0 auto;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .dashboard-main > .MuiBox-root,
+  .dashboard-main > .connection-details-page,
+  .dashboard-main > .credential-detail-page {
+    box-sizing: border-box;
+    min-width: 0;
   }
 
   .hidden {
@@ -146,6 +157,28 @@ body {
     > * {
       color: var(--color-neutral-100);
       background-color: var(--color-neutral-700);
+    }
+  }
+}
+
+@media screen and (max-width: 900px) {
+  body {
+    .dashboard-main > .MuiBox-root,
+    .dashboard-main > .connection-details-page,
+    .dashboard-main > .credential-detail-page {
+      padding-inline: 1.5rem !important;
+      padding-bottom: 2rem !important;
+    }
+  }
+}
+
+@media screen and (max-width: 600px) {
+  body {
+    .dashboard-main > .MuiBox-root,
+    .dashboard-main > .connection-details-page,
+    .dashboard-main > .credential-detail-page {
+      padding-inline: 0.875rem !important;
+      padding-bottom: 1.25rem !important;
     }
   }
 }

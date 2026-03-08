@@ -100,6 +100,27 @@ export interface IssuerCredentialRecord {
   deletedAt?: string;
 }
 
+export type IssuerFaydaVerificationStatus =
+  | "verified"
+  | "pending_manual_review"
+  | "credential_issued";
+
+export interface IssuerFaydaVerificationRecord {
+  id: string;
+  issuerId: string;
+  holderAid: string;
+  faydaId: string;
+  templateId: string | null;
+  credentialId: string | null;
+  status: IssuerFaydaVerificationStatus;
+  missingFields: string[];
+  mappedData: Record<string, unknown>;
+  faydaData: Record<string, unknown>;
+  verifiedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreateIssuerTemplateInput {
   issuerId: string;
   name: string;
