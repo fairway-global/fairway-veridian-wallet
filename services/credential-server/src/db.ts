@@ -46,6 +46,7 @@ export async function runMigrations(): Promise<void> {
     "007_account_change_requests.sql",
     "008_template_auto_issue.sql",
     "009_fayda_verification_state.sql",
+    "010_presentation_requests.sql",
   ];
 
   for (const migrationFile of migrationFiles) {

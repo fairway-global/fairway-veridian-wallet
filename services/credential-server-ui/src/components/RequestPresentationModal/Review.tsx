@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Chip, Typography } from "@mui/material";
 import CredentialBG from "../../assets/credential-bg.svg";
 import { i18n } from "../../i18n";
 import { ReviewProps } from "./RequestPresentationModal.types";
@@ -8,21 +8,16 @@ const Review = ({
   connectionId,
   connections,
   attribute,
+  schemaAttributes,
 }: ReviewProps) => {
   if (!credentialType || !connectionId) return null;
-
-  const credAttributes = Object.keys(attribute).map((key) => {
-    const inputLabelText = key.replace(/([a-z])([A-Z])/g, "$1 $2");
-
-    return {
-      key: key,
-      label: `${inputLabelText.at(0)?.toUpperCase()}${inputLabelText.slice(1)}`,
-    };
-  });
 
   const connectionName = connections.find(
     (item) => item.id === connectionId
   )?.alias;
+  const filledAttributes = schemaAttributes.filter(
+    (schemaAttribute) => String(attribute[schemaAttribute.name] || "").trim()
+  );
 
   return (
     <Box className="review-stage">
@@ -62,24 +57,55 @@ const Review = ({
           {connectionName}
         </Typography>
       </Box>
-      {credAttributes.map((credAttribute) => (
+      {filledAttributes.map((schemaAttribute) => (
         <Box
-          key={credAttribute.key}
-          sx={{ textAlign: "left" }}
+          key={schemaAttribute.name}
+          sx={{
+            textAlign: "left",
+            display: "flex",
+            flexDirection: "column",
+            gap: 0.5,
+            marginBottom: "1rem",
+          }}
         >
-          <Typography variant="subtitle1">
-            {i18n.t(
-              `pages.credentialDetails.issueCredential.inputAttribute.label.${credAttribute.label.toLowerCase()}`
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="subtitle1">{schemaAttribute.label}</Typography>
+            {schemaAttribute.required && (
+              <Chip
+                label={i18n.t("pages.requestPresentation.modal.inputAttribute.required")}
+                size="small"
+                sx={{
+                  backgroundColor: "var(--color-success-100)",
+                  color: "var(--color-success-900)",
+                  fontWeight: 600,
+                }}
+              />
             )}
-          </Typography>
+          </Box>
+          {schemaAttribute.description && (
+            <Typography
+              variant="body2"
+              sx={{ color: "var(--color-neutral-600)" }}
+            >
+              {schemaAttribute.description}
+            </Typography>
+          )}
           <Typography
             className="content"
             variant="body2"
           >
-            {attribute[credAttribute.key]}
+            {attribute[schemaAttribute.name]}
           </Typography>
         </Box>
       ))}
+      {!filledAttributes.length && (
+        <Typography
+          variant="body2"
+          sx={{ textAlign: "left", color: "var(--color-neutral-600)" }}
+        >
+          {i18n.t("pages.requestPresentation.modal.review.anyMatchingCredential")}
+        </Typography>
+      )}
     </Box>
   );
 };

@@ -1,4 +1,8 @@
 .request-presentation-modal {
+  .popup-modal-container {
+    width: min(42rem, calc(100vw - 2rem));
+  }
+
   .popup-modal-container .popup-modal-footer .footer {
     width: 100%;
     display: flex;
@@ -8,10 +12,22 @@
 
   &.stage-0,
   &.stage-1 {
+    .popup-modal-container .popup-modal-body {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
     .popup-modal-container .popup-modal-footer .footer {
       button {
         width: 100%;
       }
+    }
+
+    .connection-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: none;
     }
   }
 
@@ -71,6 +87,8 @@
 
   .input-attribute {
     width: 100%;
+    display: grid;
+    gap: 1.5rem;
 
     & > div {
       width: 100%;

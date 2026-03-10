@@ -8,7 +8,9 @@ import {
   updateTemplate,
 } from "../services/dashboardStore";
 import { TemplateAttribute } from "../services/dashboardStore.types";
+import { resolveTemplateSchemaForPublication } from "../services/templateSchemaService";
 import { sendError, sendSuccess } from "../utils/apiResponse";
+import { getSignifyClientFromRequest } from "../utils/requestContext";
 
 interface UpsertTemplateRequestBody {
   name?: string;
@@ -55,10 +57,17 @@ export async function createTemplateApi(
 ): Promise<void> {
   // OpenAPI: POST /api/templates
   try {
-    const template = await createTemplate({
+    const client = getSignifyClientFromRequest(req);
+    const resolvedSchema = await resolveTemplateSchemaForPublication({
+      client,
       name: String(req.body.name || "").trim(),
       schemaId: String(req.body.schemaId || "").trim(),
       attributes: Array.isArray(req.body.attributes) ? req.body.attributes : [],
+    });
+    const template = await createTemplate({
+      name: String(req.body.name || "").trim(),
+      schemaId: resolvedSchema.schemaId,
+      attributes: resolvedSchema.attributes,
     });
     sendSuccess(res, template, 201);
   } catch (error) {
@@ -78,10 +87,17 @@ export async function updateTemplateApi(
   }
 
   try {
-    const updatedTemplate = await updateTemplate(templateId, {
+    const client = getSignifyClientFromRequest(req);
+    const resolvedSchema = await resolveTemplateSchemaForPublication({
+      client,
       name: String(req.body.name || "").trim(),
       schemaId: String(req.body.schemaId || "").trim(),
       attributes: Array.isArray(req.body.attributes) ? req.body.attributes : [],
+    });
+    const updatedTemplate = await updateTemplate(templateId, {
+      name: String(req.body.name || "").trim(),
+      schemaId: resolvedSchema.schemaId,
+      attributes: resolvedSchema.attributes,
     });
 
     if (!updatedTemplate) {

@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
 import { Response } from "express";
 import { SignifyClient } from "signify-ts";
-import { IssuerSignifyService } from "./issuerSignifyService";
+import { IssuerRuntime, IssuerSignifyService } from "./issuerSignifyService";
+import { processPresentationRequestNotification } from "./presentationRequestService";
 
 export type RealtimeEventLevel = "info" | "success" | "warning" | "error";
 
@@ -209,7 +210,7 @@ export class RealtimeEventService {
     try {
       const runtime = await this.issuerSignifyService.getRuntimeByIssuerId(issuerId);
       await this.processContacts(runtime.client, runtime.aidPrefix, issuerId, state);
-      await this.processNotifications(runtime.client, issuerId, state);
+      await this.processNotifications(runtime, issuerId, state);
     } catch {
       // keep stream alive even if the underlying runtime is temporarily unavailable
     }
@@ -257,11 +258,11 @@ export class RealtimeEventService {
   }
 
   private async processNotifications(
-    client: SignifyClient,
+    runtime: IssuerRuntime,
     issuerId: string,
     state: IssuerWatcherState
   ): Promise<void> {
-    const rawNotifications = await client.notifications().list();
+    const rawNotifications = await runtime.client.notifications().list();
     const notes = getNotes(rawNotifications);
 
     for (const note of notes) {
@@ -271,38 +272,58 @@ export class RealtimeEventService {
       }
 
       state.seenNotificationIds.add(id);
-      const route = normalizeString((note.a as { r?: unknown })?.r);
-      const routeLower = route.toLowerCase();
-      const isCredentialAccepted =
-        routeLower.includes("admit") ||
-        routeLower.includes("agree") ||
-        routeLower.includes("accept");
+      try {
+        const processed = await processPresentationRequestNotification(
+          runtime,
+          note
+        );
+        if (processed?.handled) {
+          processed.events.forEach((event) => {
+            this.publishToIssuer(issuerId, event);
+          });
+          if (processed.deleteNotification) {
+            await runtime.client.notifications().delete(id).catch(() => {
+              // Keep stream alive even if notification deletion fails.
+            });
+          }
+          continue;
+        }
 
-      this.publishToIssuer(issuerId, {
-        type: "notifications.new",
-        payload: {
-          route,
-          notificationId: id,
-        },
-        notification: isCredentialAccepted
-          ? {
-              title: "Credential accepted by wallet user",
-              message:
-                "A wallet user accepted a credential exchange notification.",
-              level: "success",
-            }
-          : {
-              title: "New agent notification",
-              message: route
-                ? `Received notification route: ${route}`
-                : "Received a new agent notification.",
-              level: "info",
+        const route = normalizeString((note.a as { r?: unknown })?.r);
+        const routeLower = route.toLowerCase();
+        const isCredentialAccepted =
+          routeLower.includes("admit") ||
+          routeLower.includes("agree") ||
+          routeLower.includes("accept");
+
+        this.publishToIssuer(issuerId, {
+          type: "notifications.new",
+          payload: {
+            route,
+            notificationId: id,
           },
-      });
+          notification: isCredentialAccepted
+            ? {
+                title: "Credential accepted by wallet user",
+                message:
+                  "A wallet user accepted a credential exchange notification.",
+                level: "success",
+              }
+            : {
+                title: "New agent notification",
+                message: route
+                  ? `Received notification route: ${route}`
+                  : "Received a new agent notification.",
+                level: "info",
+            },
+        });
 
-      await client.notifications().delete(id).catch(() => {
-        // Keep stream alive even if notification deletion fails.
-      });
+        await runtime.client.notifications().delete(id).catch(() => {
+          // Keep stream alive even if notification deletion fails.
+        });
+      } catch {
+        state.seenNotificationIds.delete(id);
+      }
     }
 
     if (state.seenNotificationIds.size > 1500) {

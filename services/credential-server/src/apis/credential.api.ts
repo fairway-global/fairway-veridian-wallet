@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import { Operation, Saider, Serder, SignifyClient } from "signify-ts";
 import { config } from "../config";
 import { canonicalSchemaId, ISSUER_NAME, LE_SCHEMA_SAID } from "../consts";
-import { isSchemaIdKnown } from "../services/dashboardStore";
 import { RealtimeEventService } from "../services/realtimeEventService";
 import {
   getRegistry,
@@ -13,9 +12,11 @@ import {
 import { QviCredential } from "../utils/utils.types";
 import {
   getIssuerAliasFromRequest,
+  getIssuerRuntime,
   getQviCredentialIdFromRequest,
   getSignifyClientFromRequest,
 } from "../utils/requestContext";
+import { createPresentationRequest } from "../services/presentationRequestService";
 
 export const UNKNOW_SCHEMA_ID = "Unknow Schema ID: ";
 export const CREDENTIAL_NOT_FOUND = "Not found credential with ID: ";
@@ -234,14 +235,9 @@ export async function issueCredentialAndGrant(
     registryRegk?: string;
   }
 ): Promise<string> {
-  const requestedSchemaSaid = String(input.schemaSaid || "").trim();
-  const schemaSaid = canonicalSchemaId(requestedSchemaSaid);
+  const schemaSaid = canonicalSchemaId(String(input.schemaSaid || "").trim());
   const { aid, attribute } = input;
   const issuerName = String(options?.issuerName || ISSUER_NAME).trim();
-
-  if (!isSchemaIdKnown(schemaSaid)) {
-    throw new Error(`${UNKNOW_SCHEMA_ID}${requestedSchemaSaid}`);
-  }
 
   await ensureSchemaLoaded(client, schemaSaid);
 
@@ -349,14 +345,6 @@ export async function issueAcdcCredential(
   const { schemaSaid, aid, attribute } = req.body;
   const normalizedSchemaSaid = canonicalSchemaId(String(schemaSaid || "").trim());
 
-  if (!isSchemaIdKnown(normalizedSchemaSaid)) {
-    res.status(409).send({
-      success: false,
-      data: "",
-    });
-    return;
-  }
-
   await issueCredentialAndGrant(client, qviCredentialId, {
     schemaSaid: normalizedSchemaSaid,
     aid,
@@ -377,8 +365,21 @@ export async function requestDisclosure(
   next: NextFunction
 ): Promise<void> {
   const client = getSignifyClientFromRequest(req);
+  const runtime = getIssuerRuntime(req);
   const issuerAlias = getIssuerAliasFromRequest(req);
-  const { schemaSaid, aid, attributes } = req.body;
+  const { schemaSaid, aid } = req.body;
+  const requestAttributes =
+    req.body?.attributes && typeof req.body.attributes === "object"
+      ? (req.body.attributes as Record<string, unknown>)
+      : {};
+  const legacyAttributes =
+    req.body?.attribute && typeof req.body.attribute === "object"
+      ? (req.body.attribute as Record<string, unknown>)
+      : {};
+  const attributes = {
+    ...requestAttributes,
+    ...legacyAttributes,
+  };
 
   const [apply, sigs] = await client.ipex().apply({
     senderName: issuerAlias,
@@ -387,6 +388,22 @@ export async function requestDisclosure(
     attributes,
   });
   await client.ipex().submitApply(issuerAlias, apply, sigs, [aid]);
+
+  if (runtime) {
+    await createPresentationRequest({
+      runtime,
+      requestExnSaid: String(apply?.ked?.d || ""),
+      holderDid: String(aid || "").trim(),
+      schemaId: String(schemaSaid || "").trim(),
+      requestedAttributes: Object.fromEntries(
+        Object.entries(attributes || {}).map(([key, value]) => [
+          key,
+          String(value ?? "").trim(),
+        ])
+      ),
+    });
+  }
+
   const issuerId = String(req.authUser?.issuerId || req.issuerRuntime?.issuerId || "").trim();
   const realtimeService = getRealtimeEventService(req);
   if (issuerId && realtimeService) {
@@ -396,6 +413,7 @@ export async function requestDisclosure(
         action: "request_presentation",
         aid,
         schemaSaid,
+        requestExnSaid: String(apply?.ked?.d || ""),
       },
       notification: {
         title: "Presentation request sent",
@@ -403,11 +421,20 @@ export async function requestDisclosure(
         level: "info",
       },
     });
+    realtimeService.publishToIssuer(issuerId, {
+      type: "presentation_requests.refresh",
+      payload: {
+        holderDid: aid,
+        schemaSaid,
+      },
+    });
   }
 
   res.status(200).send({
     success: true,
-    data: "Apply schema successfully",
+    data: {
+      requestExnSaid: String(apply?.ked?.d || ""),
+    },
   });
 }
 

@@ -36,12 +36,14 @@ const PopupModal = ({
               <Close />
             </IconButton>
           </div>
-          {description && (
-            <Typography className="popup-modal-description">
-              {description}
-            </Typography>
-          )}
-          {children}
+          <div className="popup-modal-body">
+            {description && (
+              <Typography className="popup-modal-description">
+                {description}
+              </Typography>
+            )}
+            {children}
+          </div>
           <div className="popup-modal-footer">{footer}</div>
         </Box>
       </Fade>

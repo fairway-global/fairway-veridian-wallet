@@ -100,6 +100,39 @@ export interface IssuerCredentialRecord {
   deletedAt?: string;
 }
 
+export type PresentationRequestStatus =
+  | "requested"
+  | "verified"
+  | "completed"
+  | "rejected"
+  | "failed";
+
+export interface PresentationRequestRecord {
+  id: string;
+  issuerId: string;
+  requestExnSaid: string;
+  verifierDid: string;
+  holderDid: string;
+  schemaId: string;
+  requestedAttributes: Record<string, string>;
+  status: PresentationRequestStatus;
+  offerExnSaid: string | null;
+  agreeExnSaid: string | null;
+  grantExnSaid: string | null;
+  presentedCredentialId: string | null;
+  presentedIssuerDid: string | null;
+  presentedHolderDid: string | null;
+  presentedAttributes: Record<string, unknown>;
+  verificationChecks: Record<string, boolean>;
+  failureReason: string | null;
+  requestedAt: string;
+  presentedAt: string | null;
+  verifiedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type IssuerFaydaVerificationStatus =
   | "verified"
   | "pending_manual_review"

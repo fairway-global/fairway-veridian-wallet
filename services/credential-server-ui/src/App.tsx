@@ -21,10 +21,14 @@ import { useAppDispatch, useAppSelector } from "./store/hooks";
 import {
   fetchContactCredentials,
   fetchContacts,
+  fetchPresentationRequests,
 } from "./store/reducers/connectionsSlice";
 import "./styles/colors.scss";
 import { theme } from "./theme/theme"; // Import the theme
-import { RequestPresentation } from "./pages/RequestPresentation";
+import {
+  RequestPresentation,
+  RequestPresentationDetail,
+} from "./pages/RequestPresentation";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { fetchSchemas } from "./store/reducers/schemasSlice";
@@ -252,6 +256,10 @@ const App = () => {
         window.dispatchEvent(new CustomEvent("dashboard:credentials-refresh"));
       }
 
+      if (eventType === "presentation_requests.refresh" && isVerifier) {
+        void dispatch(fetchPresentationRequests());
+      }
+
       const notification = parsedEvent.notification;
       const hasNotification =
         Boolean(notification?.title) && Boolean(notification?.message);
@@ -284,6 +292,8 @@ const App = () => {
       ]);
     },
     [
+      dispatch,
+      isVerifier,
       mapAgentRouteToNotification,
       queueNotifications,
       refreshConnectionsAndCredentials,
@@ -301,8 +311,17 @@ const App = () => {
     if (isAuthenticated && !isAdmin) {
       dispatch(fetchSchemas());
       void refreshConnectionsAndCredentials();
+      if (isVerifier) {
+        void dispatch(fetchPresentationRequests());
+      }
     }
-  }, [dispatch, isAdmin, isAuthenticated, refreshConnectionsAndCredentials]);
+  }, [
+    dispatch,
+    isAdmin,
+    isAuthenticated,
+    isVerifier,
+    refreshConnectionsAndCredentials,
+  ]);
 
   useEffect(() => {
     if (isAuthenticated || isAdmin) {
@@ -607,6 +626,24 @@ const App = () => {
                       ) : isVerifier ? (
                         <RequestPresentation />
                       ) : (
+                      <Navigate
+                        to={RoutePath.Connections}
+                        replace
+                      />
+                    )
+                  }
+                />
+                <Route
+                  path={RoutePath.RequestPresentationDetail}
+                  element={
+                    isAdmin ? (
+                      <Navigate
+                        to={RoutePath.AdminUsers}
+                        replace
+                      />
+                    ) : isVerifier ? (
+                      <RequestPresentationDetail />
+                    ) : (
                       <Navigate
                         to={RoutePath.Connections}
                         replace

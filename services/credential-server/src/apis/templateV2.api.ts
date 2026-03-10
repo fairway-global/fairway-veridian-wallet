@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createSchemaForTemplate, isSchemaIdKnown } from "../services/dashboardStore";
+import { getSignifyClientFromRequest } from "../utils/requestContext";
 import {
   createTemplateForIssuer,
   deleteTemplateForIssuer,
@@ -9,6 +9,7 @@ import {
   updateTemplateForIssuer,
 } from "../services/tenantStore";
 import { TemplateAttribute } from "../services/dashboardStore.types";
+import { resolveTemplateSchemaForPublication } from "../services/templateSchemaService";
 import { sendError, sendSuccess } from "../utils/apiResponse";
 
 interface UpsertTemplateRequestBody {
@@ -49,9 +50,6 @@ function validateTemplateInput(
   }
   if (requireSchemaId && !schemaId) {
     return "Template schemaId is required";
-  }
-  if (schemaId && !isSchemaIdKnown(schemaId)) {
-    return `Template schemaId is unsupported: ${schemaId}`;
   }
   if (
     body.autoIssue !== undefined &&
@@ -132,15 +130,19 @@ export async function createTemplateApiV2(
 
   const name = String(req.body.name || "").trim();
   const normalizedAttributes = normalizeAttributes(req.body.attributes);
-  const schemaId = String(req.body.schemaId || "").trim()
-    ? String(req.body.schemaId || "").trim()
-    : await createSchemaForTemplate(name, normalizedAttributes);
+  const client = getSignifyClientFromRequest(req);
+  const resolvedSchema = await resolveTemplateSchemaForPublication({
+    client,
+    name,
+    schemaId: String(req.body.schemaId || "").trim(),
+    attributes: normalizedAttributes,
+  });
 
   const template = await createTemplateForIssuer({
     issuerId,
     name,
-    schemaId,
-    attributes: normalizedAttributes,
+    schemaId: resolvedSchema.schemaId,
+    attributes: resolvedSchema.attributes,
     autoIssue: normalizeAutoIssue(req.body.autoIssue),
   });
   sendSuccess(res, template, 201);
@@ -174,10 +176,18 @@ export async function updateTemplateApiV2(
     return;
   }
 
-  const updated = await updateTemplateForIssuer(issuerId, templateId, {
+  const client = getSignifyClientFromRequest(req);
+  const resolvedSchema = await resolveTemplateSchemaForPublication({
+    client,
     name: String(req.body.name || "").trim(),
     schemaId: String(req.body.schemaId || "").trim(),
     attributes: normalizeAttributes(req.body.attributes),
+  });
+
+  const updated = await updateTemplateForIssuer(issuerId, templateId, {
+    name: String(req.body.name || "").trim(),
+    schemaId: resolvedSchema.schemaId,
+    attributes: resolvedSchema.attributes,
     autoIssue:
       req.body.autoIssue === undefined
         ? Boolean(currentTemplate.autoIssue)

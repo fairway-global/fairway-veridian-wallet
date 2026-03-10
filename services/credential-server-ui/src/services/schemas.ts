@@ -6,7 +6,7 @@ const SchemaService = {
     return httpInstance.get(config.path.schemas);
   },
   getSchema: async (id: string) => {
-    return httpInstance.get(config.path.schemaOobi.replace(":id", id));
+    return httpInstance.get(config.path.schemaById.replace(":id", id));
   },
 };
 

@@ -41,6 +41,65 @@ export const fetchContactCredentials = createAsyncThunk(
   }
 );
 
+export const fetchPresentationRequests = createAsyncThunk(
+  "connections/fetchPresentationRequests",
+  async () => {
+    const response = await httpInstance.get(config.path.presentationRequestsV2);
+    const items = Array.isArray(response.data?.data) ? response.data.data : [];
+
+    return items.map((item: Record<string, unknown>): PresentationRequestData => ({
+      id: String(item.id || ""),
+      requestExnSaid: String(item.requestExnSaid || ""),
+      holderDid: String(item.holderDid || ""),
+      schemaId: String(item.schemaId || ""),
+      requestedAttributes:
+        item.requestedAttributes &&
+        typeof item.requestedAttributes === "object" &&
+        !Array.isArray(item.requestedAttributes)
+          ? Object.fromEntries(
+              Object.entries(item.requestedAttributes as Record<string, unknown>).map(
+                ([key, value]) => [key, String(value ?? "")]
+              )
+            )
+          : {},
+      requestDate: new Date(String(item.requestedAt || "")).getTime(),
+      status: String(item.status || "requested") as PresentationRequestData["status"],
+      presentedCredentialId: item.presentedCredentialId
+        ? String(item.presentedCredentialId)
+        : null,
+      presentedIssuerDid: item.presentedIssuerDid
+        ? String(item.presentedIssuerDid)
+        : null,
+      presentedHolderDid: item.presentedHolderDid
+        ? String(item.presentedHolderDid)
+        : null,
+      presentedAttributes:
+        item.presentedAttributes &&
+        typeof item.presentedAttributes === "object" &&
+        !Array.isArray(item.presentedAttributes)
+          ? (item.presentedAttributes as Record<string, unknown>)
+          : {},
+      verificationChecks:
+        item.verificationChecks &&
+        typeof item.verificationChecks === "object" &&
+        !Array.isArray(item.verificationChecks)
+          ? Object.fromEntries(
+              Object.entries(item.verificationChecks as Record<string, unknown>).map(
+                ([key, value]) => [key, Boolean(value)]
+              )
+            )
+          : {},
+      failureReason: item.failureReason ? String(item.failureReason) : null,
+      verifiedDate: item.verifiedAt
+        ? new Date(String(item.verifiedAt)).getTime()
+        : null,
+      completedDate: item.completedAt
+        ? new Date(String(item.completedAt)).getTime()
+        : null,
+    }));
+  }
+);
+
 const connectionsSlice = createSlice({
   name: "connections",
   initialState,
@@ -73,6 +132,9 @@ const connectionsSlice = createSlice({
         state.credentials = currentCredentials.concat(
           credentials.map((cred: Credential) => ({ ...cred, contactId }))
         );
+      })
+      .addCase(fetchPresentationRequests.fulfilled, (state, action) => {
+        state.presentationRequests = action.payload;
       });
   },
 });

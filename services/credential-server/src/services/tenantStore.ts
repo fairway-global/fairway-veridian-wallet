@@ -16,6 +16,7 @@ import {
   IssuerUserRecord,
   IssuerUserWithIssuerRecord,
   ManagedUserRecord,
+  PresentationRequestRecord,
 } from "./tenantStore.types";
 
 function toIso(value: unknown): string {
@@ -179,6 +180,20 @@ function parseCredentialData(value: unknown): Record<string, unknown> {
   return {};
 }
 
+function parseStringRecord(value: unknown): Record<string, string> {
+  const parsed = parseCredentialData(value);
+  return Object.fromEntries(
+    Object.entries(parsed).map(([key, item]) => [key, String(item ?? "")])
+  );
+}
+
+function parseBooleanRecord(value: unknown): Record<string, boolean> {
+  const parsed = parseCredentialData(value);
+  return Object.fromEntries(
+    Object.entries(parsed).map(([key, item]) => [key, Boolean(item)])
+  );
+}
+
 function mapCredentialRow(row: Record<string, unknown>): IssuerCredentialRecord {
   return {
     id: String(row.id),
@@ -193,6 +208,42 @@ function mapCredentialRow(row: Record<string, unknown>): IssuerCredentialRecord 
     updatedAt: toIso(row.updated_at),
     revokedAt: row.revoked_at ? toIso(row.revoked_at) : undefined,
     deletedAt: row.deleted_at ? toIso(row.deleted_at) : undefined,
+  };
+}
+
+function mapPresentationRequestRow(
+  row: Record<string, unknown>
+): PresentationRequestRecord {
+  return {
+    id: String(row.id),
+    issuerId: String(row.issuer_id),
+    requestExnSaid: String(row.request_exn_said || ""),
+    verifierDid: String(row.verifier_did || ""),
+    holderDid: String(row.holder_did || ""),
+    schemaId: canonicalSchemaId(String(row.schema_id || "").trim()),
+    requestedAttributes: parseStringRecord(row.requested_attributes),
+    status: String(row.status) as PresentationRequestRecord["status"],
+    offerExnSaid: row.offer_exn_said ? String(row.offer_exn_said) : null,
+    agreeExnSaid: row.agree_exn_said ? String(row.agree_exn_said) : null,
+    grantExnSaid: row.grant_exn_said ? String(row.grant_exn_said) : null,
+    presentedCredentialId: row.presented_credential_id
+      ? String(row.presented_credential_id)
+      : null,
+    presentedIssuerDid: row.presented_issuer_did
+      ? String(row.presented_issuer_did)
+      : null,
+    presentedHolderDid: row.presented_holder_did
+      ? String(row.presented_holder_did)
+      : null,
+    presentedAttributes: parseCredentialData(row.presented_attributes),
+    verificationChecks: parseBooleanRecord(row.verification_checks),
+    failureReason: row.failure_reason ? String(row.failure_reason) : null,
+    requestedAt: toIso(row.requested_at),
+    presentedAt: row.presented_at ? toIso(row.presented_at) : null,
+    verifiedAt: row.verified_at ? toIso(row.verified_at) : null,
+    completedAt: row.completed_at ? toIso(row.completed_at) : null,
+    createdAt: toIso(row.created_at),
+    updatedAt: toIso(row.updated_at),
   };
 }
 
@@ -1029,6 +1080,181 @@ export async function markIssuedCredentialStatusForIssuer(
     [issuerId, credentialId, status]
   );
   return rows[0] ? mapCredentialRow(rows[0]) : null;
+}
+
+export async function listPresentationRequestsByIssuer(
+  issuerId: string
+): Promise<PresentationRequestRecord[]> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT *
+      FROM presentation_requests
+      WHERE issuer_id = $1
+      ORDER BY requested_at DESC, created_at DESC
+    `,
+    [issuerId]
+  );
+  return rows.map(mapPresentationRequestRow);
+}
+
+export async function getPresentationRequestByIdForIssuer(
+  issuerId: string,
+  requestId: string
+): Promise<PresentationRequestRecord | null> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT *
+      FROM presentation_requests
+      WHERE issuer_id = $1 AND id = $2
+      LIMIT 1
+    `,
+    [issuerId, requestId]
+  );
+  return rows[0] ? mapPresentationRequestRow(rows[0]) : null;
+}
+
+export async function getPresentationRequestByRequestExnSaidForIssuer(
+  issuerId: string,
+  requestExnSaid: string
+): Promise<PresentationRequestRecord | null> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT *
+      FROM presentation_requests
+      WHERE issuer_id = $1 AND request_exn_said = $2
+      LIMIT 1
+    `,
+    [issuerId, String(requestExnSaid || "").trim()]
+  );
+  return rows[0] ? mapPresentationRequestRow(rows[0]) : null;
+}
+
+export async function getPresentationRequestByAgreeExnSaidForIssuer(
+  issuerId: string,
+  agreeExnSaid: string
+): Promise<PresentationRequestRecord | null> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT *
+      FROM presentation_requests
+      WHERE issuer_id = $1 AND agree_exn_said = $2
+      LIMIT 1
+    `,
+    [issuerId, String(agreeExnSaid || "").trim()]
+  );
+  return rows[0] ? mapPresentationRequestRow(rows[0]) : null;
+}
+
+export async function createPresentationRequestForIssuer(input: {
+  id?: string;
+  issuerId: string;
+  requestExnSaid: string;
+  verifierDid: string;
+  holderDid: string;
+  schemaId: string;
+  requestedAttributes?: Record<string, string>;
+}): Promise<PresentationRequestRecord> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      INSERT INTO presentation_requests(
+        id,
+        issuer_id,
+        request_exn_said,
+        verifier_did,
+        holder_did,
+        schema_id,
+        requested_attributes,
+        status,
+        requested_at,
+        created_at,
+        updated_at
+      )
+      VALUES($1, $2, $3, $4, $5, $6, $7, 'requested', NOW(), NOW(), NOW())
+      ON CONFLICT(request_exn_said)
+      DO UPDATE SET
+        verifier_did = EXCLUDED.verifier_did,
+        holder_did = EXCLUDED.holder_did,
+        schema_id = EXCLUDED.schema_id,
+        requested_attributes = EXCLUDED.requested_attributes,
+        updated_at = NOW()
+      RETURNING *
+    `,
+    [
+      input.id || randomUUID(),
+      input.issuerId,
+      String(input.requestExnSaid || "").trim(),
+      String(input.verifierDid || "").trim(),
+      String(input.holderDid || "").trim(),
+      canonicalSchemaId(String(input.schemaId || "").trim()),
+      JSON.stringify(input.requestedAttributes || {}),
+    ]
+  );
+  return mapPresentationRequestRow(rows[0]);
+}
+
+export async function updatePresentationRequestForIssuer(input: {
+  issuerId: string;
+  requestId: string;
+  status?: PresentationRequestRecord["status"];
+  offerExnSaid?: string | null;
+  agreeExnSaid?: string | null;
+  grantExnSaid?: string | null;
+  presentedCredentialId?: string | null;
+  presentedIssuerDid?: string | null;
+  presentedHolderDid?: string | null;
+  presentedAttributes?: Record<string, unknown>;
+  verificationChecks?: Record<string, boolean>;
+  failureReason?: string | null;
+  presentedAt?: string | null;
+  verifiedAt?: string | null;
+  completedAt?: string | null;
+}): Promise<PresentationRequestRecord | null> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      UPDATE presentation_requests
+      SET
+        status = COALESCE($3, status),
+        offer_exn_said = COALESCE($4, offer_exn_said),
+        agree_exn_said = COALESCE($5, agree_exn_said),
+        grant_exn_said = COALESCE($6, grant_exn_said),
+        presented_credential_id = COALESCE($7, presented_credential_id),
+        presented_issuer_did = COALESCE($8, presented_issuer_did),
+        presented_holder_did = COALESCE($9, presented_holder_did),
+        presented_attributes = COALESCE($10, presented_attributes),
+        verification_checks = COALESCE($11, verification_checks),
+        failure_reason = COALESCE($12, failure_reason),
+        presented_at = COALESCE($13, presented_at),
+        verified_at = COALESCE($14, verified_at),
+        completed_at = COALESCE($15, completed_at),
+        updated_at = NOW()
+      WHERE issuer_id = $1 AND id = $2
+      RETURNING *
+    `,
+    [
+      input.issuerId,
+      input.requestId,
+      input.status || null,
+      input.offerExnSaid === undefined ? null : input.offerExnSaid,
+      input.agreeExnSaid === undefined ? null : input.agreeExnSaid,
+      input.grantExnSaid === undefined ? null : input.grantExnSaid,
+      input.presentedCredentialId === undefined
+        ? null
+        : input.presentedCredentialId,
+      input.presentedIssuerDid === undefined ? null : input.presentedIssuerDid,
+      input.presentedHolderDid === undefined ? null : input.presentedHolderDid,
+      input.presentedAttributes === undefined
+        ? null
+        : JSON.stringify(input.presentedAttributes),
+      input.verificationChecks === undefined
+        ? null
+        : JSON.stringify(input.verificationChecks),
+      input.failureReason === undefined ? null : input.failureReason,
+      input.presentedAt === undefined ? null : input.presentedAt,
+      input.verifiedAt === undefined ? null : input.verifiedAt,
+      input.completedAt === undefined ? null : input.completedAt,
+    ]
+  );
+  return rows[0] ? mapPresentationRequestRow(rows[0]) : null;
 }
 
 export async function getFaydaVerificationByHolderAidForIssuer(

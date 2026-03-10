@@ -22,7 +22,7 @@ import {
 import { keriOobiApi } from "./apis/invitation.api";
 import { resolveOobi } from "./apis/oobi.api";
 import { ping } from "./apis/ping.api";
-import { schemaApi } from "./apis/schema.api";
+import { schemaApi, schemaDetailApi } from "./apis/schema.api";
 import {
   createTemplateApi,
   deleteTemplateApi,
@@ -59,6 +59,7 @@ import {
 } from "./apis/account.api";
 import { listNotificationsApiV2 } from "./apis/notificationV2.api";
 import { eventStreamApiV2 } from "./apis/realtimeEvent.api";
+import { listPresentationRequestsApiV2 } from "./apis/presentationRequestV2.api";
 import { config } from "./config";
 import { requireDashboardAuth } from "./middleware/auth.middleware";
 import { requireAccessToken } from "./middleware/accessToken.middleware";
@@ -170,10 +171,16 @@ router.get(
   contactCredentials
 );
 router.get(config.path.schemasV2, ...sharedReadAccess, schemaApi);
+router.get(config.path.schemaByIdV2, ...sharedReadAccess, schemaDetailApi);
 router.post(
   config.path.requestDisclosureV2,
   ...verifierAccess,
   requestDisclosure
+);
+router.get(
+  config.path.presentationRequestsV2,
+  ...verifierAccess,
+  listPresentationRequestsApiV2
 );
 router.post(
   config.path.revokeCredentialV2,

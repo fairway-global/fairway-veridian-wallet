@@ -1,16 +1,16 @@
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { enqueueSnackbar, VariantType } from "notistack";
 import { useEffect, useMemo, useState } from "react";
 import { Trans } from "react-i18next";
-import { IGNORE_ATTRIBUTES } from "../../const";
 import { useSchemaDetail } from "../../hooks/SchemaDetail";
 import { i18n } from "../../i18n";
 import { CredentialService } from "../../services";
 import { CredentialIssueRequest } from "../../services/credential.types";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { savePresentationRequest } from "../../store/reducers/connectionsSlice";
-import { PresentationRequestStatus } from "../../store/reducers/connectionsSlice.types";
+import { fetchPresentationRequests } from "../../store/reducers/connectionsSlice";
+import { fetchSchemas } from "../../store/reducers/schemasSlice";
+import { getSchemaAttributeDefinitions } from "../../utils/schemaAttributes";
 import { PopupModal } from "../PopupModal";
 import { InputAttribute } from "./InputAttribute";
 import "./RequestPresentationModal.scss";
@@ -43,6 +43,10 @@ const RequestPresentationModal = ({
   const [attributes, setAttributes] = useState<Record<string, string>>({});
 
   const schema = useSchemaDetail(selectedCredTemplate);
+  const schemaAttributes = useMemo(
+    () => getSchemaAttributeDefinitions(schema),
+    [schema]
+  );
 
   const credTemplateType = selectedCredTemplate ? schema?.title : undefined;
 
@@ -60,6 +64,14 @@ const RequestPresentationModal = ({
     setCurrentStage(RequestPresentationStage.SelectCredentialType);
     setSelectedConnection(connectionId);
   }, [connectionId]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    void dispatch(fetchSchemas());
+  }, [dispatch, open]);
 
   const resetModal = () => {
     onClose();
@@ -101,11 +113,14 @@ const RequestPresentationModal = ({
     return (
       (currentStage === RequestPresentationStage.SelectCredentialType &&
         !selectedCredTemplate) ||
+      (currentStage === RequestPresentationStage.InputAttribute &&
+        Boolean(selectedCredTemplate) &&
+        !schema) ||
       (currentStage === RequestPresentationStage.SelectConnection &&
         !selectedConnection) ||
       loading
     );
-  }, [currentStage, selectedCredTemplate, selectedConnection, loading]);
+  }, [currentStage, selectedCredTemplate, selectedConnection, loading, schema]);
 
   const requestPresentationCred = async () => {
     if (!selectedCredTemplate || !selectedConnection || !credTemplateType)
@@ -120,7 +135,7 @@ const RequestPresentationModal = ({
 
     if (Object.keys(attribute).length) {
       objAttributes = {
-        attribute,
+        attributes: attribute,
       };
     }
 
@@ -133,27 +148,15 @@ const RequestPresentationModal = ({
     try {
       setLoading(true);
       await CredentialService.requestPresentation(data);
+      void dispatch(fetchPresentationRequests());
       triggerToast(
         i18n.t("pages.requestPresentation.modal.messages.success"),
         "success"
       );
-
-      dispatch(
-        savePresentationRequest({
-          id: String(Date.now),
-          connectionName:
-            connections.find((item) => item.id === selectedConnection)?.alias ||
-            "",
-          credentialType: credTemplateType,
-          attribute: Object.values(attributes)[0],
-          requestDate: Date.now(),
-          status: PresentationRequestStatus.Requested,
-        })
-      );
       resetModal();
     } catch (e) {
       triggerToast(
-        i18n.t("pages.requestPresentation.modal.messages.error"),
+        i18n.t("pages.requestPresentation.modal.messages.failed"),
         "error"
       );
     } finally {
@@ -239,19 +242,23 @@ const RequestPresentationModal = ({
         );
       }
       case RequestPresentationStage.InputAttribute: {
-        const schemaRequiredAttributes =
-          schema?.properties.a.oneOf[1].required || [];
-
-        const requiredAttributes = schemaRequiredAttributes.filter(
-          (item) => !IGNORE_ATTRIBUTES.includes(item)
-        );
+        if (!schema) {
+          return (
+            <Typography
+              variant="body2"
+              sx={{ color: "var(--color-neutral-600)" }}
+            >
+              {i18n.t("pages.requestPresentation.modal.inputAttribute.loading")}
+            </Typography>
+          );
+        }
 
         return (
           <InputAttribute
             attributeOptional={true}
             value={attributes}
             setValue={updateAttributes}
-            attributes={requiredAttributes}
+            attributes={schemaAttributes}
           />
         );
       }
@@ -262,6 +269,7 @@ const RequestPresentationModal = ({
             attribute={attributes}
             connectionId={selectedConnection}
             connections={connections}
+            schemaAttributes={schemaAttributes}
           />
         );
       default:

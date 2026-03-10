@@ -2256,6 +2256,73 @@ describe("IPEX communication service of agent", () => {
     });
   });
 
+  test("Falls back to schema and holder matches when requested attributes do not match exactly", async () => {
+    Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValueOnce(true);
+    const mockExchange = {
+      exn: {
+        a: {
+          i: "uuid",
+          a: {
+            fullName: "Requested Name",
+          },
+          s: "schemaSaid",
+        },
+        i: "i",
+        rp: "id",
+        e: {},
+      },
+    };
+    getExchangeMock = jest.fn().mockResolvedValueOnce(mockExchange);
+    schemaGetMock.mockResolvedValue(QVISchema);
+    credentialStorage.getCredentialMetadatasById.mockResolvedValue([
+      {
+        id: "fallback-cred",
+        status: "confirmed",
+        connectionId: "connectionId",
+        isArchived: false,
+        pendingDeletion: false,
+      },
+    ]);
+    credentialListMock.mockResolvedValue([
+      {
+        sad: {
+          d: "fallback-cred",
+          a: {
+            fullName: "Stored Name",
+          },
+        },
+      },
+    ]);
+
+    expect(
+      await ipexCommunicationService.getIpexApplyDetails({
+        a: {
+          d: "saidForUuid",
+        },
+      } as any)
+    ).toEqual({
+      credentials: [
+        {
+          acdc: {
+            d: "fallback-cred",
+            a: {
+              fullName: "Stored Name",
+            },
+          },
+          connectionId: "connectionId",
+        },
+      ],
+      schema: {
+        description: "Qualified vLEI Issuer Credential",
+        name: "Qualified vLEI Issuer Credential",
+      },
+      attributes: {
+        fullName: "Requested Name",
+      },
+      identifier: "id",
+    });
+  });
+
   test("Can create linked ipex message record with message exchange route ipex/apply", async () => {
     schemaGetMock.mockResolvedValueOnce(QVISchema);
 

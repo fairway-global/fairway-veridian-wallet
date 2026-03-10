@@ -252,10 +252,6 @@ export async function issueCredentialApiV2(
       attributes: template.attributes,
     });
   }
-  if (!isSchemaIdKnown(template.schemaId)) {
-    sendError(res, 400, `Template schemaId is unsupported: ${template.schemaId}`);
-    return;
-  }
 
   const attributePayload: Record<string, unknown> = {};
   for (const attribute of template.attributes) {

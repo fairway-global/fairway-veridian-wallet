@@ -16,4 +16,5 @@ export const RoutePath = {
   Notifications: "/notifications",
   Settings: "/settings",
   RequestPresentation: "/request-presentation",
+  RequestPresentationDetail: "/request-presentation/:id",
 };

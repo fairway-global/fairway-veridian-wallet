@@ -1,15 +1,17 @@
 import { Contact } from "../../pages/Connections/components/ConnectionsTable/ConnectionsTable.types";
+import { SchemaAttributeDefinition } from "../../utils/schemaAttributes";
 
 interface ReviewProps {
   credentialType?: string;
   connectionId?: string;
   attribute: Record<string, string>;
   connections: Contact[];
+  schemaAttributes: SchemaAttributeDefinition[];
 }
 
 interface InputAttributeProps {
   attributeOptional?: boolean;
-  attributes: string[];
+  attributes: SchemaAttributeDefinition[];
   value: Record<string, string>;
   setValue: (key: string, value: string) => void;
 }

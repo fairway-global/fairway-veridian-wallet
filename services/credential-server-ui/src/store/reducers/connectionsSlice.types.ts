@@ -38,15 +38,28 @@ interface Credential {
 
 enum PresentationRequestStatus {
   Requested = "requested",
+  Verified = "verified",
+  Completed = "completed",
+  Rejected = "rejected",
+  Failed = "failed",
 }
 
 interface PresentationRequestData {
   id: string;
-  connectionName: string;
-  credentialType: string;
-  attribute: string;
+  requestExnSaid: string;
+  holderDid: string;
+  schemaId: string;
+  requestedAttributes: Record<string, string>;
   requestDate: number;
   status: PresentationRequestStatus;
+  presentedCredentialId: string | null;
+  presentedIssuerDid: string | null;
+  presentedHolderDid: string | null;
+  presentedAttributes: Record<string, unknown>;
+  verificationChecks: Record<string, boolean>;
+  failureReason: string | null;
+  verifiedDate: number | null;
+  completedDate: number | null;
 }
 
 export { PresentationRequestStatus };

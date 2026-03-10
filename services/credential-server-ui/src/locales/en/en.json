@@ -249,15 +249,29 @@
       },
       "detail": {
         "title": "Template detail",
+        "kicker": "Template record",
+        "summary": "Template summary",
+        "attributesTitle": "Template attributes",
+        "attributesDescription": "Configured schema fields that will be collected and issued when this template is used.",
+        "emptyAttributes": "No template attributes were configured for this template.",
+        "required": "Required",
+        "badges": {
+          "autoIssueOn": "Auto issue enabled",
+          "autoIssueOff": "Auto issue disabled",
+          "attributes": "{{number}} fields"
+        },
         "fields": {
+          "id": "Template ID",
           "schemaId": "Schema ID",
           "createdAt": "Created at",
           "updatedAt": "Updated at",
           "attributes": "Attributes",
-          "autoIssue": "Auto issue after Fayda"
+          "autoIssue": "Auto issue after Fayda",
+          "issuedCount": "Issued credentials"
         },
         "issued": {
           "title": "Issued credentials ({{number}})",
+          "description": "Credentials that have already been issued from this template.",
           "headers": {
             "id": "Credential ID",
             "holder": "Holder DID",
@@ -333,6 +347,8 @@
       },
       "detail": {
         "title": "Credential detail",
+        "kicker": "Credential record",
+        "summary": "Overview",
         "fields": {
           "id": "Credential ID",
           "template": "Template",
@@ -341,7 +357,8 @@
           "status": "Status",
           "issuedAt": "Issued at",
           "data": "Attributes"
-        }
+        },
+        "emptyAttributes": "No displayable schema attributes were found for this credential."
       },
       "issue": {
         "title": "Issue credential",
@@ -381,10 +398,19 @@
         "name": "Connection Name",
         "credential": "Credential Requested",
         "attribute": "Attribute",
+        "attributeAny": "Any matching credential",
+        "result": "Result",
+        "resultPending": "Waiting for wallet response",
+        "resultVerified": "Verified credential",
+        "resultRejected": "Presentation rejected",
         "requestDate": "Date Requested",
         "status": {
           "header": "Status",
-          "requested": "Requested"
+          "requested": "Requested",
+          "verified": "Verified",
+          "completed": "Completed",
+          "rejected": "Rejected",
+          "failed": "Failed"
         }
       },
       "modal": {
@@ -400,8 +426,10 @@
           "description": "<strong>Select a credential to request a credential presentation</strong>. Search from your established connections, and please note that only one credential can be requested per connection."
         },
         "inputAttribute": {
-          "description": "<strong>Enter the attribute values</strong>. Below are the values related to this presentation request.",
+          "description": "<strong>Enter optional exact-match attribute values</strong>. Leave a field blank to request any credential with this schema.",
+          "loading": "Loading schema fields…",
           "placeholder": "e.g. 12345678A90123V45R67",
+          "required": "Schema field",
           "label": {
             "name": "Name",
             "lei": "LEI"
@@ -414,6 +442,7 @@
           "description": "<strong>Review the details before requesting</strong>. Ensure all information is accurate.",
           "credential": "Credential Presentation Requested",
           "issueTo": "Being Requested From",
+          "anyMatchingCredential": "No exact value filters were added. Any credential with this schema can be presented.",
           "button": {
             "issue": "Request Presentation"
           }
@@ -421,6 +450,24 @@
         "messages": {
           "success": "Request sent successfully",
           "failed": "Unable to send request"
+        }
+      },
+      "detail": {
+        "title": "Presentation request detail",
+        "kicker": "Verifier request",
+        "summary": "Request summary",
+        "requiredFields": "Requested fields",
+        "presentation": "Presented credential",
+        "pending": "Pending wallet response",
+        "notFound": "This presentation request could not be found.",
+        "anyValue": "Any value",
+        "fields": {
+          "requestedAt": "Requested at",
+          "result": "Result",
+          "requestExnSaid": "Request exchange SAID",
+          "schemaId": "Schema ID",
+          "holderDid": "Holder DID",
+          "presentedCredentialId": "Presented credential"
         }
       }
     },

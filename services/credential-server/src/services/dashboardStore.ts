@@ -365,6 +365,24 @@ function getSchemaTitle(schemaId: string): string {
   }
 }
 
+export async function getSchemaDocument(
+  schemaId: string
+): Promise<Record<string, unknown> | null> {
+  const normalizedSchemaId = canonicalSchemaId(String(schemaId || "").trim());
+  const schemaPath = findSchemaFilePath(normalizedSchemaId);
+  if (!schemaPath) {
+    return null;
+  }
+
+  try {
+    const raw = readFileSync(schemaPath, "utf8");
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export async function listAvailableSchemas(): Promise<SchemaListItem[]> {
   const schemaMap = new Map<string, string>();
 
@@ -630,10 +648,6 @@ function validateTemplateInput(
   const schemaId = String(input.schemaId || "").trim();
   if (options.requireSchemaId && !schemaId) {
     return "Template schemaId is required";
-  }
-
-  if (schemaId && !isSchemaIdKnown(schemaId)) {
-    return `Template schemaId is unsupported: ${schemaId}`;
   }
 
   if (!Array.isArray(input.attributes)) {

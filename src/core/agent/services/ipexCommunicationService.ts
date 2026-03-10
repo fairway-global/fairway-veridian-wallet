@@ -8,7 +8,11 @@ import {
   Serder,
   Siger,
 } from "signify-ts";
-import { ExnMessage, type AgentServicesProps } from "../agent.types";
+import {
+  ExnMessage,
+  JSONObject,
+  type AgentServicesProps,
+} from "../agent.types";
 import { type KeriaNotification } from "./keriaNotificationService.types";
 import { ExchangeRoute } from "./keriaNotificationService.types";
 import {
@@ -405,24 +409,22 @@ class IpexCommunicationService extends AgentService {
     const filter = {
       "-s": { $eq: schemaSaid },
       "-a-i": exchange.exn.rp,
-      ...(Object.keys(attributes).length > 0
-        ? {
-            ...Object.fromEntries(
-              Object.entries(attributes).map(([key, value]) => [
-                "-a-" + key,
-                value,
-              ])
-            ),
-          }
-        : {}),
     };
 
     const filtered = await this.props.signifyClient.credentials().list({
       filter,
     });
+    const matchingCredentials =
+      Object.keys(attributes).length === 0
+        ? filtered
+        : filtered.filter((credential: any) =>
+            this.matchesRequestedAttributes(credential?.sad?.a, attributes)
+          );
+    const availableCredentials =
+      matchingCredentials.length > 0 ? matchingCredentials : filtered;
     const localFiltered =
       await this.credentialStorage.getCredentialMetadatasById(
-        filtered.map((cred: any) => cred.sad.d),
+        availableCredentials.map((cred: any) => cred.sad.d),
         {
           $and: [{ pendingDeletion: false }, { isArchived: false }],
         }
@@ -434,7 +436,9 @@ class IpexCommunicationService extends AgentService {
         description: schema.description,
       },
       credentials: localFiltered.map((cr) => {
-        const credKeri = filtered.find((cred: any) => cred.sad.d === cr.id);
+        const credKeri = availableCredentials.find(
+          (cred: any) => cred.sad.d === cr.id
+        );
         return {
           connectionId: cr.connectionId,
           acdc: credKeri.sad,
@@ -443,6 +447,18 @@ class IpexCommunicationService extends AgentService {
       attributes: attributes,
       identifier: exchange.exn.rp,
     };
+  }
+
+  private matchesRequestedAttributes(
+    credentialAttributes: Record<string, unknown> | undefined,
+    requestedAttributes: JSONObject
+  ): boolean {
+    return Object.entries(requestedAttributes).every(([key, value]) => {
+      return (
+        String(credentialAttributes?.[key] ?? "").trim() ===
+        String(value ?? "").trim()
+      );
+    });
   }
 
   private async saveAcdcMetadataRecord(
