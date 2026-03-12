@@ -1,3 +1,5 @@
+# DEPRECATED: legacy local compose topology.
+# Canonical production path is docker-compose.production.yaml with blue/green Nginx routing.
 name: veridian-prod
 
 # There is no need to use an anchor, but having it here makes the witness type init more evident

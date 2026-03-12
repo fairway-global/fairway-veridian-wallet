@@ -1,3 +1,5 @@
+# DEPRECATED: legacy Traefik deployment compose.
+# Canonical production path is docker-compose.production.yaml with Nginx edge.
 name: veridian-prod
 
 x-witness-common: &witness-common

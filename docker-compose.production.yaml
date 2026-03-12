@@ -1,0 +1,204 @@
+name: veridian-${DEPLOY_ENV:-production}-${SLOT:-blue}
+
+x-logging-common: &logging-common
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "10"
+
+x-witness-common: &witness-common
+  restart: unless-stopped
+  image: ${WITNESS_IMAGE:-cardanofoundation/cf-idw-witness:main}
+  environment:
+    - PYTHONUNBUFFERED=1
+    - PYTHONIOENCODING=UTF-8
+    - INITIAL_HTTP_PORT=5642
+    - KERI_VAR_DIR=/usr/local/var/keri
+    - KERI_SCRIPT_DIR=/usr/local/var/keri/scripts
+    - LOG_LEVEL=${WITNESS_LOG_LEVEL:-INFO}
+  entrypoint:
+    - bash
+    - -c
+    - export WITNESS_NO=$$(hostname | awk -F- '{print $$NF}'); exec kli witness start --loglevel $${LOG_LEVEL} --name wit$${WITNESS_NO} --alias wit$${WITNESS_NO} -H $$(( INITIAL_HTTP_PORT + WITNESS_NO ))
+  volumes:
+    - witnesses-config:/usr/local/var/keri
+  healthcheck:
+    test:
+      - CMD-SHELL
+      - python -c 'import os,socket; no=int(os.uname().nodename.split("-")[-1]); s=socket.create_connection(("127.0.0.1", 5642+no), 2); s.close()'
+    interval: 10s
+    timeout: 5s
+    retries: 12
+  logging: *logging-common
+
+x-keria-common: &keria-common
+  restart: unless-stopped
+  image: ${KERIA_IMAGE:-cardanofoundation/cf-idw-keria:main}
+  environment:
+    - KERI_AGENT_CORS=${KERI_AGENT_CORS:-true}
+    - KERIA_PASSCODE=${KERIA_PASSCODE:?KERIA_PASSCODE is required}
+    - ALLOW_INTRODUCTIONS=${ALLOW_INTRODUCTIONS:-true}
+    - REMOTE_SIGNING=${REMOTE_SIGNING:-true}
+  volumes:
+    - keria-data:/usr/local/var/keri
+    - keria-config:/keria/scripts/keri/cf
+  entrypoint: keria start --config-file backer-oobis --config-dir ./scripts --loglevel INFO
+  healthcheck:
+    test:
+      - CMD-SHELL
+      - python -c 'import socket; s=socket.create_connection(("127.0.0.1",3901), 2); s.close()'
+    interval: 10s
+    timeout: 5s
+    retries: 20
+  logging: *logging-common
+
+services:
+  witness-init:
+    profiles: [init]
+    restart: "no"
+    image: ${WITNESS_INIT_IMAGE:-cardanofoundation/cf-idw-witness:main}
+    environment:
+      - KERI_VAR_DIR=/usr/local/var/keri
+      - KERI_SCRIPT_DIR=/usr/local/var/keri/scripts
+      - KERIA_CURLS_PROTO=${KERIA_CURLS_PROTO:-https}
+      - KERIA_CURLS_EXTERNAL_HOST_TLD=${PUBLIC_DOMAIN:?PUBLIC_DOMAIN is required}
+      - WITNESS_COUNT=${WITNESS_COUNT:-6}
+      - DEPLOYMENT_MODE=${DEPLOYMENT_MODE:-cloud}
+      - BASE_HTTP_PORT=5642
+    volumes:
+      - witnesses-config:/usr/local/var/keri
+      - ./docker-assets/keri-witness/witness-init.sh:/configmap/witness-init.sh:ro
+      - ./docker-assets/keri-witness/witness.json.tpl:/configmap/witness.json.tpl:ro
+      - ./docker-assets/keri-witness/wil-witness-sample.json:/configmap/wil-witness-sample.json:ro
+    entrypoint: ["bash", "-c", "bash /configmap/witness-init.sh"]
+    logging: *logging-common
+
+  keria-init:
+    profiles: [init]
+    restart: "no"
+    image: rcmorano/alpine-bash-jq-curl
+    depends_on:
+      witness-init:
+        condition: service_completed_successfully
+    environment:
+      - KERIA_PASSCODE=${KERIA_PASSCODE:?KERIA_PASSCODE is required}
+      - KERIA_CURLS=${KERIA_CURLS:-https://keria-ext.${PUBLIC_DOMAIN:?PUBLIC_DOMAIN is required}}
+      - KERIA_IURLS=${KERIA_IURLS:-https://witness-0.${PUBLIC_DOMAIN}/oobi/dummy1 https://witness-1.${PUBLIC_DOMAIN}/oobi/dummy2}
+    volumes:
+      - keria-config:/config
+      - ./docker-assets/keria/keria-init.sh:/keria-init.sh:ro
+      - ./docker-assets/keria/backer-oobis.json.tpl:/configmap/backer-oobis.json.tpl:ro
+    entrypoint: ["bash", "/keria-init.sh"]
+    logging: *logging-common
+
+  witness-0:
+    hostname: witness-0
+    <<: *witness-common
+    ports:
+      - "127.0.0.1:${WITNESS_0_HOST_PORT:-15642}:5642"
+
+  witness-1:
+    hostname: witness-1
+    <<: *witness-common
+    ports:
+      - "127.0.0.1:${WITNESS_1_HOST_PORT:-15643}:5643"
+
+  witness-2:
+    hostname: witness-2
+    <<: *witness-common
+    ports:
+      - "127.0.0.1:${WITNESS_2_HOST_PORT:-15644}:5644"
+
+  witness-3:
+    hostname: witness-3
+    <<: *witness-common
+    ports:
+      - "127.0.0.1:${WITNESS_3_HOST_PORT:-15645}:5645"
+
+  witness-4:
+    hostname: witness-4
+    <<: *witness-common
+    ports:
+      - "127.0.0.1:${WITNESS_4_HOST_PORT:-15646}:5646"
+
+  witness-5:
+    hostname: witness-5
+    <<: *witness-common
+    ports:
+      - "127.0.0.1:${WITNESS_5_HOST_PORT:-15647}:5647"
+
+  keria:
+    <<: *keria-common
+    depends_on:
+      witness-0:
+        condition: service_healthy
+      witness-1:
+        condition: service_healthy
+      witness-2:
+        condition: service_healthy
+      witness-3:
+        condition: service_healthy
+      witness-4:
+        condition: service_healthy
+      witness-5:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${KERIA_API_HOST_PORT:-13901}:3901"
+      - "127.0.0.1:${KERIA_EXT_HOST_PORT:-13902}:3902"
+      - "127.0.0.1:${KERIA_BOOT_HOST_PORT:-13903}:3903"
+
+  cred-issuance:
+    restart: unless-stopped
+    image: ${CRED_IMAGE:-cardanofoundation/cf-cred-issuance:main}
+    depends_on:
+      keria:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
+      - OOBI_ENDPOINT=${CRED_OOBI_ENDPOINT:-https://cred-issuance.${PUBLIC_DOMAIN:?PUBLIC_DOMAIN is required}}
+      - PUBLIC_OOBI_ENDPOINT=${CRED_PUBLIC_OOBI_ENDPOINT:-https://cred-issuance.${PUBLIC_DOMAIN:?PUBLIC_DOMAIN is required}}
+      - KERIA_ENDPOINT=${CRED_KERIA_ENDPOINT:-http://keria:3901}
+      - KERIA_BOOT_ENDPOINT=${CRED_KERIA_BOOT_ENDPOINT:-http://keria:3903}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
+      - GATEWAY_JWT_SECRET=${GATEWAY_JWT_SECRET:?GATEWAY_JWT_SECRET is required}
+      - BRAN_ENCRYPTION_KEY=${BRAN_ENCRYPTION_KEY:?BRAN_ENCRYPTION_KEY is required}
+      - ALLOW_LEGACY_UNAUTH_ROUTES=${ALLOW_LEGACY_UNAUTH_ROUTES:-false}
+      - JSON_BODY_LIMIT=${JSON_BODY_LIMIT:-10mb}
+    volumes:
+      - issuer-server-data:/app/data
+    ports:
+      - "127.0.0.1:${CRED_HOST_PORT:-13001}:3001"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'node -e "require(\"http\").get(\"http://127.0.0.1:3001/ping\", (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on(\"error\", () => process.exit(1));"'
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    logging: *logging-common
+
+  cred-issuance-ui:
+    restart: unless-stopped
+    image: ${CRED_UI_IMAGE:-cardanofoundation/cf-cred-issuance-ui:main}
+    depends_on:
+      cred-issuance:
+        condition: service_healthy
+    environment:
+      - VITE_SERVER_URL=${CRED_UI_SERVER_URL:-https://cred-issuance.${PUBLIC_DOMAIN:?PUBLIC_DOMAIN is required}}
+    ports:
+      - "127.0.0.1:${CRED_UI_HOST_PORT:-13002}:80"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1/
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    logging: *logging-common
+
+volumes:
+  keria-data:
+  keria-config:
+  issuer-server-data:
+  witnesses-config:

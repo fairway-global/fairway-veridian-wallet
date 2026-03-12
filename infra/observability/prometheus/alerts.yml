@@ -1,0 +1,47 @@
+groups:
+  - name: veridian-infra
+    rules:
+      - alert: EndpointDown
+        expr: probe_success == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Endpoint down: {{ $labels.instance }}"
+          description: "Blackbox probe has been failing for more than 2 minutes."
+
+      - alert: EndpointReturning5xx
+        expr: probe_http_status_code >= 500
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Endpoint returning 5xx: {{ $labels.instance }}"
+          description: "Blackbox probe sees persistent 5xx responses."
+
+      - alert: CertificateExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 14 * 24 * 3600
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Certificate expiring soon: {{ $labels.instance }}"
+          description: "TLS certificate expires within 14 days."
+
+      - alert: HostDiskPressure
+        expr: (node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"}) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on host"
+          description: "Root filesystem has less than 15% free space."
+
+      - alert: ContainerRestartDetected
+        expr: changes(container_start_time_seconds{name!="",container_label_com_docker_compose_service!=""}[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container restarted: {{ $labels.name }}"
+          description: "A container restart was detected in the last 15 minutes."

@@ -1,3 +1,5 @@
+# DEPRECATED: legacy Traefik deployment compose.
+# Canonical production path is docker-compose.production.yaml with Nginx edge.
 name: veridian-prod
 
 # There is no need to use an anchor, but having it here makes the witness type init more evident

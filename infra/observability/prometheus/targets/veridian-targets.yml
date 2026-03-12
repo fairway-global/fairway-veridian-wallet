@@ -1,0 +1,14 @@
+- labels:
+    job: veridian-public-endpoints
+  targets:
+    - https://keria.example.com/
+    - https://keria-ext.example.com/
+    - https://keria-boot.example.com/
+    - https://cred-issuance.example.com/ping
+    - https://cred-issuance-ui.example.com/
+    - https://witness-0.example.com/
+    - https://witness-1.example.com/
+    - https://witness-2.example.com/
+    - https://witness-3.example.com/
+    - https://witness-4.example.com/
+    - https://witness-5.example.com/

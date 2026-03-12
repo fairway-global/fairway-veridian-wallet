@@ -1,0 +1,138 @@
+name: deploy-reusable
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Target environment name (staging or production)
+        required: true
+        type: string
+      release_sha:
+        description: Immutable image tag/release SHA to deploy
+        required: true
+        type: string
+      target_slot:
+        description: Target slot (blue|green|auto)
+        required: false
+        default: auto
+        type: string
+      action:
+        description: promote or rollback
+        required: false
+        default: promote
+        type: string
+      check_public:
+        description: Run public HTTPS checks after switch
+        required: false
+        default: true
+        type: boolean
+    secrets:
+      VM_HOST:
+        required: true
+      VM_USER:
+        required: true
+      VM_SSH_KEY:
+        required: true
+      GHCR_USERNAME:
+        required: true
+      GHCR_TOKEN:
+        required: true
+      PUBLIC_DOMAIN:
+        required: true
+      KERIA_PASSCODE:
+        required: true
+      DATABASE_URL:
+        required: true
+      JWT_ACCESS_SECRET:
+        required: true
+      JWT_REFRESH_SECRET:
+        required: true
+      GATEWAY_JWT_SECRET:
+        required: true
+      BRAN_ENCRYPTION_KEY:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Build environment contract file
+        run: |
+          mkdir -p infra/deploy/env
+          cat > "infra/deploy/env/${{ inputs.environment }}.env" <<'EOF_ENV'
+          DEPLOY_ENV=${{ inputs.environment }}
+          PUBLIC_DOMAIN=${{ secrets.PUBLIC_DOMAIN }}
+          KERIA_IMAGE_REPO=ghcr.io/cardano-foundation/veridian-wallet/idw-keria
+          WITNESS_IMAGE_REPO=ghcr.io/cardano-foundation/veridian-wallet/idw-witness
+          CRED_IMAGE_REPO=ghcr.io/cardano-foundation/veridian-wallet/cred-issuance
+          CRED_UI_IMAGE_REPO=ghcr.io/cardano-foundation/veridian-wallet/cred-issuance-ui
+          DEPLOYMENT_MODE=cloud
+          WITNESS_COUNT=6
+          KERIA_CURLS_PROTO=https
+          KERIA_CURLS=https://keria-ext.${{ secrets.PUBLIC_DOMAIN }}
+          CRED_OOBI_ENDPOINT=https://cred-issuance.${{ secrets.PUBLIC_DOMAIN }}
+          CRED_PUBLIC_OOBI_ENDPOINT=https://cred-issuance.${{ secrets.PUBLIC_DOMAIN }}
+          CRED_KERIA_ENDPOINT=http://keria:3901
+          CRED_KERIA_BOOT_ENDPOINT=http://keria:3903
+          CRED_UI_SERVER_URL=https://cred-issuance.${{ secrets.PUBLIC_DOMAIN }}
+          ALLOW_INTRODUCTIONS=true
+          REMOTE_SIGNING=true
+          KERI_AGENT_CORS=true
+          ALLOW_LEGACY_UNAUTH_ROUTES=false
+          JSON_BODY_LIMIT=10mb
+          KERIA_PASSCODE=${{ secrets.KERIA_PASSCODE }}
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+          GATEWAY_JWT_SECRET=${{ secrets.GATEWAY_JWT_SECRET }}
+          BRAN_ENCRYPTION_KEY=${{ secrets.BRAN_ENCRYPTION_KEY }}
+          EOF_ENV
+
+      - name: Validate environment contract
+        run: ./infra/deploy/scripts/validate-env-contract.sh "infra/deploy/env/${{ inputs.environment }}.env"
+
+      - name: Login to GHCR
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.5.0
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Validate image manifests
+        run: ./infra/deploy/scripts/check-images.sh --env-file "infra/deploy/env/${{ inputs.environment }}.env" --release-sha "${{ inputs.release_sha }}"
+
+      - name: Copy deployment files to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "docker-compose.production.yaml,docker-assets,infra"
+          target: "/opt/veridian/repo"
+          overwrite: true
+
+      - name: Run deployment
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/veridian/repo
+            chmod +x infra/deploy/scripts/*.sh
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+            ./infra/deploy/scripts/deploy.sh \
+              --environment "${{ inputs.environment }}" \
+              --release-sha "${{ inputs.release_sha }}" \
+              --target-slot "${{ inputs.target_slot }}" \
+              --action "${{ inputs.action }}" \
+              --check-public "${{ inputs.check_public }}"

@@ -120,6 +120,7 @@ You can gain additional insights into end-to-end testing by visiting the provide
 
 ## Additional Tutorials
 - [Customizing Splash Screens and Icons](docs/Customizing-Splash-and-Icons.md)
+- [GCP VM Deployment (Nginx + Blue/Green + Observability)](docs/gcp-vm-deployment.md)
 
 # Contributing
 
