@@ -51,6 +51,8 @@ on:
         required: true
       BRAN_ENCRYPTION_KEY:
         required: true
+      GCP_PROJECT_ID:
+        required: false
 
 jobs:
   deploy:
@@ -136,3 +138,6 @@ jobs:
               --target-slot "${{ inputs.target_slot }}" \
               --action "${{ inputs.action }}" \
               --check-public "${{ inputs.check_public }}"
+            if [[ -n "${{ secrets.GCP_PROJECT_ID }}" ]]; then
+              ./infra/deploy/scripts/print-gcp-debug-links.sh "${{ secrets.GCP_PROJECT_ID }}" "${{ secrets.PUBLIC_DOMAIN }}"
+            fi

@@ -1,0 +1,40 @@
+logging:
+  receivers:
+    docker_json:
+      type: files
+      include_paths:
+        - /var/lib/docker/containers/*/*-json.log
+    nginx_access:
+      type: files
+      include_paths:
+        - /var/log/nginx/access.log
+    nginx_error:
+      type: files
+      include_paths:
+        - /var/log/nginx/error.log
+
+  processors:
+    parse_docker_json:
+      type: parse_json
+      field: message
+      time_key: time
+      time_format: '%Y-%m-%dT%H:%M:%S.%LZ'
+
+  service:
+    pipelines:
+      docker_pipeline:
+        receivers: [docker_json]
+        processors: [parse_docker_json]
+      nginx_pipeline:
+        receivers: [nginx_access, nginx_error]
+
+metrics:
+  receivers:
+    hostmetrics:
+      type: hostmetrics
+      collection_interval: 60s
+
+  service:
+    pipelines:
+      default_pipeline:
+        receivers: [hostmetrics]

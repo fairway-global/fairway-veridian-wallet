@@ -19,6 +19,9 @@ required_vars=(
   WITNESS_IMAGE_REPO
   CRED_IMAGE_REPO
   CRED_UI_IMAGE_REPO
+  CRED_OOBI_ENDPOINT
+  CRED_PUBLIC_OOBI_ENDPOINT
+  CRED_UI_SERVER_URL
   KERIA_PASSCODE
   DATABASE_URL
   JWT_ACCESS_SECRET
@@ -51,6 +54,21 @@ done
 if [[ "$PUBLIC_DOMAIN" == http* ]]; then
   echo "PUBLIC_DOMAIN must be a bare domain (no scheme): $PUBLIC_DOMAIN" >&2
   exit 1
+fi
+
+for url_var in CRED_OOBI_ENDPOINT CRED_PUBLIC_OOBI_ENDPOINT CRED_UI_SERVER_URL; do
+  url="${!url_var}"
+  if [[ "$url" != *"$PUBLIC_DOMAIN"* ]]; then
+    echo "$url_var must include PUBLIC_DOMAIN ($PUBLIC_DOMAIN). Current value: $url" >&2
+    exit 1
+  fi
+done
+
+if [[ "$DEPLOY_ENV" == "production" || "$DEPLOY_ENV" == "staging" ]]; then
+  if [[ "$DATABASE_URL" == *"127.0.0.1"* || "$DATABASE_URL" == *"localhost"* ]]; then
+    echo "DATABASE_URL must point to an environment-specific external DB, not localhost: $DATABASE_URL" >&2
+    exit 1
+  fi
 fi
 
 if [[ "${WITNESS_COUNT:-6}" != "6" ]]; then

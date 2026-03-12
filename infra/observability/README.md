@@ -15,3 +15,9 @@ Components:
 - node-exporter: `127.0.0.1:9100`
 
 Update target domains through `infra/deploy/scripts/render-observability-targets.sh` or by editing `prometheus/targets/veridian-targets.yml`.
+
+For centralized GCP logs/metrics from Docker + Nginx, run:
+
+```bash
+./infra/deploy/scripts/install-gcp-ops-agent.sh
+```
