@@ -326,7 +326,67 @@
           "connectwallet": {
             "title": "ካርዳኖ ግንኙነት",
             "sublabel": "CIP-45",
-            "tabheader": "ካርዳኖ ግንኙነት"
+            "tabheader": "ካርዳኖ ግንኙነት",
+            "connectbtn": "ከካርዳኖ ጋር ይገናኙ",
+            "disconnectbeforecreatealert": {
+              "message": "አሁን ከአንድ ዋሌት ጋር ተገናኝተዋል። ከአዲስ ዋሌት ጋር ለመገናኘት ከአሁኑ ምርጫዎ ይቋረጣሉ። መቋረጥ እና መቀጠል ይፈልጋሉ?",
+              "confirm": "ቀጥል",
+              "cancel": "ሰርዝ"
+            },
+            "connectionbrokenalert": {
+              "message": "ከዚህ ግንኙነት ጋር የተጣመረውን የተመረጠ መለያ ስለሰረዙ ግንኙነቱ ተቋርጧል። ይህን ግንኙነት እንደገና ለማቋቋም አዲስ መለያ ይምረጡ።",
+              "confirm": "እሺ"
+            },
+            "inputpidmodal": {
+              "header": "Meerkat ID ይለጥፉ",
+              "cancel": "ሰርዝ",
+              "confirm": "አረጋግጥ",
+              "scanQR": "QR ኮድ ቃኝ"
+            },
+            "connectionhistory": {
+              "title": "የግንኙነት ታሪክ",
+              "action": {
+                "delete": "ሰርዝ"
+              },
+              "deletealert": {
+                "message": "ይህን ግንኙነት መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት?",
+                "confirm": "አዎ፣ እርግጠኛ ነኝ",
+                "cancel": "ሰርዝ"
+              },
+              "missingidentifieralert": {
+                "message": "ከካርዳኖ ጋር ለመገናኘት የግለሰብ መለያ መፍጠር ያስፈልጋል። አሁን መፍጠር ይፈልጋሉ?",
+                "confirm": "መለያ ፍጠር",
+                "cancel": "ሰርዝ"
+              },
+              "confirmconnect": {
+                "done": "ጨርሱ",
+                "connectbtn": "ገናኝ",
+                "disconnectbtn": "ቋርጥ",
+                "connectingbtn": "በመገናኘት ላይ...",
+                "pending": "በመጠባበቅ ላይ"
+              }
+            },
+            "request": {
+              "stageone": {
+                "title": "ካርዳኖ ጋር ይገናኙ",
+                "message": "የCIP-45 ግንኙነት ማቋቋም ይፈልጋሉ?",
+                "alert": {
+                  "titleconfirm": "ይህን ግንኙነት ማቋረጥ እንደሚፈልጉ እርግጠኛ ነዎት?",
+                  "confirm": "አትቀበል",
+                  "cancel": "ሰርዝ"
+                }
+              },
+              "stagetwo": {
+                "title": "መለያ ይምረጡ",
+                "message": "ከየትኛው የግለሰብ መለያ ጋር መገናኘት ይፈልጋሉ?",
+                "confirm": "አረጋግጥ"
+              },
+              "button": {
+                "back": "ተመለስ",
+                "accept": "ተቀበል",
+                "decline": "አትቀበል"
+              }
+            }
           }
         }
       }
@@ -362,6 +422,130 @@
       },
       "layout": {
         "created": "የተፈጠረበት"
+      },
+      "details": {
+        "done": "ጨርሱ",
+        "identifierdetail": {
+          "title": "የመለያ ዝርዝሮች",
+          "showadvanced": "የላቁ ዝርዝሮችን አሳይ",
+          "identifierid": {
+            "title": "የመለያ መለያ"
+          },
+          "created": {
+            "title": "የተፈጠረበት"
+          },
+          "signingkey": {
+            "title": "የፊርማ ቁልፍ",
+            "rotate": "ቁልፍ አዘምን",
+            "multisigtitle": "{{singingKeys}} የፊርማ ቁልፎችን አሳይ"
+          }
+        },
+        "keyrotation": {
+          "title": "የቁልፍ ማዞር",
+          "rotatesigningkey": {
+            "title": "የማዞሪያ ገደብ",
+            "outof": "ከ {{threshold}}"
+          },
+          "sequencenumber": {
+            "title": "ተከታታይ ቁጥር",
+            "lastrotate": "የመጨረሻ የቁልፍ ክስተት"
+          },
+          "nextkeyslist": {
+            "title": "የማዞሪያ ቁልፍ ዳይጀስት",
+            "showkey": "{{rotationKeys}} የማዞሪያ ቁልፍ ዳይጀስቶችን አሳይ"
+          }
+        },
+        "group": {
+          "title": "የቡድን መረጃ",
+          "groupmembers": {
+            "title": "የቡድን አባላት"
+          },
+          "signingkeysthreshold": {
+            "title": "የፊርማ ገደብ",
+            "outof": "ከ {{threshold}}"
+          },
+          "button": {
+            "viewmore": "{{remainMembers}} ተጨማሪ ይመልከቱ"
+          }
+        },
+        "delete": {
+          "button": "መለያ ሰርዝ",
+          "alert": {
+            "title": "ይህን መለያ መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት?",
+            "confirm": "አዎ፣ እርግጠኛ ነኝ",
+            "cancel": "ሰርዝ"
+          }
+        },
+        "rotatekeys": {
+          "message": "ቁልፎችዎን ካዘረጉ በኋላ ይህን መለያ ለአጭር ጊዜ ሲጠቀሙ አንዳንድ መዘግየቶች ሊኖሩ ይችላሉ።",
+          "signingkey": "የፊርማ ቁልፎች ዝርዝር",
+          "description": "የፊርማ ቁልፎችን ማዞር የቁልፍ መጥፋት ወይም መጋለጥ አደጋን በመቀነስ ደህንነትን ያሳድጋል።",
+          "done": "ጨርሱ"
+        },
+        "options": {
+          "title": "የመለያ አማራጮች",
+          "cancel": "ሰርዝ",
+          "view": "JSON አሳይ",
+          "edit": "መለያ አርትዕ",
+          "share": "መለያ አጋራ",
+          "delete": "መለያ ሰርዝ",
+          "rotatekeys": "ቁልፎችን አዘምን",
+          "inner": {
+            "label": "የሚታይ ስም",
+            "theme": "ገጽታ አርትዕ",
+            "confirm": "ለውጦችን አረጋግጥ",
+            "color": "የካርድ ቀለም ይምረጡ"
+          }
+        },
+        "clouderror": "ይህን መለያ በክላውድ ላይ ማግኘት አልቻልንም። በኋላ እንደገና ሊገኝ ይችላል፣ ግን አንዳንድ መረጃ ሊጠፋ ይችላል።\n\nይህን መለያ ከእንግዲህ ካልፈለጉት ለማስወገድ “መለያ ሰርዝ” ይጫኑ።",
+        "detailmodal": {
+          "you": "እርስዎ",
+          "button": {
+            "done": "ጨርሱ"
+          },
+          "advanceddetail": {
+            "title": "የላቁ ዝርዝሮች",
+            "propexplain": {
+              "title": "ስለ የላቁ ዝርዝሮች",
+              "content": "በቴክኒካዊ ዝርዝሮች የሚፈልጉ ተጠቃሚዎች ላይ ለዚህ መለያ ተጨማሪ መረጃ ይሰጣል።"
+            },
+            "proptitle": "የላቁ ዝርዝሮች",
+            "viewkey": "{{keys}} የፊርማ ቁልፎችን አሳይ",
+            "hidekey": "{{keys}} የፊርማ ቁልፎችን ደብቅ",
+            "viewrotationkey": "{{keys}} የማዞሪያ ቁልፍ ዳይጀስቶችን አሳይ",
+            "hiderotationkey": "{{keys}} የማዞሪያ ቁልፍ ዳይጀስቶችን ደብቅ"
+          },
+          "signingthreshold": {
+            "title": "የፊርማ ገደብ",
+            "propexplain": {
+              "title": "ስለ የፊርማ ገደብ",
+              "content": "በዚህ መለያ ውስጥ አንድ ግብይት ወይም ክስተት ለማጽደቅ የሚያስፈልጉ ዝቅተኛ የፊርማ ቁልፎች ብዛት።"
+            },
+            "threshold": {
+              "title": "ገደብ",
+              "text": "{{threshold}} ከ {{members}}"
+            }
+          },
+          "rotationthreshold": {
+            "title": "የማዞሪያ ገደብ",
+            "propexplain": {
+              "title": "ስለ የማዞሪያ ገደብ",
+              "content": "አሮጌ የፊርማ ቁልፎችን ለመቀየር እና ለመተካት የሚያስፈልጉ ዝቅተኛ አዳዲስ ቁልፎች ብዛት።"
+            },
+            "threshold": {
+              "title": "የማዞሪያ ገደብ",
+              "text": "{{threshold}} ከ {{members}}"
+            }
+          },
+          "groupmember": {
+            "title": "የቡድን አባላት",
+            "propexplain": {
+              "title": "ስለ የቡድን አባላት",
+              "content": "ይህን የቡድን መለያ በጋራ የሚቆጣጠሩ ሰዎች ወይም አካላት ዝርዝር ያሳያል።"
+            },
+            "bottomtext": "{{members}} የቡድን አባላት"
+          }
+        }
       }
     },
     "credentials": {
@@ -388,6 +572,114 @@
       "layout": {
         "issued": "የተሰጠበት",
         "issuer": "ሰጪ"
+      },
+      "details": {
+        "joinedmember": "የተቀላቀሉ አባላት",
+        "done": "ጨርሱ",
+        "restore": "መልስ",
+        "delete": "ሰርዝ",
+        "type": "አይነት",
+        "name": "ስም",
+        "about": "ስለዚህ",
+        "credentialdetails": "የማረጋገጫ ዝርዝሮች",
+        "description": "መግለጫ",
+        "relatedidentifier": "ተዛማጅ መለያ",
+        "id": "መለያ",
+        "modal": {
+          "about": "ስለ {{ type }}"
+        },
+        "attributes": {
+          "title": "የማረጋገጫ ባህሪዎች",
+          "label": "ባህሪዎች",
+          "description": "በዚህ ማረጋገጫ ውስጥ ዋና መረጃዎችን የሚያረጋግጡ እና የሚገልጹ ከሰጪው የተጋሩ አስፈላጊ ዝርዝሮች።",
+          "details": "የባህሪ ዝርዝሮች",
+          "issuee": "ሰጪ",
+          "issuancedate": "የተሰጠበት ቀን እና ሰዓት",
+          "lei": "LEI"
+        },
+        "schemaversion": "የስኪማ ስሪት",
+        "issuer": "ሰጪ",
+        "status": {
+          "label": "ሁኔታ",
+          "issued": "ተሰጥቷል",
+          "revoked": "ተሰርዟል",
+          "timestamp": "የጊዜ ማህተም: "
+        },
+        "options": {
+          "title": "የማረጋገጫ አማራጮች",
+          "view": "JSON አሳይ",
+          "archive": "ማረጋገጫ ወደ ማህደር አስገባ"
+        },
+        "button": {
+          "delete": "ማረጋገጫ ሰርዝ",
+          "archive": "ማረጋገጫ ወደ ማህደር አስገባ"
+        },
+        "alert": {
+          "archive": {
+            "title": "ይህን ማረጋገጫ ወደ ማህደር ማስገባት እንደሚፈልጉ እርግጠኛ ነዎት?",
+            "confirm": "አዎ፣ እርግጠኛ ነኝ",
+            "cancel": "ሰርዝ"
+          },
+          "delete": {
+            "title": "ይህን ማረጋገጫ መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት?",
+            "confirm": "አዎ፣ እርግጠኛ ነኝ",
+            "cancel": "ሰርዝ"
+          },
+          "restore": {
+            "title": "ይህን ከሌሎች ማረጋገጫዎችዎ ጋር እንደገና ማየት ይፈልጋሉ?",
+            "confirm": "አዎ፣ ማረጋገጫውን መልስ",
+            "cancel": "ሰርዝ"
+          },
+          "missingissuer": {
+            "confirm": "እሺ",
+            "text": "ይህ ማረጋገጫ ከዚያ በኋላ ተሰርዟል ወይም አሁን ሊደረስበት ከማይቻል ግንኙነት ተሰጥቶ ነበር። ስለዚህ የግንኙነቱ ዝርዝሮች ሊታዩ አይችሉም።"
+          }
+        },
+        "toast": {
+          "clipboard": "ወደ ቅንጥብ ሰሌዳ ተቀድቷል"
+        },
+        "clouderror": "ይህን ማረጋገጫ በክላውድ ላይ ማግኘት አልቻልንም። በኋላ እንደገና ሊገኝ ይችላል፣ ግን አንዳንድ መረጃ ሊጠፋ ይችላል።\n\nይህን ማረጋገጫ ከእንግዲህ ካልፈለጉት ለማስወገድ “ማረጋገጫ ሰርዝ” ይጫኑ።"
+      },
+      "archived": {
+        "title": "ታሪክ",
+        "done": "ጨርሱ",
+        "select": "ምረጥ",
+        "selectall": "ሁሉንም ምረጥ",
+        "deselectall": "ሁሉንም ምርጫ አስወግድ",
+        "cancel": "ሰርዝ",
+        "delete": "ሰርዝ",
+        "restore": "መልስ",
+        "oneselected": "1 ማረጋገጫ ተመርጧል",
+        "manyselected": "{{amount}} ማረጋገጫዎች ተመርጠዋል",
+        "archivedtitle": "በማህደር የተቀመጡ ማረጋገጫዎች",
+        "revokedtitle": "የተሰረዙ ማረጋገጫዎች",
+        "revokedlabel": "ተሰርዟል",
+        "alert": {
+          "restoresingle": {
+            "title": "ይህን ከሌሎች ማረጋገጫዎችዎ ጋር እንደገና ማየት ይፈልጋሉ?",
+            "confirm": "አዎ፣ ማረጋገጫውን መልስ",
+            "cancel": "ሰርዝ"
+          },
+          "restoremultiple": {
+            "title": "እነዚህን ከሌሎች ማረጋገጫዎችዎ ጋር እንደገና ማየት ይፈልጋሉ?",
+            "confirm": "አዎ፣ ማረጋገጫዎቹን መልስ",
+            "cancel": "ሰርዝ"
+          },
+          "deletesingle": {
+            "title": "ይህ የተመረጠውን ማረጋገጫ ከዋሌትዎ በቋሚነት ይሰርዛል",
+            "confirm": "ከዋሌት ሰርዝ",
+            "cancel": "ሰርዝ"
+          },
+          "deletemultiple": {
+            "title": "ይህ የተመረጡትን ማረጋገጫዎች ከዋሌትዎ በቋሚነት ይሰርዛል",
+            "confirm": "ከዋሌት ሰርዝ",
+            "cancel": "ሰርዝ"
+          },
+          "restorerevoked": {
+            "title": "የተሰረዙ ማረጋገጫዎችን መመለስ አይቻልም።",
+            "confirm": "እሺ"
+          }
+        }
       }
     },
     "scan": {
@@ -486,8 +778,52 @@
         "title": "የግንኙነት አማራጮች",
         "description": "ይህ ግንኙነት በመጠባበቅ ላይ ነው። ሲቀበሉት ማሳወቂያ ይደርስዎታል። ከእንግዲህ ካልፈለጉት ለማስወገድ “ግንኙነት ሰርዝ” ይጫኑ።",
         "button": "ግንኙነት ሰርዝ",
-        "secondchecktitle": "ይህን ግንኙነት መሰረዝዎን እርግጠኛ ነዎት?"
+        "secondchecktitle": "ይህን ግንኙነት መሰረዝዎን እርግጠኛ ነዎት?",
+        "finishconnecting": "ግንኙነቱን ጨርስ"
       }
+    },
+    "details": {
+      "done": "ጨርሱ",
+      "label": "መለያ ስም",
+      "date": "የተፈጠረበት ቀን",
+      "endpoints": "የአገልግሎት መጨረሻዎች",
+      "history": "የግንኙነት ታሪክ",
+      "connectedwith": "ከ“{{ issuer }}” ጋር ተገናኝቷል",
+      "issuance": "“{{ credential }}” ተቀብሏል",
+      "requestpresent": "“{{ issuer }}” የማረጋገጫ ማቅረብ ጠይቋል",
+      "update": "“{{ credential }}” ተሰርዟል",
+      "presented": "“{{ credentialType }}” ማረጋገጫ አቅርቧል",
+      "notavailable": "የለም",
+      "details": "ዝርዝሮች",
+      "notes": "ማስታወሻዎች",
+      "nocurrentnotes": "አሁን ያሉ ማስታወሻዎች የሉም",
+      "nocurrentnotesext": "አሁን ከዚህ ግንኙነት ጋር የተያያዙ ማስታወሻዎች የሉም።",
+      "cancel": "ሰርዝ",
+      "confirm": "አረጋግጥ",
+      "title": "ርዕስ",
+      "message": "መልዕክት",
+      "delete": "ግንኙነት ሰርዝ",
+      "options": {
+        "title": "የግንኙነት አማራጮች",
+        "labels": {
+          "add": "ማስታወሻ ጨምር",
+          "manage": "ማስታወሻዎችን አስተዳድር",
+          "delete": "ግንኙነት ሰርዝ"
+        },
+        "alert": {
+          "deleteconnection": {
+            "title": "ይህን ግንኙነት መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት?",
+            "confirm": "አዎ፣ እርግጠኛ ነኝ",
+            "cancel": "ሰርዝ"
+          },
+          "deletenote": {
+            "title": "ይህን ማስታወሻ መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት?",
+            "confirm": "አዎ፣ እርግጠኛ ነኝ",
+            "cancel": "ሰርዝ"
+          }
+        }
+      },
+      "clouderror": "ይህን ግንኙነት በክላውድ ላይ ማግኘት አልቻልንም። በኋላ እንደገና ሊገኝ ይችላል፣ ግን አንዳንድ መረጃ ሊጠፋ ይችላል።\n\nይህን ግንኙነት ከእንግዲህ ካልፈለጉት ለማስወገድ “ግንኙነት ሰርዝ” ይጫኑ።"
     }
   },
   "createidentifier": {
@@ -693,5 +1029,119 @@
         "skip": "በኋላ ላይ ያዘጋጁ"
       }
     }
+  },
+  "connectmodal": {
+    "title": "{{type}} ጨምር",
+    "types": {
+      "connection": "ግንኙነት",
+      "credential": "ማረጋገጫ"
+    },
+    "scan": "QR ኮድ ቃኝ",
+    "connect": "በመቃኘት ይገናኙ",
+    "provide": "QR ኮድ አቅርብ",
+    "close": "ጨርሱ"
+  },
+  "verifypassword": {
+    "title": "የይለፍ ቃል ያስገቡ",
+    "cancel": "ሰርዝ",
+    "confirm": "አረጋግጥ",
+    "button": {
+      "forgot": "የይለፍ ቃልዎን ረስተዋል?"
+    },
+    "error": {
+      "hasNoMatch": "የይለፍ ቃሉ አልተዛመደም"
+    },
+    "alert": {
+      "choice": {
+        "title": "የይለፍ ቃል ፍንጭዎን ማየት ይፈልጋሉ ወይስ የይለፍ ቃልዎን እንደገና ማቀናበር?"
+      },
+      "button": {
+        "seepasswordhint": "ፍንጭ አሳይ",
+        "resetmypassword": "የይለፍ ቃል ዳግም አዘጋጅ",
+        "tryagain": "እንደገና ሞክር",
+        "cancel": "ሰርዝ"
+      },
+      "hint": {
+        "title": "የይለፍ ቃል ፍንጭዎ"
+      }
+    }
+  },
+  "verifypasscode": {
+    "cancel": "ሰርዝ",
+    "title": "ፒን ያስገቡ",
+    "description": "ለማረጋገጥ ፒንዎን ያስገቡ",
+    "error": "የተሳሳተ ፒን",
+    "forgotten": {
+      "button": "ፒኔን ረስቼዋለሁ"
+    },
+    "alert": {
+      "text": {
+        "verify": "ፒንዎን ከረሱ ወደ ዋሌትዎ እንደገና ለመግባት የማስመለሻ ሐረግዎን ያረጋግጡ",
+        "restart": "እስካሁን የማስመለሻ ሐረግ አልፈጠሩም። እንደገና ከመጀመሪያ መጀመር ይፈልጋሉ?"
+      },
+      "button": {
+        "verify": "የማስመለሻ ሐረግዎን ያረጋግጡ",
+        "restart": "እንደገና ጀምር",
+        "cancel": "ሰርዝ"
+      }
+    }
+  },
+  "forgotauth": {
+    "cancel": "ሰርዝ",
+    "passcode": {
+      "title": "ፒን ረሳሁ",
+      "description": "ፒንዎን ዳግም ለማቀናበር የማስመለሻ ሐረግዎን ያረጋግጡ። መተየብ ለመጀመር የመጀመሪያውን አማራጭ ይጫኑ።"
+    },
+    "password": {
+      "title": "የይለፍ ቃል ረሳሁ",
+      "description": "የይለፍ ቃልዎን ዳግም ለማቀናበር የማስመለሻ ሐረግዎን ያረጋግጡ። መተየብ ለመጀመር የመጀመሪያውን አማራጭ ይጫኑ።"
+    },
+    "newpasscode": {
+      "title": "አዲስ ፒን",
+      "description": "ዋሌትዎን እንደገና ለመጠበቅ እና እርምጃዎችን ለመፈጸም አዲስ ፒን ይፍጠሩ",
+      "reenterpasscode": "ፒኑን እንደገና ያስገቡ"
+    },
+    "newpassword": {
+      "title": "አዲስ የይለፍ ቃል",
+      "description": "ተጨማሪ የዋሌት ባህሪያትን ለመድረስ አዲስ የተግባር የይለፍ ቃል ይፍጠሩ።"
+    }
+  },
+  "shareidentifier": {
+    "title": "ግንኙነት አጋራ",
+    "subtitle": {
+      "identifier": "ለማጋራት ወይም QR ኮዱን ይቃኙ ወይም ከታች ካሉት አማራጮች አንዱን ይምረጡ",
+      "connection": "ይህን QR ኮድ ለመገናኘት ለሚፈልጉት ሰው ያሳዩ፣ ወይም 'ተጨማሪ የማጋራት አማራጮች' የሚለውን ይጫኑ"
+    },
+    "done": "ጨርሱ",
+    "divider": "ወይም",
+    "copykey": "የግንኙነት URL ቅዳ",
+    "more": "ተጨማሪ የማጋራት አማራጮች"
+  },
+  "faydamodal": {
+    "title": "በፋይዳ ያረጋግጡ",
+    "description": "አዲሱ ግንኙነትዎ የፋይዳ ማረጋገጫ እስኪጠናቀቅ ድረስ በመጠባበቅ ላይ ይቆያል።",
+    "connectionLabel": "ግንኙነቱን ({{connectionLabel}}) ለማጠናቀቅ አሁን ያረጋግጡ።",
+    "button": "በፋይዳ ያረጋግጡ",
+    "verifying": "በማረጋገጥ ላይ..."
+  },
+  "biometry": {
+    "reason": "ማንነትዎን ለማረጋገጥ ባዮሜትሪክስ ይጠቀሙ",
+    "canceltitle": "ሰርዝ",
+    "iosfallbacktitle": "በTouch ID ይግቡ",
+    "iosfallbackpasswordtitle": "የይለፍ ቃል ያስገቡ",
+    "androidtitle": "ባዮሜትሪክስን አንቃ",
+    "androidsubtitle": "ወደፊት በፍጥነት ለመግባት ባዮሜትሪክስን ይጠቀሙ",
+    "setupbiometryheader": "ባዮሜትሪክስ ማቀናበር",
+    "setupbiometryconfirm": "አንቃ",
+    "setupbiometrycancel": "አሁን አይደለም",
+    "cancelbiometryheader": "የባዮሜትሪክስ ማቀናበር ሰርዝ"
+  },
+  "genericerror": {
+    "text": "የሆነ ችግር ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
+    "button": "እሺ"
+  },
+  "nowitnesserror": {
+    "text": "የSSI ኤጀንትዎ በትክክል አልተዋቀረም። ለተጨማሪ መረጃ የSSI Cloud Agent አቅራቢዎን ያነጋግሩ።",
+    "button": "እሺ"
   }
 }

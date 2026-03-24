@@ -536,7 +536,9 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
             "connections.page.deletepending.secondchecktitle"
           )}`}
           onDeletePendingItem={deleteConnection}
-          finishConnectingButtonText="Finish connecting"
+          finishConnectingButtonText={`${i18n.t(
+            "connections.page.deletepending.finishconnecting"
+          )}`}
           onFinishConnecting={handleFinishConnecting}
         />
         <FaydaModal

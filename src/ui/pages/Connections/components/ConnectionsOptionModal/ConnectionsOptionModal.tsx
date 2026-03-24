@@ -10,6 +10,9 @@ const ConnectionsOptionModal = ({
   handleScanConnection,
   handleProvideQr,
 }: ConnectionsOptionModalProps) => {
+  const translatedType = i18n.t(`connectmodal.types.${type.toLowerCase()}`, {
+    defaultValue: type.toLowerCase(),
+  });
   const options: OptionItem[] = [
     {
       icon: scanCircleOutline,
@@ -42,7 +45,9 @@ const ConnectionsOptionModal = ({
         closeButton: true,
         closeButtonAction: handleClose,
         closeButtonLabel: `${i18n.t("connectmodal.close")}`,
-        title: `${i18n.t("connectmodal.title")} ${type.toLowerCase()}`,
+        title: `${i18n.t("connectmodal.title", {
+          type: translatedType,
+        })}`,
       }}
       items={options}
     />
