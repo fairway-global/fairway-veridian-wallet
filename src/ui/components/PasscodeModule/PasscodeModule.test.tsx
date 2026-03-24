@@ -8,7 +8,7 @@ import { OperationType } from "../../globals/types";
 
 const initialState = {
   stateCache: {
-    routes: [RoutePath.GENERATE_SEED_PHRASE],
+    routes: [{ path: RoutePath.GENERATE_SEED_PHRASE }],
     authentication: {
       loggedIn: false,
       time: Date.now(),

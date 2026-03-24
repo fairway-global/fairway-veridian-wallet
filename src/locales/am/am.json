@@ -1,0 +1,697 @@
+{
+  "onboarding": {
+    "slides": [
+      {
+        "title": "ወደ ቬሪዲያን እንኳን በደህና መጡ",
+        "description": "ደህንነቱ የተጠበቀ እና እንከን የለሽ አስተዳደር ጋር የእርስዎን ዲጂታል ማንነት ሙሉ ቁጥጥር ይውሰዱ"
+      },
+      {
+        "title": "ደህንነቱ የተጠበቀ እና የራስ-ገዝ",
+        "description": "ማንነትዎ የተመሰጠረ እና በመሣሪያዎ ላይ ደህንነቱ በተጠበቀ ሁኔታ የተከማቸ ነው። እርስዎ ብቻ ፍቃድ አለዎት"
+      },
+      {
+        "title": "ግላዊነትን ያስቀደመ",
+        "description": "የምስክር ወረቀቶችዎን መቼ እንደሚያቀርቡ ይቆጣጠሩ፣ የግል መረጃዎን የግል ያድርጉ"
+      },
+      {
+        "title": "ከቡድን ማንነት ጋር ይመዝገቡ",
+        "description": "አስፈላጊ በሚሆንበት ጊዜ እንደ ግለሰብ ወይም የቡድን አካል ይመዝገቡ እና ያረጋግጡ"
+      }
+    ],
+    "getstarted": {
+      "button": {
+        "label": "ጀምር"
+      }
+    },
+    "alreadywallet": {
+      "button": {
+        "label": "ቀድሞውኑ ቋት አለኝ"
+      }
+    }
+  },
+  "createpasscodemodule": {
+    "errornomatch": "ሚስጥር ቁጥር አይዛመድም",
+    "errormatch": "የይለፍ ቁጥር ቀድሞውኑ ጥቅም ላይ ውሏል",
+    "cantremember": "ማስታወስ አልቻልክም?",
+    "repeat": "ተዛማጅ ቁጥሮችን ያስወግዱ ለምሳሌ 111111",
+    "consecutive": "ተከታታይ ቁጥሮችን ያስወግዱ ለምሳሌ 123456"
+  },
+  "setpasscode": {
+    "enterpasscode": "የይለፍ ኮድዎን ይፍጠሩ",
+    "description": "ቋቶን ለማረጋገጥ እና በመመዝገብ ላይ ያለውን ሂደት ለመቀጠል የይለፍ ቃል ይፍጠሩ",
+    "recoverydescription": "ቋቶን ለማረጋገጥ እና የማስመለስ ሂደቱን ለመቀጠል የይለፍ ቃል ይፍጠሩ",
+    "reenterpasscode": "የይለፍ ቃልዎን እንደገና ያስገቡ",
+    "cancelbtn": "ይሰርዙ",
+    "backbtn": "ተመለስ"
+  },
+  "setupbiometrics": {
+    "title": "ባዮሜትሪክስን ያስጀመሩ",
+    "description": "ወደ ቬሪዲያን ቋቶን በፍጥነት ለመጠቀም ባዮሜትሪክስን ይጠቀሙ። ይህን ቅንብሮች ውስጥ በማንኛውም ጊዜ ይህን ማብራት ወይም ማጥፋት ይችላሉ",
+    "button": {
+      "enable": "ባዮሜትሪክስን ያስጀመሩ",
+      "skip": "በኋላ ላይ ያዘጋጁ"
+    }
+  },
+  "generateseedphrase": {
+    "onboarding": {
+      "title": "የእርስዎ የማስመለሻ ሐረግ",
+      "paragraph": {
+        "bottom": "እነዚህን ቃላት ደህንነታቸውን ይጠብቁ! በአስተማማኝ ሁኔታ ያስቀምጧቸው እና ከማንም ጋር በጭራሽ አያጋሩዋቸው።"
+      },
+      "button": {
+        "continue": "ይቀጥሉ",
+        "switch": "ነባር ቋቶን መልሰው ያግኙ",
+        "recoverydocumentation": "የማስመለሻ  ሐረግዎ ምንድን ነው?"
+      },
+      "recoveryseedphrasedocs": {
+        "title": "የማስመለሻ ሐረግ",
+        "button": {
+          "done": "ተከናውኗል"
+        },
+        "alert": "የማስመለሻ ሐረግዎን ካጡ ቋቶን መልሰን ማግኘት አንችልም። ደህንነቱን መጠበቅ ማለት የማንነትዎን ደህንነት መጠበቅ ማለት ነው።",
+        "content": {
+          "what": {
+            "title": "የማስመለሻ ሐረግ ምንድን ነው?",
+            "content": [
+              {
+                "text": "የማስመለሻ ሐረግዎ ለቋቶ እንደ ዋና ቁልፍ ነው ። ስልክዎን ካጡ ወይም በአዲሱ መሣሪያ ላይ መልሰው ማግኘት ከፈለጉ የመታወቂያ ቋትደህንነቱ በተጠበቀ ሁኔታ እንዲያገኙ የሚያስችልዎ ልዩ የ 18 ቃላት ስብስብ ነው።"
+              }
+            ]
+          },
+          "why": {
+            "title": "ይህን ያህል አስፈላጊ የሆነው ለምንድን ነው?",
+            "content": [
+              {
+                "text": "<strong>የእርስዎ ቋት, የእርስዎ ቁጥጥር፦</strong> ባህላዊ መለያዎች በተለየ, ማንም- እኛ እንኳን ቋቶን ለእርስዎ ዳግም ማስጀመር አንችልም። ይህ የእርስዎን ማንነት እና ውሂብ ደህንነቱ የተጠበቀ እና ሙሉ በሙሉ በእርስዎ ቁጥጥር ስር ይጠብቃል።"
+              },
+              {
+                "text": "<strong>በአይነቱ ልዩ ቁልፍ፦</strong> የማስመለሻ ሐረግ በመሣሪያዎ ላይ የሆነ ነገር ከተከሰተ ቋትዎን ለመመለስ ብቸኛው መንገድ ነው። ያለሱ ማንነትዎን በቋሚነት ሊያጡ ይችላሉ።"
+              },
+              {
+                "text": "<strong>ይጠበቁ፦</strong> እንደቤትዎ ሁለተኛ ቁልፍ ያስቡት። ከጠፋቦት ማንም በርዎን ሊከፍት አይችልም!"
+              }
+            ]
+          },
+          "how": {
+            "title": "እንዴት በጥንቃቄ ማስቀመጥ እንደሚቻል፦",
+            "content": [
+              {
+                "text": "<strong>ይጻፉት፦</strong> በተቆለፈ መሳቢያ ወይም ደህንነቱ በተጠበቀ ቦታ ይቆልፉት።"
+              },
+              {
+                "text": "<strong>አያጋሩ፦</strong> የእርስዎን የማስመለሻ ሐረግ በመጠቀም ማንኛውም ሰው ቋትዎን መጠቀም ይችላል። ለግል ይያቁት።"
+              },
+              {
+                "text": "<strong>ምንም ግብረ-ምስል እይታዎች የሉም፦</strong> በስልክዎ ላይ ወይም በውሂብ ላይ አያስቀምጡ ፤ይህ ከጠላፊዎች ይከላከላል።"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "segment": "{{length}} ቃላት",
+    "privacy": {
+      "overlay": {
+        "text": "የማስመለሻ ሐረግዎን ለማየት ዝግጁ በሚሆኑበት ጊዜ ‹ የእይታ ማግኛ ሐረግ › የሚለውን አዝራር ይጫኑ። ማንም እያየቦት እንዳልሆነ ማረጋገጥዎን ያስታውሱ!",
+        "button": "የማስመለሻ ሐረግን ይመልከቱ"
+      }
+    },
+    "alert": {
+      "confirm": {
+        "text": "የ 18 ቃል ሐረግዎን በትክክል እንደገለበጡ ደግመው መመርመሮን አረጋግጠዋል?",
+        "button": {
+          "confirm": "አዎ፣ ተገልብጦዋል",
+          "cancel": "ይሰርዙ"
+        }
+      },
+      "exit": {
+        "text": "ተመልሰው ከሄዱ አሁን ያሉበትን ሂደት ያጣሉ። እርግጠኛ ነዎት ይህን ማድረግ ይፈልጋሉ?",
+        "button": {
+          "confirm": "ያረጋግጡ",
+          "cancel": "ይሰርዙ"
+        }
+      },
+      "toggle": {
+        "text": "ትሮችን መቀየር ቀድሞውኑ ያስገቡትን ቃላት ያስወግዳል፤ እርግጠኛ ነዎት ለመቀየር ይፈልጋሉ?",
+        "button": {
+          "confirm": "አዎ ትሮችን ቀይር",
+          "cancel": "ይሰርዙ"
+        }
+      },
+      "verify": {
+        "text": "የእርስዎ የማስመለሻ ሐረግ ሊረጋገጥ አልቻለም። እባክዎ እንደገና ይሞክሩ ወይም አማራጭ ዘዴ ይምረጡ",
+        "button": {
+          "confirm": "እንደገና ይሞክሩ",
+          "cancel": "ይሰርዙ"
+        }
+      }
+    },
+    "termsandconditions": {
+      "text": "የ <0>{{clickableTerms}}</0> እና <1>{{clickablePrivacy}}</1> ን አንብቤ እስማማለሁ።",
+      "terms": "የአጠቃቀም ውሎች",
+      "privacy": "የግላዊነት ፖሊሲ"
+    }
+  },
+  "lockpage": {
+    "title": "በድጋሚ እንኳን በደህና መጡ ።",
+    "description": "ለመግባት እባክዎ የማለፊያ ኮድዎን ያስገቡ",
+    "error": "የተሳሳተ የይለፍ ቃል",
+    "forgotten": {
+      "button": "የይለፍ ቃሌን ረሳሁ"
+    },
+    "attempterror": "{{attempt}} ሙከራ ይቀራል",
+    "attemptalert": {
+      "title": "መግባት አልተቻለም",
+      "content": "እንደገና ይሞክር ከ{{time}}",
+      "hour": "{{value}} ሰዓት",
+      "hours": "{{value}} ሰዓቶች",
+      "minute": "{{value}} ደቂቃ",
+      "minutes": "{{value}} ደቂቃዎች"
+    },
+    "alert": {
+      "text": {
+        "verify": "የይለፍ ኮድዎን ከረሱ እባክዎ የቋቶዎን ለመጠቀም የማስመለሻ ሐረግዎን ያረጋግጡ",
+        "restart": "አሁን የማስመለሻ ሐረግዎን አልፈጠሩም፤ እንደገና የመግባት ሂደቱን መጀመር ይፈልጋሉ?"
+      },
+      "button": {
+        "verify": "የማስመለሻ ሐረግዎን ያረጋግጡ",
+        "restart": "ዳግም አስጀምር",
+        "cancel": "ይሰርዙ"
+      }
+    }
+  },
+  "verifyseedphrase": {
+    "onboarding": {
+      "title": "የማስመለሻ ሐረግዎን ያረጋግጡ",
+      "button": {
+        "continue": "ያረጋግጡ",
+        "back": "ተመለስ",
+        "clear": "ሁሉንም ያጥፉ"
+      }
+    },
+    "paragraph": {
+      "top": "እባክዎን ለእርስዎ በተሰጠው ቅደም ተከተል እያንዳንዱን ቃል ይምረጡ።"
+    },
+    "alert": {
+      "fail": {
+        "text": "ይቅርታ ያስገቡት የማስመለሻ ሐረግ የተሳሳተ ነው!",
+        "button": {
+          "confirm": "እንደገና ይሞክሩ"
+        }
+      },
+      "exit": {
+        "text": "ተመልሰው ከሄዱ አሁን ያሉበትን ሂደት ያጣሉ። እርግጠኛ ነዎት ይህን ማድረግ ይፈልጋሉ?",
+        "button": {
+          "confirm": "ያረጋግጡ",
+          "cancel": "ይሰርዙ"
+        }
+      },
+      "clear": {
+        "text": "እስካሁን ድረስ ያስገቡዋቸውን ሁሉንም ቃላት ማጥፋት እንደሚፈልጉ እርግጠኛ ነዎት?",
+        "button": {
+          "confirm": "ሁሉንም ያጥፉ",
+          "cancel": "ይሰርዙ"
+        }
+      }
+    }
+  },
+  "verifyrecoveryseedphrase": {
+    "title": "ቋትዎን ያስመልሱ",
+    "button": {
+      "continue": "ያረጋግጡ",
+      "lock": "በ 1 ደቂቃ ውስጥ እንደገና ይሞክሩ",
+      "clear": "ሁሉንም ያጥፉ",
+      "switch": "አዲስ ቋት ይፍጠሩ"
+    },
+    "paragraph": {
+      "top": "የቋትዎን ለማስመለስ እባክዎ የማስመለሻ ማግኛ ሐረግዎን ያረጋግጡ። መተየብ ለመጀመር በመጀመሪያው አማራጭ ላይ ጠቅ ያድርጉ።"
+    },
+    "suggestions": {
+      "title": "ጥቆማዎች",
+      "error": "ሁሉም ቃላት ከጥቆማዎች ጋር ተኳሃኝ መሆን አለባቸው"
+    },
+    "alert": {
+      "fail": {
+        "text": "ይቅርታ ያስገቡት የማስመለሻ ሐረግ የተሳሳተ ነው!",
+        "button": {
+          "confirm": "እንደገና ይሞክሩ"
+        }
+      },
+      "clear": {
+        "text": "እስካሁን ድረስ ያስገቡዋቸውን ሁሉንም ቃላት ማጥፋት እንደሚፈልጉ እርግጠኛ ነዎት?",
+        "button": {
+          "confirm": "ሁሉንም ያጥፉ",
+          "cancel": "ይሰርዙ"
+        }
+      }
+    }
+  },
+  "tabsmenu": {
+    "label": {
+      "identifiers": "መለያዎች",
+      "creds": "ማረጋገጫዎች",
+      "scan": "ይቃኙ",
+      "notifications": "ማሳወቅያዎች",
+      "menu": "ምናሌ"
+    }
+  },
+  "tabs": {
+    "menu": {
+      "tab": {
+        "header": "መነሻ ምናሌ",
+        "settings": {
+          "sections": {
+            "header": "ቅንብሮች",
+            "security": {
+              "title": "ደህንነት",
+              "biometry": "ባዮሜትሪክ ማረጋገጫ",
+              "changepin": {
+                "title": "የይለፍ ቁጥር ቀይር"
+              },
+              "managepassword": {
+                "title": "የተግባር የይለፍ ቃል አስተዳድር",
+                "page": {
+                  "title": "የይለፍ ቃል አስተዳድር",
+                  "alert": {
+                    "existingpassword": "አዲሱ የተግባር የይለፍ ቃልዎ ከነባሩ የተለየ መሆን አለበት።",
+                    "ok": "እሺ"
+                  }
+                }
+              },
+              "seedphrase": {
+                "title": "የማስመለሻ ሐረግ",
+                "page": {
+                  "title": "የማስመለሻ ሐረግ"
+                }
+              }
+            },
+            "support": {
+              "title": "ድጋፍ እና ህጋዊ",
+              "contact": "የቬሪዲያን ድጋፍ",
+              "learnmore": "ስለ ቬሪዲያን ተጨማሪ ይወቁ",
+              "terms": {
+                "title": "ውሎች እና የግላዊነት ፖሊሲ",
+                "submenu": {
+                  "title": "ውሎች እና ግላዊነት",
+                  "termsofuse": "የአጠቃቀም ውሎች",
+                  "privacy": "የግላዊነት ፖሊሲ"
+                }
+              },
+              "version": "የመተግበሪያ ስሪት"
+            },
+            "deleteaccount": {
+              "button": "መለያ ሰርዝ",
+              "alert": {
+                "title": "ይህ ሁሉንም የዋሌት ውሂብ ይሰርዛል። መለያዎን በሚስጥር የማስመለሻ ሐረግዎ በመጠቀም በማንኛውም ጊዜ መመለስ ይችላሉ።",
+                "confirm": "መለያ ሰርዝ",
+                "cancel": "ይሰርዙ"
+              }
+            }
+          }
+        },
+        "items": {
+          "profile": {
+            "title": "መገለጫ",
+            "tabheader": "መገለጫ",
+            "tabedit": "መገለጫ አርትዕ",
+            "actionedit": "አርትዕ",
+            "actionconfirm": "አረጋግጥ",
+            "actioncancel": "ይሰርዙ",
+            "name": "ስም"
+          },
+          "connections": {
+            "title": "ግንኙነቶች",
+            "tabheader": "ግንኙነቶች"
+          },
+          "connectwallet": {
+            "title": "ካርዳኖ ግንኙነት",
+            "sublabel": "CIP-45",
+            "tabheader": "ካርዳኖ ግንኙነት"
+          }
+        }
+      }
+    },
+    "identifiers": {
+      "tab": {
+        "title": "መለያዎች",
+        "create": "መለያ ጨምር",
+        "favourites": "ተወዳጆች",
+        "allidentifiers": "ሁሉም መለያዎች",
+        "filters": {
+          "all": "ሁሉም",
+          "individual": "ግለሰብ",
+          "group": "ቡድን",
+          "placeholder": "እስካሁን ምንም {{ type }} መለያዎች አልፈጠሩም።"
+        },
+        "pendingidentifiers": "በመጠባበቅ ላይ ያሉ መለያዎች",
+        "multisigidentifiers": "ለቡድኖች",
+        "welcome": {
+          "skip": "ዝለል",
+          "welcometext": "እንኳን ደህና መጡ፣ {{name}}",
+          "text": "የተጠበቀ እና የግል ዲጂታል ማንነትዎን ለመፍጠር ትክክለኛው ቦታ ላይ ነዎት። የመጀመሪያዎን መለያ በመጨመር እንጀምር።",
+          "add": "መለያ ጨምር"
+        }
+      },
+      "deletepending": {
+        "title": "የመለያ አማራጮች",
+        "description": "መለያዎ በመጠባበቅ ላይ ነው እና አሁንም ሊጠናቀቅ ይችላል። ይህን መለያ ከእንግዲህ ካልፈለጉ ለማስወገድ “መለያ ሰርዝ” ይጫኑ።",
+        "mutilsigdescription": "ይህ መልቲሲግ በመጠባበቅ ላይ ነው። የሚፈለገው የአባላት መጠን ሲሟላ ይጠናቀቃል። ከበመጠባበቂያ ዝርዝርዎ ለማስወገድ “መለያ ሰርዝ” ይጫኑ።",
+        "witnesserror": "ይህን መለያ ሲፈጥሩ ችግር ተፈጥሯል። ተጨማሪ መረጃ ለማግኘት እባክዎ የክላውድ አቅራቢዎን ያነጋግሩ። ከበመጠባበቂያ ዝርዝርዎ ለማስወገድ “መለያ ሰርዝ” ይጫኑ።",
+        "button": "መለያ ሰርዝ",
+        "secondchecktitle": "ይህን መለያ መሰረዝዎን እርግጠኛ ነዎት?"
+      },
+      "layout": {
+        "created": "የተፈጠረበት"
+      }
+    },
+    "credentials": {
+      "tab": {
+        "title": "ማረጋገጫዎች",
+        "placeholder": "ገና ማረጋገጫዎች የሉም። አንድ ግንኙነት ካወጣልዎ በኋላ እዚህ ይታያሉ።",
+        "viewarchived": "በማህደር የተቀመጡ እና የተሰረዙ",
+        "favourites": "ተወዳጆች",
+        "allcreds": "ሁሉም ማረጋገጫዎች",
+        "filters": {
+          "all": "ሁሉም",
+          "individual": "ግለሰብ",
+          "group": "ቡድን",
+          "placeholder": "በአሁኑ ጊዜ ምንም {{ type }} ማረጋገጫዎች የሉዎትም።"
+        },
+        "pendingcred": "በመጠባበቅ ላይ ያሉ ማረጋገጫዎች",
+        "deletepending": {
+          "title": "የማረጋገጫ አማራጮች",
+          "description": "ማረጋገጫዎ በመጠባበቅ ላይ ነው እና አሁንም ሊጠናቀቅ ይችላል። ከእንግዲህ ካልፈለጉት ለማስወገድ “ማረጋገጫ ሰርዝ” ይጫኑ።",
+          "button": "ማረጋገጫ ሰርዝ",
+          "secondchecktitle": "ይህን ማረጋገጫ መሰረዝዎን እርግጠኛ ነዎት?"
+        }
+      },
+      "layout": {
+        "issued": "የተሰጠበት",
+        "issuer": "ሰጪ"
+      }
+    },
+    "scan": {
+      "tab": {
+        "title": "ለመቃኘት የQR ኮዱን በማዕቀፉ ውስጥ ያስተካክሉ",
+        "permissionalert": "ቃኝት ለመጀመር በመሣሪያዎ ቅንብሮች ውስጥ ካሜራውን ያስችሉ",
+        "cameraunavailable": "ካሜራዎን መድረስ አልቻልንም።",
+        "missingidentifier": {
+          "title": "ግንኙነት ለማቋቋም መጀመሪያ መለያ መፍጠር ያስፈልጋል",
+          "create": "መለያ ፍጠር",
+          "cancel": "ሰርዝ"
+        }
+      },
+      "pastemeerkatid": "Meerkat ID ለጥፍ"
+    },
+    "notifications": {
+      "tab": {
+        "header": "ማሳወቂያዎች",
+        "empty": "ማሳወቂያ የለም",
+        "chips": {
+          "all": "ሁሉም",
+          "identifiers": "መለያዎች",
+          "credentials": "ማረጋገጫዎች"
+        },
+        "unknownissuer": {
+          "text": "አንድ ሰው ማረጋገጫ ሊሰጥዎ እየሞከረ ነው። ግንኙነቶችዎ እንዲቀበሉ በትክክል መዋቀራቸውን ያረጋግጡ።",
+          "button": "እሺ"
+        },
+        "unknownrequest": {
+          "text": "አንድ ሰው ከእርስዎ ማረጋገጫ እየጠየቀ ነው። ግንኙነቶችዎ እንዲቀበሉ በትክክል መዋቀራቸውን ያረጋግጡ።",
+          "button": "እሺ"
+        },
+        "sections": {
+          "new": "አዲስ",
+          "earlier": {
+            "title": "ከዚህ በፊት",
+            "end": "የማሳወቂያዎች መጨረሻ",
+            "buttons": {
+              "showealier": "ቀደም ያሉ ማሳወቂያዎችን ይመልከቱ"
+            }
+          }
+        },
+        "optionmodal": {
+          "title": "የማሳወቂያ አማራጮች",
+          "done": "ተጠናቋል",
+          "showdetail": "ዝርዝር አሳይ",
+          "markasread": "እንደ ተነበበ ምልክት አድርግ",
+          "markasunread": "እንደ ያልተነበበ ምልክት አድርግ",
+          "delete": "ማሳወቂያ ሰርዝ",
+          "deletealert": {
+            "text": "ይህን ማሳወቂያ ማጥፋት ወደ ኋላ ሊመለስ አይችልም። ከተሰረዘ በኋላ ከዚህ ማሳወቂያ የሚፈለጉ እርምጃዎችን መፈጸም አይችሉም።",
+            "accept": "ሰርዝ",
+            "cancel": "ሰርዝ"
+          }
+        },
+        "labels": {
+          "exnipexgrant": "<strong>{{connection}}</strong> ማረጋገጫ ሊሰጥዎ ይፈልጋል",
+          "multisigicp": "<strong>{{connection}}</strong> ከእርስዎ ጋር የቡድን መለያ ለመፍጠር ጥያቄ አቅርቧል",
+          "exnipexapply": "<strong>{{connection}}</strong> ከእርስዎ ማረጋገጫ ጠይቋል",
+          "exnipexgrantrevoke": "የእርስዎ <strong>{{credential}}</strong> ማረጋገጫ ተሰርዟል",
+          "exnipexapplyproposed": "<strong>{{initiator}}</strong> ለ<strong>{{connection}}</strong> ጥያቄ ማረጋገጫ አቅርቧል",
+          "sign": "ለ <strong>{{connection}}</strong> <strong>የፊርማ ጥያቄ</strong>",
+          "signeventinfo": "<strong>የፊርማ ክስተት መረጃ</strong>",
+          "connectinstructions": "<strong>{{connection}} ጋር ለመገናኘት መመሪያዎችን በኢሜይልዎ ይመልከቱ</strong>"
+        }
+      }
+    }
+  },
+  "connections": {
+    "unknown": "ያልታወቀ",
+    "page": {
+      "title": "ግንኙነቶች",
+      "create": "ግንኙነት ጨምር",
+      "search": {
+        "placeholder": "ግንኙነቶችን ይፈልጉ",
+        "connections": "ግንኙነቶች",
+        "noresult": {
+          "title": "ለ“{{keyword}}” ምንም ውጤት አልተገኘም",
+          "text": "አጻጻፉን ይፈትሹ ወይም አዲስ ፍለጋ ይሞክሩ"
+        }
+      },
+      "indentifierselector": {
+        "title": "መለያ ይምረጡ",
+        "message": "ግንኙነቱን በየትኛው መለያ ማድረግ ይፈልጋሉ?",
+        "button": {
+          "cancel": "ሰርዝ",
+          "confirm": "አረጋግጥ"
+        }
+      },
+      "alert": {
+        "message": "ግንኙነት ለመፍጠር መለያ መፍጠር ያስፈልጋል። አሁን መፍጠር ይፈልጋሉ?",
+        "confirm": "መለያ ፍጠር",
+        "cancel": "ሰርዝ"
+      },
+      "deletepending": {
+        "title": "የግንኙነት አማራጮች",
+        "description": "ይህ ግንኙነት በመጠባበቅ ላይ ነው። ሲቀበሉት ማሳወቂያ ይደርስዎታል። ከእንግዲህ ካልፈለጉት ለማስወገድ “ግንኙነት ሰርዝ” ይጫኑ።",
+        "button": "ግንኙነት ሰርዝ",
+        "secondchecktitle": "ይህን ግንኙነት መሰረዝዎን እርግጠኛ ነዎት?"
+      }
+    }
+  },
+  "createidentifier": {
+    "cancel": "ሰርዝ",
+    "back": "ተመለስ",
+    "done": "ተጠናቋል",
+    "add": {
+      "title": "መለያ ጨምር",
+      "confirmbutton": "መለያ ፍጠር"
+    },
+    "scan": {
+      "cancel": "ሰርዝ",
+      "confirm": "አረጋግጥ",
+      "pasteoobi": "URL ለጥፍ",
+      "initiate": "ቡድን ጀምር",
+      "scanqrcode": "QR ኮድ ቃኝ",
+      "pastecontents": "ይዘት ለጥፍ"
+    },
+    "displayname": {
+      "title": "የሚታይ ስም",
+      "placeholder": "ለዚህ መለያ ስም ይፍጠሩ"
+    },
+    "color": {
+      "title": "የካርድ ቀለም ይምረጡ"
+    },
+    "aidtype": {
+      "title": "የመለያ አይነት",
+      "default": {
+        "label": "ግለሰብ"
+      },
+      "multisig": {
+        "label": "ቡድን"
+      },
+      "delegated": {
+        "label": "ውክልና"
+      }
+    },
+    "aidinfo": {
+      "title": "የመለያ አይነቶች",
+      "text": "መፍጠር ስለሚችሉት የመለያ አይነቶች ማብራሪያ።",
+      "individual": {
+        "label": "ግለሰብ",
+        "text": "እነዚህን መለያዎች ሁሉንም የግል ማንነቶችዎን ለመወከል ይጠቀሙባቸው።"
+      },
+      "group": {
+        "label": "ቡድን",
+        "text": "የቡድን መለያ በብዙ ሰዎች የሚቆጠር አካልን ለመወከል ይጠቅማል።"
+      },
+      "delegated": {
+        "label": "ውክልና",
+        "text": "የውክልና አማራጩ በአሁኑ ጊዜ በልማት ላይ ነው።"
+      },
+      "button": {
+        "done": "ተጠናቋል"
+      }
+    },
+    "theme": {
+      "title": "የካርድ ቅጥ ይምረጡ"
+    },
+    "error": {
+      "maxlength": "ከ32 ቁምፊዎች በታች መሆን አለበት"
+    }
+  },
+  "custominput": {
+    "optional": "(ግዴታ ያልሆነ)"
+  },
+  "switchmodemodal": {
+    "title": "ከመቀየርዎ በፊት",
+    "button": {
+      "back": "ተመለስ",
+      "continue": "ይቀጥሉ"
+    },
+    "recovery": {
+      "title": "ወደ ነባር ቋት መልሶ ለማግኘት ቀይር",
+      "paragraphtop": "ወደ ቋት መልሶ ማግኛ ሂደት ለመቀየር እየሞከሩ ነው። የሚሆነውም ይኸው ነው፦",
+      "warning": {
+        "one": "<strong>የይለፍ ቃል እና ክወናዎች የይለፍ ቃል፦</strong> የእርስዎን ነባር የይለፍ ቃል እና ክወናዎች የይለፍ ቃል ይጠብቃሉ። የክወና የይለፍ ቃል ማዋቀር ለመዝለል ከመረጡ ይህ ምርጫ ይቀጥላል።",
+        "two": "<strong>የማስመለሻ ሀረግ፦</strong> አዲስ የማስመለሻ ሐረግ መፍጠሪያ አልፈው ከሆነ፤ ይህ ይደመሰሳል። ከቀዳሚው ቋት ጋር የተዛመደውን የማስመለሻ ሐረግ ማረጋገጥ ያስፈልግዎታል።",
+        "three": "<strong>ማስፈንጠሪያን ያገናኙ፦</strong> ለኤስኤስአይ ወኪል ማያ ገጽ አገናኝ ማስፈንጠሪያ ብቻ ያስፈልግዎታል።"
+      },
+      "paragraphbot": "በሚቀይሩበት ጊዜ ነባር ቋዋትዎን ለመጠቀም የማስመረሻ ዝርዝሮችዎን ማስገባት ይችላሉ።"
+    },
+    "create": {
+      "title": "አዲስ ቋት ለመፍጠር ቀይር",
+      "paragraphtop": "ወደ አዲሱ ቋት ፈጠራ ሂደት ለመቀየር እየሞከሩ ነው። የሚሆነውም ይኸው ነው፦",
+      "warning": {
+        "one": "<strong>የይለፍ ቃል እና ክወናዎች የይለፍ ቃል፦</strong> የእርስዎን ነባር የይለፍ ቃል እና ክወናዎች የይለፍ ቃል ይጠብቃሉ። የክወና የይለፍ ቃል ማዋቀር ለመዝለል ከመረጡ ይህ ምርጫ ይቀጥላል።",
+        "two": "<strong>የማስመለሻ ሐረግ:</strong> አንተ ማስመለሻ ሐረግ መፍጠር እና ደህንነቱ በተጠበቀ ቦታ ወደ ታች እነዚህን ቃላት መቅዳት ይኖርብዎታል",
+        "three": "ቡት ማስፈንጠሪያ እና ማገናኛ ማስፈንጠሪያ፡ የቡት ማስፈንጠሪያ እና ማገናኛ ማስፈንጠሪያ ለኤስኤስአይ ወኪል ማያ ገጽ ያስፈልጎታል።"
+      },
+      "paragraphbot": "በሚቀይሩበት ጊዜ አዲስ ቋት ለመፍጠር ሂደቱን ይጀምራሉ።"
+    },
+    "checkbox": "አንብቤያለሁ እና ተረድቻለሁ።"
+  },
+  "removependingalert": {
+    "button": {
+      "done": "ጨርሱ",
+      "confirm": "አዎ እርግጠኛ ነኝ",
+      "cancel": "ይሰርዙ"
+    }
+  },
+  "createpassword": {
+    "title": "የይለፍ ቃል ፍጠር",
+    "change": "አዲስ የይለፍ ቃል",
+    "cancel": "ይሰርዙ",
+    "description": "አማራጭ የይለፍ ቃል በመፍጠር በእርስዎ ቋት ውስጥ ጥንቃቄ የሚፈልጉ እርምጃዎች ተጨማሪ የደህንነት ሽፋን ያክሉ።",
+    "learnmore": "ተጨማሪ ይወቁ",
+    "input": {
+      "first": {
+        "symbolguide": "ምልክት መመሪያ",
+        "title": "የይለፍ ቃል ፍጠር",
+        "placeholder": "የይለፍ ቃል ይተይቡ"
+      },
+      "second": {
+        "title": "የይለፍ ቃል ያረጋግጡ",
+        "placeholder": "የይለፍ ቃልዎን እንደገና ይተይቡ"
+      },
+      "third": {
+        "title": "ፍንጭ ፍጠር",
+        "placeholder": "የይለፍ ቃል ፍንጭ ፍጠር"
+      }
+    },
+    "button": {
+      "continue": "የይለፍ ቃል ፍጠር",
+      "skip": "ዝለል"
+    },
+    "alert": {
+      "text": "ለመዝለል እንደሚፈልጉ እርግጠኛ ነዎት? ይህን በማድረግዎ ማንኛውም የተጠበቁ ክወናዎች ለመከወን የእርስዎን የሚስጥር ቁጥር መጠቀም ይጠበቅቦታል። በእርግጥ ከፈለጉ ይህንን በኋላ ማዋቀር ይችላሉ።",
+      "button": {
+        "confirm": "አዎ ዝለል",
+        "cancel": "ይሰርዙ"
+      }
+    },
+    "error": {
+      "hasSpecialChar": "ለይለፍ ቃልዎ የታችኛው(ሎወር ኬዝ)/የላይኛው(አፐር ኬዝ) ፊደላትን፣ ቁጥሮችን እና ምልክቶችን ብቻ ይጠቀሙ።",
+      "passwordlength": "ከ 8-64 ፊደሎች እና ቁጥሮች መካከል መያዝ አለበት",
+      "hasNoUppercase": "የላይኛው(አፐር ኬዝ) ፊደል መያዝ አለበት",
+      "hasNoLowercase": "የታችኛው(ሎወር ኬዝ) ፊደል መያዝ አለበት",
+      "hasNoNumber": "ቁጥር መያዝ አለበት",
+      "hasNoSymbol": "ትክክለኛ ምልክት መያዝ አለበት።",
+      "hasNoMatch": "የይለፍ ቃላት አይዛመዱም",
+      "hintSameAsPassword": "የእርስዎ ፍንጭ የይለፍ ቃልዎ ሊሆን አይችልም"
+    },
+    "meter": {
+      "strengthlevel": {
+        "weak": "ደካማ",
+        "medium": "መካከለኛ",
+        "strong": "ጠንካራ"
+      },
+      "acceptcriteria": {
+        "text": "ከ <strong>8-64 ፊደሎች እና ቁጥሮች</strong> መካከል መሆን አለበት፤ <strong>የታችኛው(ሎወር ኬዝ)</strong> እና <strong>የላይኛው(አፐር ኬዝ)</strong> ፊደላት፣ <strong>ቁጥር</strong> እና <strong>ምልክት</strong> ይይዛል።"
+      }
+    },
+    "symbolmodal": {
+      "title": "ምልክት መመሪያ",
+      "done": "ጨርሱ",
+      "text": "እባክዎ ከዚህ በታች ከተዘረዘሩት የአሜሪካ እና የእንግሊዝ ቁልፍ ሰሌዳዎች ጋር በሚጣጣም የይለፍ ቃልዎ ውስጥ የሚጠቀሙባቸውን ምልክቶች ያረጋግጡ፦",
+      "note": "የተለያዩ ስርዓተ ክወናዎች እና መተግበሪያዎች በዚህ ስብስብ ላይ ገደቦች ሊተገበሩ ይችላሉ።",
+      "symbolcolumn": "ምልክት",
+      "name": "ስም",
+      "listsymbol": {
+        "space": "ባዶ ቦታ",
+        "exclamationmark": "ኦንማርክ የቃለ አጋኖ ምልክት",
+        "numbersign": "n ቁጥር ምልክት (ሃሽ)",
+        "dollarsign": "የዶላር ምልክት",
+        "sterlingsign": "n ስተርሊንግ ምልክት (ፓውንድ)",
+        "eurosign": "የዩሮ ምልክት",
+        "percent": "ፐርሰንት",
+        "ampersand": "የእና ምልክት",
+        "singlequote": "e ነጠላ ጥቅስ",
+        "leftparenthesis": "ማሟያ ጽሑፍ የግራ ቅንፍ",
+        "rightparenthesis": "ማሟያ ጽሑፍ የቀኝ ቅንፍ",
+        "asterisk": "የኮኮብ ምልክት በጽሕፈት",
+        "plus": "መደመር ምልክት",
+        "comma": "ነጠላ ሠረዝ",
+        "minus": "የመቀነስ ምልክት",
+        "fullstop": "አራት ነጥብ",
+        "slash": "ሰረዝ",
+        "colon": "ሁለት ነጥብ",
+        "semicolon": "ድርብ ሰረዝ",
+        "lessthan": "ያንሳል ምልክት",
+        "equal": "እኩልነት ምልክት",
+        "greaterthan": "ይበልጣል ምልክት",
+        "questionmark": "ጥያቄ ምልክት",
+        "atsign": "በምልክት ላይ",
+        "leftbracket": "የግራ ቅንፍ",
+        "backslash": "የኋላ ሰረዝ",
+        "rightbracket": "የቀኝ ቅንፍ",
+        "caret": "C",
+        "underscore": "የታች ሰረዝ",
+        "graveaccent": "መቃብር አጠራር (የጭንቅላት ሰረዝ)",
+        "leftbrace": "የግራ መዝጊያ",
+        "verticalbar": "ቀጥ ያለ አሞሌ",
+        "rightbrace": "የቀኝ መዝጊያ",
+        "tilde": "Tilde"
+      }
+    },
+    "setuppassword": {
+      "title": "የይለፍ ቃል ይፍጠሩ",
+      "description": "ጥንቃቄ ለሚፈልጉ እርምጃዎች ተጨማሪ ጥበቃን ይጨምሩ። ለአሁኑ ይህንን ከዘለሉ ፒንዎ በምትኩ ጥቅም ላይ ይውላል — መቼም የይለፍ ቃል ማዘጋጀት ይችላሉ።",
+      "button": {
+        "enable": "የይለፍ ቃል ይጨምሩ",
+        "skip": "በኋላ ላይ ያዘጋጁ"
+      }
+    }
+  }
+}

@@ -1,10 +1,31 @@
+jest.mock("ionicons/components/ion-icon.js", () => ({}), { virtual: true });
+jest.mock("../../../hooks", () => ({
+  useIonHardwareBackButton: jest.fn(),
+}));
+
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import { mockIonicReact } from "@ionic/react-test-utils";
+import { act } from "react";
 import { TabLayout } from "./TabLayout";
+import { i18n } from "../../../../i18n";
 
 mockIonicReact();
 
 describe("Tab layout", () => {
+  beforeEach(async () => {
+    window.localStorage.removeItem("app-language");
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+  });
+
+  afterEach(async () => {
+    window.localStorage.removeItem("app-language");
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+  });
+
   test("Render back button", async () => {
     const backButtonAction = jest.fn();
     const { getByTestId } = render(
@@ -58,5 +79,21 @@ describe("Tab layout", () => {
 
     fireEvent.click(getByTestId("action-button"));
     expect(actionButtonAction).toBeCalled();
+  });
+
+  test("Render language switch", async () => {
+    const { getByTestId } = render(
+      <TabLayout
+        header
+        title="Header title"
+      />
+    );
+
+    fireEvent.click(getByTestId("language-option-am"));
+
+    await waitFor(() => {
+      expect(i18n.resolvedLanguage).toBe("am");
+      expect(window.localStorage.getItem("app-language")).toBe("am");
+    });
   });
 });

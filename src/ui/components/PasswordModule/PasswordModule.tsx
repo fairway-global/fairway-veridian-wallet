@@ -16,7 +16,7 @@ import {
 import { ToastMsgType } from "../../globals/types";
 import { showError } from "../../utils/error";
 import {
-  errorMessages,
+  getErrorMessages,
   passwordStrengthChecker,
 } from "../../utils/passwordStrengthChecker";
 import { combineClassNames } from "../../utils/style";
@@ -165,6 +165,7 @@ const PasswordModule = forwardRef<PasswordModuleRef, PasswordModuleProps>(
         !passwordStrengthChecker.isValidCharacters(createPasswordValue));
 
     const openSymbolModal = () => setIsOpenSymbol(true);
+    const errorMessages = getErrorMessages();
 
     return (
       <>

@@ -16,6 +16,7 @@ import { useCallback, useState } from "react";
 import { TabLayoutProps } from "./TabLayout.types";
 import { useIonHardwareBackButton } from "../../../hooks";
 import { BackEventPriorityType } from "../../../globals/types";
+import { LanguageSwitch } from "../../LanguageSwitch";
 
 const TabLayout = ({
   pageId,
@@ -123,6 +124,8 @@ const TabLayout = ({
             )}
 
             <IonButtons slot="end">
+              <LanguageSwitch />
+
               {additionalButtons}
 
               {actionButton && actionButtonLabel && (

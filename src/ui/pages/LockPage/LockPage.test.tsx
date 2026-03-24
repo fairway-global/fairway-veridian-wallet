@@ -13,10 +13,12 @@ import { IonReactRouter } from "@ionic/react-router";
 import { act } from "react";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import { Provider } from "react-redux";
-import { MemoryRouter, Route } from "react-router-dom";
+import { MemoryRouter, Route, Router } from "react-router-dom";
 import configureStore from "redux-mock-store";
+import { createMemoryHistory } from "history";
 import EN_TRANSLATIONS from "../../../locales/en/en.json";
-import { RoutePath } from "../../../routes";
+import { RoutePath, TabsRoutePath } from "../../../routes/paths";
+import { CurrentRouteCacheProps } from "../../../store/reducers/stateCache/stateCache.types";
 import { OperationType } from "../../globals/types";
 import { passcodeFiller } from "../../utils/passcodeFiller";
 import { SetPasscode } from "../SetPasscode";
@@ -84,6 +86,10 @@ jest.mock("../../hooks/useBiometricsHook", () => ({
   })),
 }));
 
+jest.mock("../SetPasscode", () => ({
+  SetPasscode: () => <div>Set Passcode</div>,
+}));
+
 jest.mock("@capacitor-community/privacy-screen", () => ({
   PrivacyScreen: {
     enable: jest.fn(),
@@ -93,7 +99,7 @@ jest.mock("@capacitor-community/privacy-screen", () => ({
 
 interface StoreMockedProps {
   stateCache: {
-    routes: RoutePath[];
+    routes: CurrentRouteCacheProps[];
     authentication: {
       loggedIn: boolean;
       time: number;
@@ -125,7 +131,7 @@ const storeMocked = (initialState: StoreMockedProps) => {
 
 const initialState = {
   stateCache: {
-    routes: [RoutePath.GENERATE_SEED_PHRASE],
+    routes: [{ path: RoutePath.GENERATE_SEED_PHRASE }],
     authentication: {
       loggedIn: false,
       time: Date.now(),
@@ -240,7 +246,7 @@ describe("Lock Page", () => {
 
     const initialState = {
       stateCache: {
-        routes: [RoutePath.GENERATE_SEED_PHRASE],
+        routes: [{ path: RoutePath.GENERATE_SEED_PHRASE }],
         authentication: {
           loggedIn: false,
           time: Date.now(),
@@ -408,12 +414,42 @@ describe("Lock Page", () => {
       expect(queryByTestId("lock-page")).not.toBeInTheDocument();
     });
   });
+
+  test("Redirects to onboarding when a protected route is opened without a passcode", async () => {
+    const history = createMemoryHistory({
+      initialEntries: [TabsRoutePath.NOTIFICATIONS],
+    });
+
+    const noPasscodeState = {
+      ...initialState,
+      stateCache: {
+        ...initialState.stateCache,
+        routes: [{ path: TabsRoutePath.NOTIFICATIONS }],
+        authentication: {
+          ...initialState.stateCache.authentication,
+          passcodeIsSet: false,
+        },
+      },
+    };
+
+    render(
+      <Provider store={storeMocked(noPasscodeState)}>
+        <Router history={history}>
+          <LockPage />
+        </Router>
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(history.location.pathname).toBe(RoutePath.ONBOARDING);
+    });
+  });
 });
 
 describe("Lock Page: Max login attempt", () => {
   const initialState = {
     stateCache: {
-      routes: [RoutePath.GENERATE_SEED_PHRASE],
+      routes: [{ path: RoutePath.GENERATE_SEED_PHRASE }],
       authentication: {
         loggedIn: false,
         time: Date.now(),

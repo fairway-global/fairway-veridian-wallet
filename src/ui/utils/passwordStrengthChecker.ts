@@ -5,19 +5,19 @@ const passwordRequirements = {
   uppercasePattern: /^(?=.*[A-Z])/,
   lowercasePattern: /^(?=.*[a-z])/,
   numberPattern: /^(?=.*[0-9])/,
-  symbolPattern: /^(?=.*[!"@#$£€%&'()*+,-./:;<=>?@[\\\]^-`{|}~])/,
-  validCharactersPattern: /^[a-zA-Z0-9!"@#$£€%&'()*+,-./:;<=>?@[\\\]^-`{|}~]+$/,
+  symbolPattern: /^(?=.*[!"@#$Â£â‚¬%&'()*+,-./:;<=>?@[\\\]^-`{|}~])/,
+  validCharactersPattern: /^[a-zA-Z0-9!"@#$Â£â‚¬%&'()*+,-./:;<=>?@[\\\]^-`{|}~]+$/,
   lengthPattern: /^.{8,64}$/,
 };
 
-const errorMessages = {
+const getErrorMessages = () => ({
   hasSpecialChar: i18n.t("createpassword.error.hasSpecialChar"),
   passwordLength: i18n.t("createpassword.error.passwordlength"),
   hasNoUppercase: i18n.t("createpassword.error.hasNoUppercase"),
   hasNoLowercase: i18n.t("createpassword.error.hasNoLowercase"),
   hasNoNumber: i18n.t("createpassword.error.hasNoNumber"),
   hasNoSymbol: i18n.t("createpassword.error.hasNoSymbol"),
-};
+});
 
 const passwordStrengthChecker = {
   isLengthValid(password: string): boolean {
@@ -72,6 +72,8 @@ const passwordStrengthChecker = {
     return StrongLevel.Strong;
   },
   getErrorByPriority(password: string): string | undefined {
+    const errorMessages = getErrorMessages();
+
     if (password.length < 8 || password.length > 64) {
       return errorMessages.passwordLength;
     } else if (!this.isUppercaseValid(password)) {
@@ -90,4 +92,4 @@ const passwordStrengthChecker = {
   },
 };
 
-export { passwordStrengthChecker, errorMessages };
+export { passwordStrengthChecker, getErrorMessages };

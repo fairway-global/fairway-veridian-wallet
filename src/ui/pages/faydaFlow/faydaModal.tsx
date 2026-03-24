@@ -55,8 +55,8 @@ const FaydaModal = ({ isOpen, setIsOpen }: FaydaModalProps) => {
     const CLIENT_ID = "crXYIYg2cJiNTaw5t-peoPzCRo-3JATNfBd5A86U8t0";
     const REDIRECT_URI =
       process.env.REACT_APP_FAYDA_REDIRECT_URI ||
-      // "org.cardanofoundation.idw://fayda/callback";
-      "http://localhost:3000/callback";
+      "org.cardanofoundation.idw://fayda/callback";
+      // "http://localhost:3000/callback";
     const AUTH_ENDPOINT = "https://esignet.ida.fayda.et/authorize";
 
     if (!CLIENT_ID || !REDIRECT_URI || !AUTH_ENDPOINT) {

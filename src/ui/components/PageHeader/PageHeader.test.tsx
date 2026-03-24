@@ -1,8 +1,18 @@
+jest.mock("ionicons/components/ion-icon.js", () => ({}), { virtual: true });
+jest.mock("../../hooks", () => ({
+  useAppIonRouter: () => ({
+    push: jest.fn(),
+  }),
+  useIonHardwareBackButton: jest.fn(),
+}));
+jest.mock("../../hooks/swipeBackHook", () => ({
+  useSwipeBack: jest.fn(),
+}));
+
 import { fireEvent, render } from "@testing-library/react";
 import { Provider } from "react-redux";
 import configureStore from "redux-mock-store";
 import { PageHeader } from "./PageHeader";
-import { RoutePath } from "../../../routes";
 
 describe("Page Header", () => {
   const mockStore = configureStore();
@@ -32,7 +42,7 @@ describe("Page Header", () => {
       <Provider store={storeMocked}>
         <PageHeader
           backButton={true}
-          currentPath={RoutePath.GENERATE_SEED_PHRASE}
+          currentPath={"/"}
           progressBar={true}
           progressBarValue={0.66}
           progressBarBuffer={1}

@@ -754,6 +754,26 @@ describe("Credential service of agent", () => {
     );
   });
 
+  test("should delete local credential if delete from signify throws a missing-credential 500 error", async () => {
+    const mockMetadata = {
+      identifierId: "test-identifier-id",
+      pendingDeletion: true,
+      id: "test-credential-id",
+    };
+    deleteCredentialMock.mockRejectedValueOnce(
+      new Error(
+        'HTTP DELETE /credentials/test-credential-id - 500 Internal Server Error - {"title": "500 Internal Server Error"}'
+      )
+    );
+
+    await credentialService.deleteCredential("test-credential-id");
+
+    expect(deleteCredentialMock).toHaveBeenCalledWith(mockMetadata.id);
+    expect(credentialStorage.deleteCredentialMetadata).toHaveBeenCalledWith(
+      "test-credential-id"
+    );
+  });
+
   test("should throw an error if delete from signify throws a non-404 error", async () => {
     const mockMetadata = {
       identifierId: "test-identifier-id",
@@ -761,12 +781,14 @@ describe("Credential service of agent", () => {
       id: "test-credential-id",
     };
     deleteCredentialMock.mockRejectedValueOnce(
-      new Error("Request failed - 500 Internal Server Error")
+      new Error("HTTP DELETE /credentials/test-credential-id - 500 Internal Server Error - boom")
     );
 
     await expect(
       credentialService.deleteCredential("test-credential-id")
-    ).rejects.toThrow("Request failed - 500 Internal Server Error");
+    ).rejects.toThrow(
+      "HTTP DELETE /credentials/test-credential-id - 500 Internal Server Error - boom"
+    );
 
     expect(deleteCredentialMock).toHaveBeenCalledWith(mockMetadata.id);
     expect(credentialStorage.deleteCredentialMetadata).not.toHaveBeenCalled();
