@@ -11,7 +11,7 @@ import {
   setupIonicReact,
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
-import { StrictMode, useEffect, useState } from "react";
+import { StrictMode, useEffect, useReducer, useState } from "react";
 import { SafeArea } from "capacitor-plugin-safe-area";
 import { Routes } from "../routes";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
@@ -65,7 +65,26 @@ const App = () => {
   }>({ success: false, error: "" });
 
   const [threatsDetected, setThreatsDetected] = useState<ThreatCheck[]>([]);
+  const [, forceLanguageRefresh] = useReducer(
+    (count: number) => count + 1,
+    0
+  );
   const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    const handleLanguageChange = (language: string) => {
+      document.documentElement.lang =
+        language?.split("-")[0].toLowerCase() || "en";
+      forceLanguageRefresh();
+    };
+
+    handleLanguageChange(i18n.resolvedLanguage || i18n.language);
+    i18n.on("languageChanged", handleLanguageChange);
+
+    return () => {
+      i18n.off("languageChanged", handleLanguageChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;

@@ -9,6 +9,9 @@ const config = {
   entry: {
     main: path.join(__dirname, "src", "index.tsx"),
   },
+  output: {
+    path: path.resolve(__dirname, "build"),
+  },
   module: {
     rules: [
       {
@@ -19,7 +22,12 @@ const config = {
       },
       {
         test: /\.(ts|tsx)$/,
-        use: "ts-loader",
+        use: {
+          loader: "ts-loader",
+          options: {
+            configFile: path.resolve(__dirname, "tsconfig.webpack.json"),
+          },
+        },
         exclude: /node_modules/,
       },
       {
@@ -76,13 +84,20 @@ const config = {
       template: path.join(__dirname, "src", "index.html"),
     }),
     new CopyPlugin({
-      patterns: [{ from: "public" }],
+      patterns: [
+        {
+          from: "public",
+          globOptions: {
+            ignore: ["**/manifest.json"],
+          },
+        },
+      ],
     }),
     new CopyPlugin({
       patterns: [
         {
           from: path.join(__dirname, "public", "manifest.json"),
-          to: path.join(__dirname, "build"),
+          to: "manifest.json",
           force: true,
           transform: function (content, path) {
             // generates the manifest file using the package.json information

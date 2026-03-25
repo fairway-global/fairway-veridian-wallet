@@ -6,12 +6,12 @@ const nameRequirements = {
   onlySpacePattern: /^\s+$/,
 };
 
-const nameErrorMessages = {
+const getNameErrorMessages = () => ({
   invalidCharacter: i18n.t("nameerror.hasspecialchar"),
   invalidMaxLength: i18n.t("nameerror.maxlength"),
   invalidMinLength: i18n.t("nameerror.onlyspace"),
   invalidSpaceCharacter: i18n.t("nameerror.onlyspace"),
-};
+});
 
 const nameChecker = {
   isValidCharacters(name: string) {
@@ -24,6 +24,8 @@ const nameChecker = {
     return !nameRequirements.onlySpacePattern.test(name);
   },
   getError(name: string) {
+    const nameErrorMessages = getNameErrorMessages();
+
     if (name.length > 32) {
       return nameErrorMessages.invalidMaxLength;
     }
@@ -44,4 +46,4 @@ const nameChecker = {
   },
 };
 
-export { nameChecker };
+export { nameChecker, getNameErrorMessages };

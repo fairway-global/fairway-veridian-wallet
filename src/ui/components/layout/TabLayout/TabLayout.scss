@@ -25,6 +25,10 @@
       margin-inline: 0;
     }
 
+    ion-buttons .language-switch {
+      margin-right: 0.5rem;
+    }
+
     &.has-back-button {
       ion-title {
         margin-left: 1rem;
@@ -81,6 +85,10 @@
 
     ion-header ion-toolbar {
       margin-top: 0.531rem;
+
+      ion-buttons .language-switch {
+        margin-right: 0.35rem;
+      }
 
       &.has-back-button {
         ion-title {

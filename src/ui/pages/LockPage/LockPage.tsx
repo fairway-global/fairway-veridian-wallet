@@ -306,10 +306,26 @@ const LockPageContainer = () => {
 const LockPage = () => {
   const currentRoute = useAppSelector(getCurrentRoute);
   const authentication = useAppSelector(getAuthentication);
+  const router = useHistory();
 
   const isPublicPage = PublicRoutes.includes(currentRoute?.path as RoutePath);
+  const shouldRedirectToOnboarding =
+    !authentication.passcodeIsSet &&
+    !authentication.loggedIn &&
+    !!currentRoute?.path &&
+    !isPublicPage;
 
-  if (isPublicPage || authentication.loggedIn) {
+  useEffect(() => {
+    if (!shouldRedirectToOnboarding) {
+      return;
+    }
+
+    if (router.location.pathname !== RoutePath.ONBOARDING) {
+      router.replace(RoutePath.ONBOARDING);
+    }
+  }, [router, shouldRedirectToOnboarding]);
+
+  if (isPublicPage || authentication.loggedIn || !authentication.passcodeIsSet) {
     return null;
   }
 

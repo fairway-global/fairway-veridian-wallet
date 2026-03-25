@@ -5,6 +5,7 @@ import {
   BiometryType,
   CheckBiometryResult,
 } from "@aparajita/capacitor-biometric-auth";
+import { Capacitor } from "@capacitor/core";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import { act, useState } from "react";
 import { Provider } from "react-redux";
@@ -66,6 +67,11 @@ const TestComponent = () => {
 
 describe("Biometric hook", () => {
   beforeEach(() => {
+    jest.spyOn(Capacitor, "isNativePlatform").mockReturnValue(true);
+    authenticate.mockReset();
+    authenticate.mockImplementation(() => Promise.resolve(true));
+    addResumeListener.mockReset();
+    addResumeListener.mockImplementation(() => undefined);
     checkBiometry.mockImplementation(() =>
       Promise.resolve({
         isAvailable: true,
@@ -79,6 +85,10 @@ describe("Biometric hook", () => {
         strongCode: undefined,
       })
     );
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   test("normal", async () => {
@@ -243,6 +253,20 @@ describe("Biometric hook", () => {
 
     await waitFor(() => {
       expect(dispatchMock).toBeCalled();
+    });
+  });
+
+  test("does not register the resume listener on web", async () => {
+    jest.spyOn(Capacitor, "isNativePlatform").mockReturnValue(false);
+
+    render(
+      <Provider store={store}>
+        <TestComponent />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(addResumeListener).not.toBeCalled();
     });
   });
 

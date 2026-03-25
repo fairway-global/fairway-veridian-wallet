@@ -33,7 +33,10 @@ class CredentialService extends AgentService {
   private static readonly CREDENTIAL_TYPE_ID_LIKE_PATTERN =
     /^[A-Za-z0-9_-]{40,}$/;
 
-  private static isMissingCredentialCloudError(error: unknown): boolean {
+  private static isMissingCredentialCloudError(
+    error: unknown,
+    method: "GET" | "DELETE" = "GET"
+  ): boolean {
     if (!(error instanceof Error)) {
       return false;
     }
@@ -48,7 +51,7 @@ class CredentialService extends AgentService {
     // Some KERIA versions return 500 instead of 404 for missing /credentials/{said}.
     return (
       /500/gi.test(status) &&
-      /HTTP GET \/credentials\//i.test(message) &&
+      new RegExp(`HTTP ${method} \\/credentials\\/`, "i").test(message) &&
       /"title"\s*:\s*"500 Internal Server Error"/i.test(message)
     );
   }
@@ -160,17 +163,13 @@ class CredentialService extends AgentService {
   }
 
   async deleteCredential(id: string): Promise<void> {
-    await this.props.signifyClient
-      .credentials()
-      .delete(id)
-      .catch(async (error) => {
-        const status = error.message.split(" - ")[1];
-        if (/404/gi.test(status)) {
-          return await this.credentialStorage.deleteCredentialMetadata(id);
-        } else {
-          throw error;
-        }
-      });
+    try {
+      await this.props.signifyClient.credentials().delete(id);
+    } catch (error) {
+      if (!CredentialService.isMissingCredentialCloudError(error, "DELETE")) {
+        throw error;
+      }
+    }
 
     await this.credentialStorage.deleteCredentialMetadata(id);
   }

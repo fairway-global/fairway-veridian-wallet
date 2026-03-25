@@ -55,8 +55,8 @@ const FaydaModal = ({ isOpen, setIsOpen }: FaydaModalProps) => {
     const CLIENT_ID = "crXYIYg2cJiNTaw5t-peoPzCRo-3JATNfBd5A86U8t0";
     const REDIRECT_URI =
       process.env.REACT_APP_FAYDA_REDIRECT_URI ||
-      // "org.cardanofoundation.idw://fayda/callback";
-      "http://localhost:3000/callback";
+      "org.cardanofoundation.idw://fayda/callback";
+      // "http://localhost:3000/callback";
     const AUTH_ENDPOINT = "https://esignet.ida.fayda.et/authorize";
 
     if (!CLIENT_ID || !REDIRECT_URI || !AUTH_ENDPOINT) {
@@ -91,7 +91,7 @@ const FaydaModal = ({ isOpen, setIsOpen }: FaydaModalProps) => {
       display: "page",
       nonce: "g4DEuje5Fx57Vb64dO4oqLHXGT8L8G7g",
       state: "ptOO76SD",
-      ui_locales: "en",
+      ui_locales: i18n.resolvedLanguage || i18n.language || "en",
     });
 
     return `${AUTH_ENDPOINT}?${params.toString()}`;
@@ -122,13 +122,14 @@ const FaydaModal = ({ isOpen, setIsOpen }: FaydaModalProps) => {
         closeButton={true}
         closeButtonLabel={`${i18n.t("shareidentifier.done")}`}
         closeButtonAction={closeModal}
-        title={"Verify with Fayda"}
+        title={`${i18n.t("faydamodal.title")}`}
       />
       <p style={{ padding: "0 16px" }}>
-        Your new connection will remain pending until Fayda verification is
-        completed.
+        {i18n.t("faydamodal.description")}
         {connectionLabel
-          ? ` Verify now to finalize connection (${connectionLabel}).`
+          ? ` ${i18n.t("faydamodal.connectionLabel", {
+              connectionLabel,
+            })}`
           : ""}
       </p>
 
@@ -149,7 +150,9 @@ const FaydaModal = ({ isOpen, setIsOpen }: FaydaModalProps) => {
             icon={cardOutline}
             style={{ padding: "0 8px" }}
           />
-          {verificationInProgress ? "Verifying..." : "Verify with Fayda"}
+          {verificationInProgress
+            ? i18n.t("faydamodal.verifying")
+            : i18n.t("faydamodal.button")}
         </IonButton>
       </div>
     </ResponsiveModal>

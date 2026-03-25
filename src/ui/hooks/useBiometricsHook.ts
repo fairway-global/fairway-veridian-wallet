@@ -20,14 +20,19 @@ const useBiometricAuth = (isLockPage?: boolean) => {
   const [biometricInfo, setBiometricInfo] = useState<CheckBiometryResult>();
   const { setPauseTimestamp } = useActivityTimer();
   const { passwordIsSet } = useAppSelector(getAuthentication);
+  const isNativePlatform = Capacitor.isNativePlatform();
 
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform) {
       checkBiometrics();
     }
-  }, []);
+  }, [isNativePlatform]);
 
   useEffect(() => {
+    if (!isNativePlatform) {
+      return;
+    }
+
     let appListener: PluginListenerHandle;
 
     const updateBiometrics = async () => {
@@ -44,7 +49,7 @@ const useBiometricAuth = (isLockPage?: boolean) => {
     return () => {
       appListener?.remove();
     };
-  }, [dispatch]);
+  }, [dispatch, isNativePlatform]);
 
   const checkBiometrics = async () => {
     const biometricResult = await BiometricAuth.checkBiometry();
@@ -53,6 +58,13 @@ const useBiometricAuth = (isLockPage?: boolean) => {
   };
 
   const handleBiometricAuth = async (): Promise<boolean | BiometryError> => {
+    if (!isNativePlatform) {
+      return new BiometryError(
+        "Biometry not available",
+        BiometryErrorType.biometryNotAvailable
+      );
+    }
+
     const biometricResult = await checkBiometrics();
 
     if (!biometricResult?.strongBiometryIsAvailable) {

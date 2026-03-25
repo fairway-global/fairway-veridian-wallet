@@ -19,7 +19,7 @@ import { PasswordModule } from "./PasswordModule";
 
 const initialState = {
   stateCache: {
-    routes: [RoutePath.TABS_MENU],
+    routes: [{ path: RoutePath.TABS_MENU }],
     authentication: {
       loggedIn: false,
       time: Date.now(),
@@ -323,7 +323,7 @@ describe("Password Module", () => {
     verifySecretMock.mockResolvedValueOnce(true);
     const initialState = {
       stateCache: {
-        routes: [RoutePath.TABS_MENU],
+        routes: [{ path: RoutePath.TABS_MENU }],
         authentication: {
           loggedIn: true,
           time: Date.now(),
@@ -452,7 +452,7 @@ describe("Password Module", () => {
   test("Open symbol modal", async () => {
     const initialState = {
       stateCache: {
-        routes: [RoutePath.TABS_MENU],
+        routes: [{ path: RoutePath.TABS_MENU }],
         authentication: {
           loggedIn: true,
           time: Date.now(),
