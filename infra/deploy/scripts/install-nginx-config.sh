@@ -55,7 +55,7 @@ rm -f "$rendered_conf"
 as_root ln -sfn "$SITE_AVAILABLE" "$SITE_ENABLED"
 
 upstream_tmp="$(mktemp)"
-"${SCRIPT_DIR}/render-nginx-upstreams.sh" "$INITIAL_SLOT" > "$upstream_tmp"
+"${SCRIPT_DIR}/render-nginx-upstreams.sh" "$INITIAL_SLOT" "$ENVIRONMENT" > "$upstream_tmp"
 as_root install -m 644 "$upstream_tmp" "$UPSTREAM_FILE"
 rm -f "$upstream_tmp"
 

@@ -1,5 +1,5 @@
 # Managed by Veridian deployment automation.
-map $http_upgrade $connection_upgrade {
+map $http_upgrade $connection_upgrade___ENVIRONMENT__ {
   default upgrade;
   '' close;
 }
@@ -27,11 +27,8 @@ server {
   }
 }
 
-# Shared TLS + proxy headers
-ssl_session_cache shared:SSL:10m;
-ssl_session_timeout 10m;
-ssl_protocols TLSv1.2 TLSv1.3;
-ssl_prefer_server_ciphers on;
+# Shared proxy headers
+# TLS protocol/cipher policy is expected to come from the base nginx.conf.
 
 add_header X-Frame-Options "DENY" always;
 add_header X-Content-Type-Options "nosniff" always;
@@ -44,7 +41,7 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $scheme;
 proxy_http_version 1.1;
 proxy_set_header Upgrade $http_upgrade;
-proxy_set_header Connection $connection_upgrade;
+proxy_set_header Connection $connection_upgrade___ENVIRONMENT__;
 proxy_read_timeout 300s;
 
 server {
@@ -56,7 +53,7 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://keria_api;
+    proxy_pass http://keria_api___ENVIRONMENT__;
   }
 }
 
@@ -69,7 +66,7 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://keria_ext;
+    proxy_pass http://keria_ext___ENVIRONMENT__;
   }
 }
 
@@ -82,7 +79,7 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://keria_boot;
+    proxy_pass http://keria_boot___ENVIRONMENT__;
   }
 }
 
@@ -95,7 +92,7 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://cred_api;
+    proxy_pass http://cred_api___ENVIRONMENT__;
   }
 }
 
@@ -108,7 +105,7 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://cred_ui;
+    proxy_pass http://cred_ui___ENVIRONMENT__;
   }
 }
 
@@ -121,7 +118,7 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://witness_0;
+    proxy_pass http://witness_0___ENVIRONMENT__;
   }
 }
 
@@ -134,7 +131,7 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://witness_1;
+    proxy_pass http://witness_1___ENVIRONMENT__;
   }
 }
 
@@ -147,7 +144,7 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://witness_2;
+    proxy_pass http://witness_2___ENVIRONMENT__;
   }
 }
 
@@ -160,7 +157,7 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://witness_3;
+    proxy_pass http://witness_3___ENVIRONMENT__;
   }
 }
 
@@ -173,7 +170,7 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://witness_4;
+    proxy_pass http://witness_4___ENVIRONMENT__;
   }
 }
 
@@ -186,6 +183,6 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/__CERT_DOMAIN__/privkey.pem;
 
   location / {
-    proxy_pass http://witness_5;
+    proxy_pass http://witness_5___ENVIRONMENT__;
   }
 }

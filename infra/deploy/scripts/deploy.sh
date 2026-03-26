@@ -239,7 +239,7 @@ fi
 previous_slot="$active_slot"
 
 tmp_upstream="$(mktemp)"
-"${SCRIPT_DIR}/render-nginx-upstreams.sh" "$target_slot" > "$tmp_upstream"
+"${SCRIPT_DIR}/render-nginx-upstreams.sh" "$target_slot" "$ENVIRONMENT" > "$tmp_upstream"
 as_root install -m 644 "$tmp_upstream" "$NGINX_UPSTREAM_FILE"
 rm -f "$tmp_upstream"
 
@@ -257,7 +257,7 @@ if [[ "$CHECK_PUBLIC" == "true" ]]; then
     if [[ "$previous_slot" != "$target_slot" ]]; then
       echo "Rolling back traffic to ${previous_slot}." >&2
       rollback_tmp="$(mktemp)"
-      "${SCRIPT_DIR}/render-nginx-upstreams.sh" "$previous_slot" > "$rollback_tmp"
+      "${SCRIPT_DIR}/render-nginx-upstreams.sh" "$previous_slot" "$ENVIRONMENT" > "$rollback_tmp"
       as_root install -m 644 "$rollback_tmp" "$NGINX_UPSTREAM_FILE"
       rm -f "$rollback_tmp"
       as_root nginx -t

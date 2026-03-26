@@ -2,9 +2,19 @@
 set -euo pipefail
 
 SLOT="${1:-}"
+ENVIRONMENT="${2:-}"
 if [[ -z "$SLOT" ]]; then
-  echo "Usage: $0 <blue|green>" >&2
+  echo "Usage: $0 <blue|green> [environment]" >&2
   exit 1
+fi
+
+UPSTREAM_SUFFIX=""
+if [[ -n "$ENVIRONMENT" ]]; then
+  if [[ ! "$ENVIRONMENT" =~ ^[a-zA-Z0-9_]+$ ]]; then
+    echo "Invalid environment for upstream suffix: $ENVIRONMENT" >&2
+    exit 1
+  fi
+  UPSTREAM_SUFFIX="_${ENVIRONMENT}"
 fi
 
 case "$SLOT" in
@@ -41,15 +51,15 @@ case "$SLOT" in
 esac
 
 cat <<EOC
-upstream keria_api { server 127.0.0.1:${KERIA_API_HOST_PORT}; }
-upstream keria_ext { server 127.0.0.1:${KERIA_EXT_HOST_PORT}; }
-upstream keria_boot { server 127.0.0.1:${KERIA_BOOT_HOST_PORT}; }
-upstream cred_api { server 127.0.0.1:${CRED_HOST_PORT}; }
-upstream cred_ui { server 127.0.0.1:${CRED_UI_HOST_PORT}; }
-upstream witness_0 { server 127.0.0.1:${WITNESS_0_HOST_PORT}; }
-upstream witness_1 { server 127.0.0.1:${WITNESS_1_HOST_PORT}; }
-upstream witness_2 { server 127.0.0.1:${WITNESS_2_HOST_PORT}; }
-upstream witness_3 { server 127.0.0.1:${WITNESS_3_HOST_PORT}; }
-upstream witness_4 { server 127.0.0.1:${WITNESS_4_HOST_PORT}; }
-upstream witness_5 { server 127.0.0.1:${WITNESS_5_HOST_PORT}; }
+upstream keria_api${UPSTREAM_SUFFIX} { server 127.0.0.1:${KERIA_API_HOST_PORT}; }
+upstream keria_ext${UPSTREAM_SUFFIX} { server 127.0.0.1:${KERIA_EXT_HOST_PORT}; }
+upstream keria_boot${UPSTREAM_SUFFIX} { server 127.0.0.1:${KERIA_BOOT_HOST_PORT}; }
+upstream cred_api${UPSTREAM_SUFFIX} { server 127.0.0.1:${CRED_HOST_PORT}; }
+upstream cred_ui${UPSTREAM_SUFFIX} { server 127.0.0.1:${CRED_UI_HOST_PORT}; }
+upstream witness_0${UPSTREAM_SUFFIX} { server 127.0.0.1:${WITNESS_0_HOST_PORT}; }
+upstream witness_1${UPSTREAM_SUFFIX} { server 127.0.0.1:${WITNESS_1_HOST_PORT}; }
+upstream witness_2${UPSTREAM_SUFFIX} { server 127.0.0.1:${WITNESS_2_HOST_PORT}; }
+upstream witness_3${UPSTREAM_SUFFIX} { server 127.0.0.1:${WITNESS_3_HOST_PORT}; }
+upstream witness_4${UPSTREAM_SUFFIX} { server 127.0.0.1:${WITNESS_4_HOST_PORT}; }
+upstream witness_5${UPSTREAM_SUFFIX} { server 127.0.0.1:${WITNESS_5_HOST_PORT}; }
 EOC
