@@ -37,6 +37,7 @@ import {
 } from "../../../store/reducers/identifiersCache";
 import {
   setQueueIncomingRequest,
+  showConnections,
   setToastMsg,
 } from "../../../store/reducers/stateCache";
 import { IncomingRequestType } from "../../../store/reducers/stateCache/stateCache.types";
@@ -230,6 +231,10 @@ const groupCreatedEvent: GroupCreatedEvent = {
 const dispatch = jest.fn();
 
 describe("Connection state changed handler", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   beforeAll(() => {
     const getConnectionShortDetailsSpy = jest.spyOn(
       Agent.agent.connections,
@@ -246,6 +251,8 @@ describe("Connection state changed handler", () => {
   });
 
   test("handles connection state succuss", async () => {
+    window.localStorage.setItem("fayda_verified", "true");
+
     const connectionStateChangedEventMockSuccess = {
       ...connectionStateChangedEvent,
       payload: {
@@ -263,6 +270,29 @@ describe("Connection state changed handler", () => {
     expect(dispatch).toBeCalledWith(
       setToastMsg(ToastMsgType.NEW_CONNECTION_ADDED)
     );
+  });
+
+  test("opens Fayda flow automatically for unverified confirmed connections", async () => {
+    const connectionStateChangedEventMockSuccess = {
+      ...connectionStateChangedEvent,
+      payload: {
+        status: ConnectionStatus.CONFIRMED,
+        connectionId: "connectionId",
+      },
+    };
+
+    await connectionStateChangedHandler(
+      connectionStateChangedEventMockSuccess,
+      dispatch
+    );
+
+    expect(dispatch).toBeCalledWith(
+      updateOrAddConnectionCache({
+        ...connectionShortDetails,
+        status: ConnectionStatus.PENDING,
+      })
+    );
+    expect(dispatch).toBeCalledWith(showConnections(true));
   });
 });
 

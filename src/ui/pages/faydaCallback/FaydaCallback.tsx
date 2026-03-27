@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Agent } from "../../../core/agent/agent";
+import { i18n } from "../../../i18n";
 import { useAppDispatch } from "../../../store/hooks";
 import { setFaydaVerified } from "../../../store/reducers/faydaVerifiedCache";
 import { setNotificationsCache } from "../../../store/reducers/notificationsCache";
@@ -54,12 +55,16 @@ export const FaydaCallback = () => {
   const location = useLocation();
   const history = useHistory();
   const hasHandledCallback = useRef(false);
+  const tr = (key: string) => String(i18n.t(key));
 
-  const [status, setStatus] = useState("Processing Fayda login...");
+  const [status, setStatus] = useState(tr("faydacallback.status.processing"));
   const [error, setError] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<FaydaProfile | null>(null);
   const [issuingCredential, setIssuingCredential] = useState(false);
   const [showIssuedModal, setShowIssuedModal] = useState(false);
+  const [completionDestination, setCompletionDestination] = useState<
+    "notifications" | "menu" | null
+  >(null);
 
   const waitForGrantNotification = async (
     issuerAid: string,
@@ -106,7 +111,7 @@ export const FaydaCallback = () => {
 
   useEffect(() => {
     if (!code) {
-      setError("Missing authorization code");
+      setError(tr("faydacallback.error.missingCode"));
       return;
     }
 
@@ -136,17 +141,17 @@ export const FaydaCallback = () => {
   // ===== MAIN FLOW =====
   const handleCallback = async (authCode: string, returnedState?: string) => {
     try {
-      setStatus("Validating session...");
+      setStatus(tr("faydacallback.status.validating"));
 
       const storedState = sessionStorage.getItem(SESSION_KEYS.state);
 
       if (storedState && returnedState && storedState !== returnedState) {
-        throw new Error("State mismatch. Restart login.");
+        throw new Error(tr("faydacallback.error.stateMismatch"));
       }
 
       const verifier = sessionStorage.getItem(SESSION_KEYS.verifier);
 
-      setStatus("Exchanging code for token...");
+      setStatus(tr("faydacallback.status.exchanging"));
 
       // ===== TOKEN CALL =====
       const tokenRes = await fetch(TOKEN_ENDPOINT, {
@@ -157,14 +162,18 @@ export const FaydaCallback = () => {
         }),
       });
 
-      if (!tokenRes.ok) throw new Error("Token exchange failed");
+      if (!tokenRes.ok) {
+        throw new Error(tr("faydacallback.error.tokenExchangeFailed"));
+      }
 
       const tokenJson = await tokenRes.json();
       const accessToken = tokenJson.access_token;
 
-      if (!accessToken) throw new Error("No access token returned");
+      if (!accessToken) {
+        throw new Error(tr("faydacallback.error.noAccessToken"));
+      }
 
-      setStatus("Fetching verified identity...");
+      setStatus(tr("faydacallback.status.fetching"));
 
       // ===== USER INFO CALL =====
       const userRes = await fetch(USERINFO_ENDPOINT, {
@@ -173,7 +182,9 @@ export const FaydaCallback = () => {
         body: JSON.stringify({ access_token: accessToken }),
       });
 
-      if (!userRes.ok) throw new Error("Userinfo failed");
+      if (!userRes.ok) {
+        throw new Error(tr("faydacallback.error.userinfoFailed"));
+      }
 
       const userInfoResponse = await userRes.json();
       const decodedUserInfo: FaydaProfile = (await decodeUserInfoResponse(
@@ -184,16 +195,14 @@ export const FaydaCallback = () => {
 
       // Show fetched user info to the user and wait for confirmation
       setUserInfo(decodedUserInfo);
-      setStatus(
-        "Review the received user information, then accept and continue."
-      );
+      setStatus(tr("faydacallback.status.review"));
 
       // Keep session keys until user confirms; do not auto-redirect.
     } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error(err);
-      setError(err.message || "Callback failed");
-      setStatus("Login failed");
+      setError(err.message || tr("faydacallback.status.loginFailed"));
+      setStatus(tr("faydacallback.status.loginFailed"));
     }
   };
 
@@ -214,16 +223,14 @@ export const FaydaCallback = () => {
     }
 
     if (!holderAid) {
-      setError(
-        "No connection found for credential issuance. Create/scan the connection first, then verify with Fayda."
-      );
+      setError(tr("faydacallback.error.noConnection"));
       return;
     }
 
     try {
       setIssuingCredential(true);
       setError(null);
-      setStatus("Issuing FaydaVerifiedAutoIssue...");
+      setStatus(tr("faydacallback.status.issuing"));
       const existingNotificationIds = new Set(
         (
           await Agent.agent.keriaNotifications
@@ -265,7 +272,7 @@ export const FaydaCallback = () => {
       }
 
       if (!issueResponse.ok) {
-        let backendMessage = "Credential issuance failed";
+        let backendMessage = tr("faydacallback.error.issuanceFailed");
         const backendBody = issuePayload;
         if (backendBody?.data) {
           backendMessage =
@@ -285,24 +292,26 @@ export const FaydaCallback = () => {
       let grantNotificationVisible = !hasIssuedCredential;
 
       if (hasIssuedCredential) {
-        setStatus("Credential issued. Waiting for wallet notification sync...");
+        setStatus(tr("faydacallback.status.waiting"));
         grantNotificationVisible = await waitForGrantNotification(
           pendingIssuerAid,
           existingNotificationIds
         );
       }
 
+      setUserInfo(null);
       dispatch(setFaydaVerified(canFinalizeConnection));
+      setCompletionDestination(hasIssuedCredential ? "notifications" : "menu");
       setShowIssuedModal(hasIssuedCredential && grantNotificationVisible);
       setStatus(
         grantNotificationVisible
           ? backendMessage ||
               (hasIssuedCredential
-                ? "Credential offer was sent to your wallet."
+                ? tr("faydacallback.status.offerSent")
                 : issueData?.pendingManualReview
-                  ? "Fayda verification completed. The issuer must finish this credential manually."
-                  : "Fayda verification completed. No auto-issued credential is configured for this issuer.")
-          : "Credential was issued on the server, but the wallet has not synced the grant notification yet. Stay online and open Notifications again in a moment."
+                  ? tr("faydacallback.status.manualReview")
+                  : tr("faydacallback.status.noAutoIssue"))
+          : tr("faydacallback.status.syncPending")
       );
 
       try {
@@ -314,7 +323,7 @@ export const FaydaCallback = () => {
       sessionStorage.removeItem(SESSION_KEYS.verifier);
     } catch (err: any) {
       dispatch(setFaydaVerified(false));
-      setError(err.message || "Unable to issue credential");
+      setError(err.message || tr("faydacallback.error.unableToIssue"));
     } finally {
       setIssuingCredential(false);
     }
@@ -331,30 +340,56 @@ export const FaydaCallback = () => {
       <IonContent className="ion-padding">
         {!error && !userInfo && (
           <>
-            <IonSpinner />
             <IonText>
               <p>{status}</p>
             </IonText>
+
+            {!completionDestination && <IonSpinner />}
+
+            {completionDestination === "notifications" && (
+              <IonButton
+                expand="block"
+                onClick={() => history.replace("/tabs/notifications")}
+              >
+                {tr("faydacallback.actions.openNotifications")}
+              </IonButton>
+            )}
+
+            {completionDestination && (
+              <IonButton
+                expand="block"
+                fill="outline"
+                onClick={() => history.replace("/tabs/menu")}
+              >
+                {tr("faydacallback.actions.backToMenu")}
+              </IonButton>
+            )}
           </>
         )}
 
         {userInfo && (
           <div className="fayda-callback-review">
             <div className="fayda-callback-review-card">
-              <h3 className="fayda-callback-review-title">User Information</h3>
+              <h3 className="fayda-callback-review-title">
+                {tr("faydacallback.review.title")}
+              </h3>
               <ul className="fayda-callback-review-list">
                 <li className="fayda-callback-review-item">
-                  <strong>Name:</strong> {userInfo.name || "N/A"}
+                  <strong>{tr("faydacallback.review.name")}</strong>{" "}
+                  {userInfo.name || tr("faydacallback.review.na")}
                 </li>
                 <li className="fayda-callback-review-item">
-                  <strong>Email:</strong> {userInfo.email || "N/A"}
+                  <strong>{tr("faydacallback.review.email")}</strong>{" "}
+                  {userInfo.email || tr("faydacallback.review.na")}
                 </li>
                 <li className="fayda-callback-review-item">
-                  <strong>Phone:</strong> {userInfo.phone_number || "N/A"}
+                  <strong>{tr("faydacallback.review.phone")}</strong>{" "}
+                  {userInfo.phone_number || tr("faydacallback.review.na")}
                 </li>
                 {userInfo.birthdate && (
                   <li className="fayda-callback-review-item">
-                    <strong>Date Of Birth:</strong> {userInfo.birthdate}
+                    <strong>{tr("faydacallback.review.dob")}</strong>{" "}
+                    {userInfo.birthdate}
                   </li>
                 )}
                 {userInfo.picture && (
@@ -375,15 +410,15 @@ export const FaydaCallback = () => {
                   onClick={confirmAndContinue}
                 >
                   {issuingCredential
-                    ? "Issuing credential..."
-                    : "Accept and continue"}
+                    ? tr("faydacallback.actions.issuing")
+                    : tr("faydacallback.actions.acceptContinue")}
                 </IonButton>
                 <IonButton
                   fill="outline"
                   disabled={issuingCredential}
                   onClick={cancel}
                 >
-                  Cancel
+                  {tr("faydacallback.actions.cancel")}
                 </IonButton>
               </div>
             </div>
@@ -400,22 +435,22 @@ export const FaydaCallback = () => {
               expand="block"
               onClick={() => history.replace("/tabs/menu")}
             >
-              Back to Connections
+              {tr("faydacallback.actions.backToConnections")}
             </IonButton>
           </>
         )}
 
         <IonAlert
           isOpen={showIssuedModal}
-          header="FaydaVerifiedAutoIssue issued"
-          message="Credential offer sent. Open Notifications and accept the credential."
+          header={tr("faydacallback.alert.header")}
+          message={tr("faydacallback.alert.message")}
           buttons={[
             {
-              text: "Check notifications",
+              text: tr("faydacallback.alert.checkNotifications"),
               handler: () => history.replace("/tabs/notifications"),
             },
             {
-              text: "Later",
+              text: tr("faydacallback.alert.later"),
               role: "cancel",
               handler: () => history.replace("/tabs/menu"),
             },

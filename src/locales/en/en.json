@@ -1278,6 +1278,54 @@
     "button": "Verify with Fayda",
     "verifying": "Verifying..."
   },
+  "faydacallback": {
+    "status": {
+      "processing": "Processing Fayda login...",
+      "validating": "Validating session...",
+      "exchanging": "Exchanging code for token...",
+      "fetching": "Fetching verified identity...",
+      "review": "Review the received user information, then accept and continue.",
+      "issuing": "Issuing FaydaVerifiedAutoIssue...",
+      "waiting": "Credential issued. Waiting for wallet notification sync...",
+      "offerSent": "Credential offer was sent to your wallet.",
+      "manualReview": "Fayda verification completed. The issuer must finish this credential manually.",
+      "noAutoIssue": "Fayda verification completed. No auto-issued credential is configured for this issuer.",
+      "syncPending": "Credential was issued on the server, but the wallet has not synced the grant notification yet. Stay online and open Notifications again in a moment.",
+      "loginFailed": "Login failed"
+    },
+    "error": {
+      "missingCode": "Missing authorization code",
+      "stateMismatch": "State mismatch. Restart login.",
+      "tokenExchangeFailed": "Token exchange failed",
+      "noAccessToken": "No access token returned",
+      "userinfoFailed": "Userinfo failed",
+      "noConnection": "No connection found for credential issuance. Create/scan the connection first, then verify with Fayda.",
+      "issuanceFailed": "Credential issuance failed",
+      "unableToIssue": "Unable to issue credential"
+    },
+    "actions": {
+      "openNotifications": "Open Notifications",
+      "backToMenu": "Back to Menu",
+      "acceptContinue": "Accept and continue",
+      "cancel": "Cancel",
+      "backToConnections": "Back to Connections",
+      "issuing": "Issuing credential..."
+    },
+    "review": {
+      "title": "User Information",
+      "name": "Name:",
+      "email": "Email:",
+      "phone": "Phone:",
+      "dob": "Date Of Birth:",
+      "na": "N/A"
+    },
+    "alert": {
+      "header": "FaydaVerifiedAutoIssue issued",
+      "message": "Credential offer sent. Open Notifications and accept the credential.",
+      "checkNotifications": "Check notifications",
+      "later": "Later"
+    }
+  },
   "createidentifier": {
     "cancel": "Cancel",
     "back": "Back",

@@ -1,12 +1,17 @@
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { Provider } from "react-redux";
+import { i18n } from "../../../../../i18n";
 import { store } from "../../../../../store";
 import { RomeCardTemplate } from "./RomeCardTemplate";
 import { shortCredsFix } from "../../../../__fixtures__/shortCredsFix";
 import { formatShortDate } from "../../../../utils/formatters";
 
 describe("Rome Card Template", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
   it("renders Rome Card Template", async () => {
     const handleShowCardDetails = jest.fn();
     const { getByText, getByTestId, getByAltText } = render(
@@ -56,6 +61,29 @@ describe("Rome Card Template", () => {
     await waitFor(() => {
       expect(getByTestId("alert-confirm")).toBeInTheDocument();
     });
+  });
+
+  it("translates the pending chip", async () => {
+    await i18n.changeLanguage("am");
+
+    const { getByText } = render(
+      <Provider store={store}>
+        <RomeCardTemplate
+          name="name"
+          index={0}
+          cardData={shortCredsFix[8]}
+          isActive={true}
+        />
+      </Provider>
+    );
+
+    expect(
+      getByText(
+        i18n.t(
+          "tabs.menu.tab.items.connectwallet.connectionhistory.confirmconnect.pending"
+        )
+      )
+    ).toBeInTheDocument();
   });
 
   it("In active card status", async () => {

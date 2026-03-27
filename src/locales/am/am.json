@@ -1124,6 +1124,54 @@
     "button": "በፋይዳ ያረጋግጡ",
     "verifying": "በማረጋገጥ ላይ..."
   },
+  "faydacallback": {
+    "status": {
+      "processing": "የፋይዳ ግባት በሂደት ላይ...",
+      "validating": "ክፍለ-ጊዜውን በማረጋገጥ ላይ...",
+      "exchanging": "ኮዱን ወደ ቶከን በመቀየር ላይ...",
+      "fetching": "የተረጋገጠ መለያ በማግኘት ላይ...",
+      "review": "የተቀበሉትን የተጠቃሚ መረጃ ይመልከቱ እና ይቀጥሉ።",
+      "issuing": "FaydaVerifiedAutoIssue በመስጠት ላይ...",
+      "waiting": "ክሬዴንሻሉ ተሰጥቷል። የዋሌት ማሳወቂያ ማመሳሰልን በመጠበቅ ላይ...",
+      "offerSent": "የክሬዴንሻል አቅርቦት ወደ ዋሌትዎ ተልኳል።",
+      "manualReview": "የፋይዳ ማረጋገጫ ተጠናቋል። ሰጪው ይህን ክሬዴንሻል በእጅ ማጠናቀቅ ያስፈልገዋል።",
+      "noAutoIssue": "የፋይዳ ማረጋገጫ ተጠናቋል። ለዚህ ሰጪ በራስ-ሰር የሚሰጥ ክሬዴንሻል አልተዋቀረም።",
+      "syncPending": "ክሬዴንሻሉ በሰርቨሩ ላይ ተሰጥቷል፣ ግን ዋሌቱ የግራንት ማሳወቂያውን ገና አልመሳሰለም። ኦንላይን ይቆዩ እና ከጥቂት ጊዜ በኋላ ማሳወቂያዎችን እንደገና ይክፈቱ።",
+      "loginFailed": "ግባቱ አልተሳካም"
+    },
+    "error": {
+      "missingCode": "የፈቃድ ኮድ አልተገኘም",
+      "stateMismatch": "የሁኔታ አለመመሳሰል። መግባቱን እንደገና ይጀምሩ።",
+      "tokenExchangeFailed": "የቶከን ልውውጥ አልተሳካም",
+      "noAccessToken": "የመዳረሻ ቶከን አልተመለሰም",
+      "userinfoFailed": "የተጠቃሚ መረጃ ማግኘት አልተሳካም",
+      "noConnection": "ለክሬዴንሻል ስጦታ የሚሆን ግንኙነት አልተገኘም። መጀመሪያ ግንኙነቱን ይፍጠሩ/ይስካኑ፣ ከዚያ በፋይዳ ያረጋግጡ።",
+      "issuanceFailed": "የክሬዴንሻል መስጠት አልተሳካም",
+      "unableToIssue": "ክሬዴንሻሉን መስጠት አልተቻለም"
+    },
+    "actions": {
+      "openNotifications": "ማሳወቂያዎችን ክፈት",
+      "backToMenu": "ወደ ሜኑ ተመለስ",
+      "acceptContinue": "ተቀበል እና ቀጥል",
+      "cancel": "ሰርዝ",
+      "backToConnections": "ወደ ግንኙነቶች ተመለስ",
+      "issuing": "ክሬዴንሻል በመስጠት ላይ..."
+    },
+    "review": {
+      "title": "የተጠቃሚ መረጃ",
+      "name": "ስም:",
+      "email": "ኢሜይል:",
+      "phone": "ስልክ:",
+      "dob": "የልደት ቀን:",
+      "na": "የለም"
+    },
+    "alert": {
+      "header": "FaydaVerifiedAutoIssue ተሰጥቷል",
+      "message": "የክሬዴንሻል አቅርቦት ተልኳል። ማሳወቂያዎችን ክፈቱ እና ክሬዴንሻሉን ይቀበሉ።",
+      "checkNotifications": "ማሳወቂያዎችን ይመልከቱ",
+      "later": "በኋላ"
+    }
+  },
   "biometry": {
     "reason": "ማንነትዎን ለማረጋገጥ ባዮሜትሪክስ ይጠቀሙ",
     "canceltitle": "ሰርዝ",

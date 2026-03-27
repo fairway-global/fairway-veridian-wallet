@@ -3591,6 +3591,75 @@ describe("Long running operation tracker", () => {
     );
   });
 
+  test("Should confirm received credential even if cloud details are not readable yet", async () => {
+    const credentialIdMock = "credentialId";
+    signifyClient
+      .exchanges()
+      .get.mockResolvedValueOnce({
+        exn: {
+          r: ExchangeRoute.IpexAdmit,
+          p: "p",
+        },
+      })
+      .mockResolvedValueOnce({
+        exn: {
+          r: ExchangeRoute.IpexGrant,
+          d: "d",
+          e: {
+            acdc: {
+              d: credentialIdMock,
+            },
+          },
+        },
+      });
+    getCredentialMock.mockRejectedValueOnce(
+      new Error("Not Found - 404 - not found")
+    );
+    const operationRecord = {
+      type: "OperationPendingRecord",
+      id: "exchange.receivecredential.AOCUvGbpidkplC7gAoJOxLgXX1P2j4xlWMbzk3gM8JzA",
+      createdAt: new Date("2024-08-01T10:36:17.814Z"),
+      recordType: "exchange.receivecredential",
+      updatedAt: new Date("2024-08-01T10:36:17.814Z"),
+    } as OperationPendingRecord;
+    identifierStorage.getIdentifierMetadata = jest.fn().mockResolvedValue({
+      type: "IdentifierMetadataRecord",
+      id: "EC1cyV3zLnGs4B9AYgoGNjXESyQZrBWygz3jLlRD30bR",
+      displayName: "holder",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    notificationStorage.findAllByQuery.mockResolvedValue([
+      {
+        type: "NotificationRecord",
+        id: "id",
+        createdAt: new Date("2024-08-01T10:36:17.814Z"),
+        a: {
+          r: NotificationRoute.ExnIpexGrant,
+          d: "EIDUavcmyHBseNZAdAHR3SF8QMfX1kSJ3Ct0OqS0-HCW",
+        },
+        route: NotificationRoute.ExnIpexGrant,
+        read: true,
+        linkedRequest: { accepted: false },
+        connectionId: "EEFjBBDcUM2IWpNF7OclCme_bE76yKE3hzULLzTOFE8E",
+        updatedAt: new Date(),
+      },
+    ]);
+    credentialService.markAcdc.mockResolvedValue(undefined);
+
+    await keriaNotificationService.processOperation(operationRecord);
+
+    expect(credentialService.markAcdc).toBeCalledWith(
+      credentialIdMock,
+      CredentialStatus.CONFIRMED
+    );
+    expect(notificationStorage.deleteById).toBeCalledWith("id");
+    expect(markNotificationMock).toBeCalledWith("id");
+    expect(operationPendingStorage.deleteById).toBeCalledWith(
+      "exchange.receivecredential.AOCUvGbpidkplC7gAoJOxLgXX1P2j4xlWMbzk3gM8JzA"
+    );
+  });
+
   test("Should handle long operations with type exchange.offercredential and delete original notification", async () => {
     const credentialIdMock = "credentialId";
     signifyClient

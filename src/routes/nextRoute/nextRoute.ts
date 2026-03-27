@@ -8,6 +8,11 @@ import {
   setAuthentication,
   setCurrentRoute,
 } from "../../store/reducers/stateCache";
+import {
+  canResumePasswordCreation,
+  canResumeSeedPhraseCreation,
+  hasWalletState,
+} from "../authenticationFlow";
 import { RoutePath, TabsRoutePath } from "../paths";
 import { DataProps, NextRoute, StoreState } from "./nextRoute.types";
 
@@ -20,11 +25,11 @@ const getNextRootRoute = (data: DataProps) => {
     path = RoutePath.SETUP_BIOMETRICS;
   }
 
-  if (authentication.finishSetupBiometrics) {
+  if (canResumePasswordCreation(authentication)) {
     path = RoutePath.CREATE_PASSWORD;
   }
 
-  if (authentication.passwordIsSet || authentication.passwordIsSkipped) {
+  if (canResumeSeedPhraseCreation(authentication)) {
     path = authentication.recoveryWalletProgress
       ? RoutePath.VERIFY_RECOVERY_SEED_PHRASE
       : RoutePath.GENERATE_SEED_PHRASE;
@@ -39,6 +44,16 @@ const getNextRootRoute = (data: DataProps) => {
   }
 
   return { pathname: path };
+};
+
+const getInitialRootRoute = (data: DataProps) => {
+  const authentication = data.store.stateCache.authentication;
+
+  if (!hasWalletState(authentication)) {
+    return { pathname: RoutePath.ONBOARDING };
+  }
+
+  return getNextRootRoute(data);
 };
 
 const getNextOnboardingRoute = (data: DataProps) => {
@@ -190,7 +205,7 @@ const getNextRoute = (
 
 const nextRoute: Record<string, NextRoute> = {
   [RoutePath.ROOT]: {
-    nextPath: (data: DataProps) => getNextRootRoute(data),
+    nextPath: (data: DataProps) => getInitialRootRoute(data),
     updateRedux: [],
   },
   [RoutePath.ONBOARDING]: {
@@ -242,6 +257,7 @@ const nextRoute: Record<string, NextRoute> = {
 export {
   getNextCreatePasswordRoute,
   getNextCreateSSIAgentRoute,
+  getInitialRootRoute,
   getNextGenerateSeedPhraseRoute,
   getNextOnboardingRoute,
   getNextRootRoute,

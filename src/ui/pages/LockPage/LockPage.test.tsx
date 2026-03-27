@@ -105,6 +105,8 @@ interface StoreMockedProps {
       time: number;
       passcodeIsSet: boolean;
       seedPhraseIsSet?: boolean;
+      recoveryWalletProgress?: boolean;
+      ssiAgentIsSet?: boolean;
     };
     currentOperation: OperationType;
   };
@@ -137,6 +139,8 @@ const initialState = {
       time: Date.now(),
       passcodeIsSet: true,
       seedPhraseIsSet: true,
+      recoveryWalletProgress: false,
+      ssiAgentIsSet: false,
       loginAttempt: {
         attempts: 0,
         lockedUntil: Date.now(),
@@ -236,7 +240,7 @@ describe("Lock Page", () => {
     ).toBeVisible();
   });
 
-  test("Forgot passcode before verify seedphrase", async () => {
+  test("Forgot passcode during wallet recovery clears onboarding state", async () => {
     const storeMocked = (initialState: StoreMockedProps) => {
       return {
         ...mockStore(initialState),
@@ -252,6 +256,8 @@ describe("Lock Page", () => {
           time: Date.now(),
           passcodeIsSet: true,
           seedPhraseIsSet: false,
+          recoveryWalletProgress: true,
+          ssiAgentIsSet: false,
           loginAttempt: {
             attempts: 0,
             lockedUntil: Date.now(),
@@ -444,6 +450,66 @@ describe("Lock Page", () => {
       expect(history.location.pathname).toBe(RoutePath.ONBOARDING);
     });
   });
+
+  test("Does not render the lock page while onboarding a new wallet", () => {
+    const onboardingState = {
+      ...initialState,
+      stateCache: {
+        ...initialState.stateCache,
+        routes: [{ path: RoutePath.CREATE_PASSWORD }],
+        authentication: {
+          ...initialState.stateCache.authentication,
+          passcodeIsSet: true,
+          seedPhraseIsSet: false,
+          recoveryWalletProgress: false,
+          ssiAgentIsSet: false,
+        },
+      },
+    };
+
+    const { queryByTestId } = render(
+      <Provider store={storeMocked(onboardingState)}>
+        <MemoryRouter initialEntries={[RoutePath.CREATE_PASSWORD]}>
+          <LockPage />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    expect(queryByTestId("lock-page")).not.toBeInTheDocument();
+  });
+
+  test("Redirects a new user on a protected route back to onboarding even when a passcode exists", async () => {
+    const history = createMemoryHistory({
+      initialEntries: [TabsRoutePath.NOTIFICATIONS],
+    });
+
+    const noWalletState = {
+      ...initialState,
+      stateCache: {
+        ...initialState.stateCache,
+        routes: [{ path: TabsRoutePath.NOTIFICATIONS }],
+        authentication: {
+          ...initialState.stateCache.authentication,
+          passcodeIsSet: true,
+          seedPhraseIsSet: false,
+          recoveryWalletProgress: false,
+          ssiAgentIsSet: false,
+        },
+      },
+    };
+
+    render(
+      <Provider store={storeMocked(noWalletState)}>
+        <Router history={history}>
+          <LockPage />
+        </Router>
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(history.location.pathname).toBe(RoutePath.ONBOARDING);
+    });
+  });
 });
 
 describe("Lock Page: Max login attempt", () => {
@@ -454,7 +520,9 @@ describe("Lock Page: Max login attempt", () => {
         loggedIn: false,
         time: Date.now(),
         passcodeIsSet: true,
-        seedPhraseIsSet: false,
+        seedPhraseIsSet: true,
+        recoveryWalletProgress: false,
+        ssiAgentIsSet: false,
         loginAttempt: {
           attempts: 0,
           lockedUntil: Date.now(),

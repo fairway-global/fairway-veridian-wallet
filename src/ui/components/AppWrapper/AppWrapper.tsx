@@ -63,6 +63,7 @@ import {
   setQueueIncomingRequest,
   setShowWelcomePage,
   setToastMsg,
+  showConnections,
   showNoWitnessAlert,
 } from "../../../store/reducers/stateCache";
 import {
@@ -170,6 +171,7 @@ const connectionStateChangedHandler = async (
           status: ConnectionStatus.PENDING,
         })
       );
+      dispatch(showConnections(true));
       return;
     }
 
@@ -363,34 +365,61 @@ const AppWrapper = (props: { children: ReactNode }) => {
       return;
     }
 
-    const pendingConnectionId = getLocalStorageItem(
-      FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY
-    );
-    if (!pendingConnectionId) {
-      return;
-    }
+    let cancelled = false;
 
-    const resolvePendingConnection = async () => {
+    const refreshFaydaWalletState = async () => {
+      const pendingConnectionId = getLocalStorageItem(
+        FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY
+      );
+
       try {
-        const connectionDetails =
-          await Agent.agent.connections.getConnectionShortDetailById(
-            pendingConnectionId
-          );
-        dispatch(updateOrAddConnectionCache(connectionDetails));
-        dispatch(setToastMsg(ToastMsgType.NEW_CONNECTION_ADDED));
+        if (pendingConnectionId) {
+          const connectionDetails =
+            await Agent.agent.connections.getConnectionShortDetailById(
+              pendingConnectionId
+            );
+
+          if (!cancelled) {
+            dispatch(updateOrAddConnectionCache(connectionDetails));
+            dispatch(setToastMsg(ToastMsgType.NEW_CONNECTION_ADDED));
+          }
+        }
+
+        await Agent.agent.credentials.syncKeriaCredentials();
+
+        const [credsCache, credsArchivedCache, notifications] =
+          await Promise.all([
+            Agent.agent.credentials.getCredentials(),
+            Agent.agent.credentials.getCredentials(true),
+            Agent.agent.keriaNotifications.getNotifications(),
+          ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        dispatch(setCredsCache(credsCache));
+        dispatch(setCredsArchivedCache(credsArchivedCache));
+        dispatch(setNotificationsCache(notifications));
       } catch (error) {
         showError(
-          "Unable to refresh connection after Fayda verification",
+          "Unable to refresh wallet state after Fayda verification",
           error,
           dispatch
         );
       } finally {
-        removeLocalStorageItem(FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY);
-        removeLocalStorageItem(FAYDA_PENDING_CONNECTION_LABEL_STORAGE_KEY);
+        if (pendingConnectionId) {
+          removeLocalStorageItem(FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY);
+          removeLocalStorageItem(FAYDA_PENDING_CONNECTION_LABEL_STORAGE_KEY);
+        }
       }
     };
 
-    resolvePendingConnection();
+    void refreshFaydaWalletState();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch, faydaVerified]);
 
   const syncFaydaVerificationStatus = useCallback(
@@ -483,6 +512,8 @@ const AppWrapper = (props: { children: ReactNode }) => {
 
   const loadDatabase = async () => {
     try {
+      await Agent.agent.credentials.syncKeriaCredentials();
+
       const connectionsDetails = await Agent.agent.connections.getConnections();
       const multisigConnectionsDetails =
         await Agent.agent.connections.getMultisigConnections();

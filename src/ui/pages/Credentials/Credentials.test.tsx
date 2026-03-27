@@ -27,6 +27,7 @@ import { CredentialsFilters } from "./Credentials.types";
 const deleteIdentifierMock = jest.fn();
 const archiveIdentifierMock = jest.fn();
 const markCredentialPendingDeletionMock = jest.fn();
+const getCredentialsMock = jest.fn();
 jest.mock("../../../core/agent/agent", () => ({
   Agent: {
     agent: {
@@ -34,7 +35,7 @@ jest.mock("../../../core/agent/agent", () => ({
         getCredentialDetailsById: jest.fn(),
         deleteCredential: () => deleteIdentifierMock(),
         archiveCredential: () => archiveIdentifierMock(),
-        getCredentials: jest.fn(),
+        getCredentials: (...args: any[]) => getCredentialsMock(...args),
         markCredentialPendingDeletion: () =>
           markCredentialPendingDeletionMock(),
       },
@@ -204,6 +205,11 @@ describe("Creds Tab", () => {
     const mockStore = configureStore();
     const dispatchMock = jest.fn();
 
+    getCredentialsMock.mockReset();
+    getCredentialsMock.mockImplementation((isArchived?: boolean) =>
+      Promise.resolve(isArchived ? filteredCredsFix : filteredCredsFix)
+    );
+
     mockedStore = {
       ...mockStore(initialStateFull),
       dispatch: dispatchMock,
@@ -211,6 +217,21 @@ describe("Creds Tab", () => {
 
     store.dispatch(setCredsCache([]));
     store.dispatch(setCredentialsFilters(CredentialsFilters.All));
+  });
+
+  test("refreshes credentials when the tab loads", async () => {
+    render(
+      <MemoryRouter initialEntries={[TabsRoutePath.CREDENTIALS]}>
+        <Provider store={mockedStore}>
+          <Credentials />
+        </Provider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(getCredentialsMock).toHaveBeenCalledWith();
+      expect(getCredentialsMock).toHaveBeenCalledWith(true);
+    });
   });
 
   test("Renders favourites in Creds", () => {
@@ -309,6 +330,9 @@ describe("Creds Tab", () => {
   });
 
   test("Toggle Creds Filters show Individual", async () => {
+    getCredentialsMock.mockImplementation((isArchived?: boolean) =>
+      Promise.resolve(isArchived ? filteredCredsFix : [filteredCredsFix[0]])
+    );
     store.dispatch(setCredsCache([filteredCredsFix[0]]));
 
     const { getByTestId, getByText, queryByText } = render(
@@ -355,6 +379,9 @@ describe("Creds Tab", () => {
   });
 
   test("Toggle Creds Filters show Group", async () => {
+    getCredentialsMock.mockImplementation((isArchived?: boolean) =>
+      Promise.resolve(isArchived ? filteredCredsFix : [filteredCredsFix[3]])
+    );
     store.dispatch(setCredsCache([filteredCredsFix[3]]));
     store.dispatch(setCredentialsFilters(CredentialsFilters.All));
 

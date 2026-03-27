@@ -12,6 +12,10 @@ import { Agent } from "../../../core/agent/agent";
 import { MiscRecordId } from "../../../core/agent/agent.types";
 import { KeyStoreKeys, SecureStorage } from "../../../core/storage";
 import { i18n } from "../../../i18n";
+import {
+  isWalletOnboardingRoute,
+  shouldRequireUnlock,
+} from "../../../routes/authenticationFlow";
 import { PublicRoutes, RoutePath } from "../../../routes/paths";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import {
@@ -309,11 +313,13 @@ const LockPage = () => {
   const router = useHistory();
 
   const isPublicPage = PublicRoutes.includes(currentRoute?.path as RoutePath);
+  const requiresUnlock = shouldRequireUnlock(authentication);
+  const isWalletSetupPage = isWalletOnboardingRoute(currentRoute?.path);
   const shouldRedirectToOnboarding =
-    !authentication.passcodeIsSet &&
+    !requiresUnlock &&
     !authentication.loggedIn &&
     !!currentRoute?.path &&
-    !isPublicPage;
+    !isWalletSetupPage;
 
   useEffect(() => {
     if (!shouldRedirectToOnboarding) {
@@ -325,7 +331,7 @@ const LockPage = () => {
     }
   }, [router, shouldRedirectToOnboarding]);
 
-  if (isPublicPage || authentication.loggedIn || !authentication.passcodeIsSet) {
+  if (isPublicPage || authentication.loggedIn || !requiresUnlock) {
     return null;
   }
 

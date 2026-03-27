@@ -5,6 +5,7 @@ import {
   removeCurrentRoute,
   setCurrentRoute,
 } from "../../store/reducers/stateCache";
+import { canResumeSeedPhraseCreation } from "../authenticationFlow";
 import { DataProps, PayloadProps } from "../nextRoute/nextRoute.types";
 import { RoutePath, TabsRoutePath } from "../paths";
 
@@ -42,10 +43,7 @@ const getDefaultPath = (data: DataProps) => {
     return TabsRoutePath.IDENTIFIERS;
   }
 
-  if (
-    data.store.stateCache.authentication.passwordIsSet ||
-    data.store.stateCache.authentication.passwordIsSkipped
-  ) {
+  if (canResumeSeedPhraseCreation(data.store.stateCache.authentication)) {
     return RoutePath.GENERATE_SEED_PHRASE;
   }
 

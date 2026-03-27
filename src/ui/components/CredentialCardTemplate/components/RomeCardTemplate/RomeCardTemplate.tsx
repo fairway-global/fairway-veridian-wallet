@@ -63,7 +63,11 @@ const RomeCardTemplate = ({
                 icon={hourglassOutline}
                 color="primary"
               />
-              <span>{CredentialStatus.PENDING}</span>
+              <span>
+                {i18n.t(
+                  "tabs.menu.tab.items.connectwallet.connectionhistory.confirmconnect.pending"
+                )}
+              </span>
             </IonChip>
           ) : null}
         </div>

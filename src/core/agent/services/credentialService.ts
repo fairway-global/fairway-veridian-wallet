@@ -92,6 +92,9 @@ class CredentialService extends AgentService {
     );
 
     await this.resolveCredentialTypeFromSchema(listMetadatas);
+    if (!isGetArchive) {
+      await this.reconcilePendingCredentialStatuses(listMetadatas);
+    }
 
     return listMetadatas.map((element: CredentialMetadataRecord) =>
       getCredentialShortDetails(element)
@@ -122,6 +125,14 @@ class CredentialService extends AgentService {
       }
 
       throw new Error(CredentialService.CREDENTIAL_NOT_FOUND);
+    }
+
+    const cloudStatus = this.getCredentialStatusFromCloud(acdc);
+    if (metadata.status !== cloudStatus) {
+      metadata.status = cloudStatus;
+      await this.credentialStorage.updateCredentialMetadata(metadata.id, {
+        status: cloudStatus,
+      });
     }
 
     const credentialShortDetails = getCredentialShortDetails(metadata);
@@ -256,6 +267,45 @@ class CredentialService extends AgentService {
     }
 
     return undefined;
+  }
+
+  private getCredentialStatusFromCloud(acdc: any): CredentialStatus {
+    return acdc?.status?.s === "1"
+      ? CredentialStatus.REVOKED
+      : CredentialStatus.CONFIRMED;
+  }
+
+  private async reconcilePendingCredentialStatuses(
+    metadatas: CredentialMetadataRecord[]
+  ): Promise<void> {
+    const pendingMetadatas = metadatas.filter(
+      (metadata) => metadata.status === CredentialStatus.PENDING
+    );
+
+    for (const metadata of pendingMetadatas) {
+      let cloudCredential;
+      try {
+        cloudCredential = await this.getCredentialFromCloudWithRetry(
+          metadata.id
+        );
+      } catch {
+        continue;
+      }
+
+      if (!cloudCredential) {
+        continue;
+      }
+
+      const nextStatus = this.getCredentialStatusFromCloud(cloudCredential);
+      if (metadata.status === nextStatus) {
+        continue;
+      }
+
+      metadata.status = nextStatus;
+      await this.credentialStorage.updateCredentialMetadata(metadata.id, {
+        status: nextStatus,
+      });
+    }
   }
 
   private shouldResolveCredentialType(metadata: CredentialMetadataRecord): boolean {
@@ -498,6 +548,9 @@ class CredentialService extends AgentService {
 
     const localCredentials =
       await this.credentialStorage.getAllCredentialMetadata();
+    const cloudCredentialsById = new Map(
+      cloudCredentials.map((credential: any) => [credential.sad.d, credential])
+    );
 
     const unSyncedData = cloudCredentials.filter(
       (credential: any) =>
@@ -533,6 +586,41 @@ class CredentialService extends AgentService {
       };
 
       await this.createMetadata(metadata);
+    }
+
+    const pendingLocalCredentials = localCredentials.filter(
+      (credential) =>
+        credential.status === CredentialStatus.PENDING &&
+        cloudCredentialsById.has(credential.id)
+    );
+
+    for (const pendingCredential of pendingLocalCredentials) {
+      const cloudCredential = cloudCredentialsById.get(pendingCredential.id);
+      if (!cloudCredential) {
+        continue;
+      }
+
+      const telStatus = (
+        await this.props.signifyClient
+          .credentials()
+          .state(cloudCredential.sad.ri, cloudCredential.sad.d)
+      ).et;
+
+      const nextStatus =
+        telStatus === Ilks.iss
+          ? CredentialStatus.CONFIRMED
+          : CredentialStatus.REVOKED;
+
+      if (pendingCredential.status === nextStatus) {
+        continue;
+      }
+
+      await this.credentialStorage.updateCredentialMetadata(
+        pendingCredential.id,
+        {
+          status: nextStatus,
+        }
+      );
     }
   }
 

@@ -215,6 +215,40 @@ describe("Credential service of agent", () => {
     expect(await credentialService.getCredentials()).toStrictEqual([]);
   });
 
+  test("can reconcile pending credentials when listing credentials", async () => {
+    const pendingRecord = new CredentialMetadataRecord({
+      ...credentialMetadataProps,
+      id: "pending-list-credential",
+      status: CredentialStatus.PENDING,
+    });
+
+    credentialStorage.getAllCredentialMetadata = jest
+      .fn()
+      .mockResolvedValue([pendingRecord]);
+    getCredentialMock.mockResolvedValueOnce({
+      sad: {
+        d: pendingRecord.id,
+        i: pendingRecord.connectionId,
+        a: { i: pendingRecord.identifierId },
+      },
+      schema: {
+        title: pendingRecord.credentialType,
+      },
+      status: {
+        s: "0",
+        dt: nowISO,
+      },
+    });
+
+    const result = await credentialService.getCredentials();
+
+    expect(credentialStorage.updateCredentialMetadata).toHaveBeenCalledWith(
+      pendingRecord.id,
+      { status: CredentialStatus.CONFIRMED }
+    );
+    expect(result[0].status).toBe(CredentialStatus.CONFIRMED);
+  });
+
   test("can resolve schema title when credential type is id-like", async () => {
     const unresolvedRecord = new CredentialMetadataRecord({
       ...credentialMetadataProps,
@@ -395,6 +429,48 @@ describe("Credential service of agent", () => {
     });
   });
 
+  test("get credential details promotes a pending local credential to confirmed", async () => {
+    Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValueOnce(true);
+    const pendingMetadata = new CredentialMetadataRecord({
+      ...credentialMetadataProps,
+      id: "pending-detail-credential",
+      status: CredentialStatus.PENDING,
+    });
+    credentialStorage.getCredentialMetadata = jest
+      .fn()
+      .mockResolvedValue(pendingMetadata);
+
+    getCredentialMock = jest.fn().mockResolvedValue({
+      sad: {
+        a: { LEI: "5493001KJTIIGC8Y1R17" },
+        d: pendingMetadata.id,
+        i: pendingMetadata.connectionId,
+        ri: "EOIj7V-rqu_Q9aGSmPfviBceEtRk1UZBN5H2P_L-Hhx5",
+        s: pendingMetadata.schema,
+        v: "ACDC10JSON000197_",
+      },
+      schema: {
+        title: pendingMetadata.credentialType,
+        description: "Pending detail description",
+        version: "1.0.0",
+      },
+      status: {
+        s: "0",
+        dt: nowISO,
+      },
+    });
+
+    const result = await credentialService.getCredentialDetailsById(
+      pendingMetadata.id
+    );
+
+    expect(credentialStorage.updateCredentialMetadata).toHaveBeenCalledWith(
+      pendingMetadata.id,
+      { status: CredentialStatus.CONFIRMED }
+    );
+    expect(result.status).toBe(CredentialStatus.CONFIRMED);
+  });
+
   test("can get credential short details by ID", async () => {
     const id = "testid";
     const credentialType = "TYPE-001";
@@ -550,6 +626,50 @@ describe("Credential service of agent", () => {
     expect(credentialStateMock).toBeCalledWith(
       "EA67QQC6C6OG4Pok44UHKegNS0YoQm3yxeZwJEbbdCrh",
       "EL24R3ECGtv_UzQmYUcu9AeP1ks2JPzTxgPcQPkadEPY"
+    );
+  });
+
+  test("Can reconcile a pending local credential when KERIA already has it", async () => {
+    const pendingCredential = new CredentialMetadataRecord({
+      ...credentialMetadataProps,
+      id: "pending-credential-id",
+      status: CredentialStatus.PENDING,
+    });
+
+    credentialListMock
+      .mockResolvedValueOnce([
+        {
+          sad: {
+            d: pendingCredential.id,
+            ri: "registry-said",
+            i: "issuer-aid",
+            a: {
+              i: pendingCredential.identifierId,
+              dt: "2023-11-29T02:13:34.858000+00:00",
+            },
+          },
+          schema: {
+            $id: pendingCredential.schema,
+            title: pendingCredential.credentialType,
+          },
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    credentialStateMock.mockResolvedValueOnce({ et: Ilks.iss });
+    credentialStorage.getAllCredentialMetadata = jest
+      .fn()
+      .mockResolvedValue([pendingCredential]);
+
+    await credentialService.syncKeriaCredentials();
+
+    expect(credentialStorage.saveCredentialMetadataRecord).not.toHaveBeenCalled();
+    expect(credentialStorage.updateCredentialMetadata).toHaveBeenCalledWith(
+      pendingCredential.id,
+      { status: CredentialStatus.CONFIRMED }
+    );
+    expect(credentialStateMock).toHaveBeenCalledWith(
+      "registry-said",
+      pendingCredential.id
     );
   });
 

@@ -344,6 +344,15 @@ const Credentials = () => {
     schemaNamesById,
   ]);
 
+  const refreshCredentials = useCallback(async () => {
+    try {
+      const creds = await Agent.agent.credentials.getCredentials();
+      dispatch(setCredsCache(creds));
+    } catch (e) {
+      showError("Unable to refresh credentials", e, dispatch);
+    }
+  }, [dispatch]);
+
   const fetchArchivedCreds = useCallback(async () => {
     try {
       const creds = await Agent.agent.credentials.getCredentials(true);
@@ -387,6 +396,7 @@ const Credentials = () => {
     );
   }, [confirmedCreds, pendingCreds.length]);
 
+  useOnlineStatusEffect(refreshCredentials);
   useOnlineStatusEffect(fetchArchivedCreds);
 
   const handleConnections = () => {
@@ -395,6 +405,7 @@ const Credentials = () => {
 
   useIonViewWillEnter(() => {
     dispatch(setCurrentRoute({ path: TabsRoutePath.CREDENTIALS }));
+    void refreshCredentials();
   });
 
   const handleShowNavAnimation = (source: StartAnimationSource) => {

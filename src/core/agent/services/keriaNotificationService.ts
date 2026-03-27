@@ -1310,21 +1310,6 @@ class KeriaNotificationService extends AgentService {
               .exchanges()
               .get(admitExchange.exn.p);
             const credentialId = grantExchange.exn.e.acdc.d;
-            let credentialAvailable = true;
-            try {
-              await this.props.signifyClient.credentials().get(credentialId);
-            } catch (error) {
-              if (KeriaNotificationService.isCredentialCloudMissing(error)) {
-                credentialAvailable = false;
-              } else {
-                throw error;
-              }
-            }
-
-            // Keep pending operation until holder KERIA can read credential details.
-            if (!credentialAvailable) {
-              return;
-            }
 
             const notifications = await this.notificationStorage.findAllByQuery(
               {
