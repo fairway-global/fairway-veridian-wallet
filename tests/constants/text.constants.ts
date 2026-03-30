@@ -22,7 +22,7 @@ export enum Passcode {
 export enum Biometric {
   DescriptionCancelBiometric = "You canceled Biometrics. You can set this up later via the settings page.",
   Title = "Enable biometrics",
-  SubTitle = "Use biometrics for quicker access to your Veridian wallet. You can turn this on or off anytime in settings.",
+  SubTitle = "Use biometrics for quicker access to Fairwallet. You can turn this on or off anytime in settings.",
 }
 
 export enum WelcomeMessage {

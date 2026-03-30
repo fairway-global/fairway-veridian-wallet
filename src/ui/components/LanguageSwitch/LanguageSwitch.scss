@@ -8,25 +8,46 @@
 }
 
 .language-switch__button {
+  appearance: none;
+  -webkit-appearance: none;
   min-width: 2.375rem;
   min-height: 2rem;
   padding: 0.35rem 0.65rem;
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: var(--ion-color-neutral-700);
+  color: var(--ion-color-neutral-800);
+  -webkit-text-fill-color: var(--ion-color-neutral-800);
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1;
+  font-family: inherit;
   cursor: pointer;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
 }
 
-.language-switch__button.is-active {
+.language-switch__button.is-active,
+.language-switch__button[aria-pressed="true"],
+.language-switch__button.is-active:hover,
+.language-switch__button.is-active:focus-visible,
+.language-switch__button.is-active:active,
+.language-switch__button[aria-pressed="true"]:hover,
+.language-switch__button[aria-pressed="true"]:focus-visible,
+.language-switch__button[aria-pressed="true"]:active {
   background: var(--ion-color-primary-700);
-  color: var(--ion-color-neutral-50);
+  color: var(--ion-color-neutral-100) !important;
+  -webkit-text-fill-color: var(--ion-color-neutral-100);
+}
+
+.language-switch__button:not(.is-active):not([aria-pressed="true"]),
+.language-switch__button:not(.is-active):not([aria-pressed="true"]):hover,
+.language-switch__button:not(.is-active):not([aria-pressed="true"]):focus-visible,
+.language-switch__button:not(.is-active):not([aria-pressed="true"]):active {
+  background: transparent;
+  color: var(--ion-color-neutral-800) !important;
+  -webkit-text-fill-color: var(--ion-color-neutral-800);
 }
 
 .language-switch__button:focus-visible {

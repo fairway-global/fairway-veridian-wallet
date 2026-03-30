@@ -3,15 +3,15 @@
     "done": "Done",
     "intro": {
       "title": "Terms of Use",
-      "text": "These Terms of Use set forth the legally binding terms and conditions for your use of the Veridian wallet (“Veridian”). Veridian is a decentralized identity management application developed by the Cardano Foundation (Cardano Stiftung) (the “Foundation”), which enables you to generate, manage, and control your digital identity through cryptographic keys and verifiable credentials using the Key Event Receipt Infrastructure (KERI) protocol.\n\nPlease read these Terms carefully. By accessing or using Veridian, you agree to be bound by these Terms, including any additional guidelines or rules referenced herein. If you do not agree to these Terms, please do not use Veridian."
+      "text": "These Terms of Use set forth the legally binding terms and conditions for your use of Fairwallet (“Fairwallet”). Fairwallet is a decentralized identity management application developed by the Cardano Foundation (Cardano Stiftung) (the “Foundation”), which enables you to generate, manage, and control your digital identity through cryptographic keys and verifiable credentials using the Key Event Receipt Infrastructure (KERI) protocol.\n\nPlease read these Terms carefully. By accessing or using Fairwallet, you agree to be bound by these Terms, including any additional guidelines or rules referenced herein. If you do not agree to these Terms, please do not use Fairwallet."
     },
-    "support": "Veridian Wallet Support",
+    "support": "Fairwallet Support",
     "sections": [
       {
         "content": [
           {
             "subtitle": "1. Eligibility",
-            "text": "By using Veridian, you represent and warrant that you are of legal age to form a binding contract in your jurisdiction, and have not previously been suspended or removed from using Veridian. If you are using Veridian on behalf of a legal entity, you further represent and warrant that (i) the entity is duly organized under applicable laws, and (ii) you are duly authorized to act on its behalf."
+            "text": "By using Fairwallet, you represent and warrant that you are of legal age to form a binding contract in your jurisdiction, and have not previously been suspended or removed from using Fairwallet. If you are using Fairwallet on behalf of a legal entity, you further represent and warrant that (i) the entity is duly organized under applicable laws, and (ii) you are duly authorized to act on its behalf."
           }
         ]
       },
@@ -23,15 +23,15 @@
           },
           {
             "subtitle": "2.1. Licence Grant",
-            "text": "The Cardano Foundation grants you a limited, non-exclusive, non-transferable licence to access and use Veridian for your digital identity management purposes, subject to these terms."
+            "text": "The Cardano Foundation grants you a limited, non-exclusive, non-transferable licence to access and use Fairwallet for your digital identity management purposes, subject to these terms."
           },
           {
             "subtitle": "2.2. Restrictions on Use",
             "text": "You agree not to:",
             "nested": [
-              "Modify, distribute, or create derivative works based on Veridian.",
+              "Modify, distribute, or create derivative works based on Fairwallet.",
               "Compromise the security or integrity of the Wallet or its underlying systems.",
-              "Use Veridian for any unlawful or unauthorised purpose."
+              "Use Fairwallet for any unlawful or unauthorised purpose."
             ]
           }
         ]
@@ -44,7 +44,7 @@
           },
           {
             "subtitle": "3.1. Security of Digital Identity",
-            "text": "Maintaining the security and confidentiality of your passwords, cryptographic keys, digital identity (AID), and any credentials generated or stored in Veridian. Loss or compromise of this information may result in irrecoverable loss of access to your digital identity."
+            "text": "Maintaining the security and confidentiality of your passwords, cryptographic keys, digital identity (AID), and any credentials generated or stored in Fairwallet. Loss or compromise of this information may result in irrecoverable loss of access to your digital identity."
           },
           {
             "subtitle": "3.2. Associated information, Credentials",
@@ -52,7 +52,7 @@
           },
           {
             "subtitle": "3.3. Compliance with Laws",
-            "text": "Compliance with all applicable laws and regulations when using Veridian."
+            "text": "Compliance with all applicable laws and regulations when using Fairwallet."
           }
         ]
       },
@@ -60,7 +60,7 @@
         "content": [
           {
             "subtitle": "4. Intellectual property",
-            "text": "All intellectual property rights in and to Veridian, including its design, features, and underlying technology, are owned by the Cardano Foundation or its licensors. Nothing in these Terms grants you any right or license to use any trademark, logo, or service mark displayed in Veridian without the prior written consent of the Cardano Foundation."
+            "text": "All intellectual property rights in and to Fairwallet, including its design, features, and underlying technology, are owned by the Cardano Foundation or its licensors. Nothing in these Terms grants you any right or license to use any trademark, logo, or service mark displayed in Fairwallet without the prior written consent of the Cardano Foundation."
           }
         ]
       },
@@ -68,7 +68,7 @@
         "content": [
           {
             "subtitle": "5. Third Party Services",
-            "text": "Veridian may interface with third-party services (such as cloud agents or blockchain networks) to provide its functionality. The Cardano Foundation is not responsible for the performance or reliability of these third-party services, and your use of such services is governed by their respective terms and policies."
+            "text": "Fairwallet may interface with third-party services (such as cloud agents or blockchain networks) to provide its functionality. The Cardano Foundation is not responsible for the performance or reliability of these third-party services, and your use of such services is governed by their respective terms and policies."
           }
         ]
       },
@@ -80,15 +80,15 @@
           },
           {
             "subtitle": "6.1. Disclaimer of Warranties",
-            "text": "Veridian is provided on an “as is” and “as available” basis without warranties of any kind, either express or implied. The Foundation makes no representations and expressly disclaims all warranties about the suitability, merchantability, fitness for purpose, reliability, availability, timeliness, security, title and non-infringement, accuracy or completeness, data synched to or made available from the products, product content, or any consulting services we provide for any associated purpose."
+            "text": "Fairwallet is provided on an “as is” and “as available” basis without warranties of any kind, either express or implied. The Foundation makes no representations and expressly disclaims all warranties about the suitability, merchantability, fitness for purpose, reliability, availability, timeliness, security, title and non-infringement, accuracy or completeness, data synched to or made available from the products, product content, or any consulting services we provide for any associated purpose."
           },
           {
             "subtitle": "6.2. No Indirect Damages",
-            "text": "To the fullest extent permitted by law, the Foundation shall not be liable for any indirect, incidental, consequential, punitive, or special damages (including loss of profits, revenue, or data) arising out of your use of Veridian."
+            "text": "To the fullest extent permitted by law, the Foundation shall not be liable for any indirect, incidental, consequential, punitive, or special damages (including loss of profits, revenue, or data) arising out of your use of Fairwallet."
           },
           {
             "subtitle": "6.3. Limitation of Liability",
-            "text": "The aggregate liability of the Foundation, whether in contract, tort, or otherwise, is limited to the maximum extent permitted by applicable law. In any event, if fees have been paid for use of Veridian, our total liability shall not exceed the total amounts paid in the twelve months preceding the claim. If no fees are payable, our liability will be limited to one hundred US Dollars."
+            "text": "The aggregate liability of the Foundation, whether in contract, tort, or otherwise, is limited to the maximum extent permitted by applicable law. In any event, if fees have been paid for use of Fairwallet, our total liability shall not exceed the total amounts paid in the twelve months preceding the claim. If no fees are payable, our liability will be limited to one hundred US Dollars."
           }
         ]
       },
@@ -108,19 +108,19 @@
           },
           {
             "subtitle": "8.1. Service Changes",
-            "text": "We reserve the right to modify, update, limit, or revoke your access to Veridian at any time, for any reason, without prior notice, at our sole discretion."
+            "text": "We reserve the right to modify, update, limit, or revoke your access to Fairwallet at any time, for any reason, without prior notice, at our sole discretion."
           },
           {
             "subtitle": "8.2. Privacy Policy",
-            "text": "By using Veridian, you acknowledge that our <0>{{PrivacyPolicy}}</0> applies to you, and your continued use constitutes acceptance of the <0>{{PrivacyPolicy}}</0>."
+            "text": "By using Fairwallet, you acknowledge that our <0>{{PrivacyPolicy}}</0> applies to you, and your continued use constitutes acceptance of the <0>{{PrivacyPolicy}}</0>."
           },
           {
             "subtitle": "8.3. Feedback",
-            "text": "We welcome your feedback and suggestions regarding Veridian, and you can provide your thoughts at <1>{{VeridianSupport}}</1>. By providing feedback, you grant us permission to use, share, and build upon your input without any obligation or compensation to you."
+            "text": "We welcome your feedback and suggestions regarding Fairwallet, and you can provide your thoughts at <1>{{VeridianSupport}}</1>. By providing feedback, you grant us permission to use, share, and build upon your input without any obligation or compensation to you."
           },
           {
             "subtitle": "8.4. Amendments",
-            "text": "We may modify these Terms at any time. The revised version will become effective on the next business day after posting. Your continued use of Veridian constitutes your acceptance of the modified Terms. If you do not agree with any changes, you must notify us in writing within thirty (30) days of notice."
+            "text": "We may modify these Terms at any time. The revised version will become effective on the next business day after posting. Your continued use of Fairwallet constitutes your acceptance of the modified Terms. If you do not agree with any changes, you must notify us in writing within thirty (30) days of notice."
           },
           {
             "subtitle": "8.5. Assignment",
@@ -132,19 +132,19 @@
           },
           {
             "subtitle": "8.7. Application Provider Terms",
-            "text": "These Terms of Use are between you and the Foundation only, and not with an application service or application platform provider (such as Apple, Inc., or Google Inc.), which may provide you the Veridian wallet application subject to their own terms of use."
+            "text": "These Terms of Use are between you and the Foundation only, and not with an application service or application platform provider (such as Apple, Inc., or Google Inc.), which may provide you the Fairwallet application subject to their own terms of use."
           },
           {
             "subtitle": "8.8. Entire Agreement",
-            "text": "These Terms constitute the entire agreement between you and the Cardano Foundation regarding your use of Veridian and supersede all prior communications, agreements, and understandings."
+            "text": "These Terms constitute the entire agreement between you and the Cardano Foundation regarding your use of Fairwallet and supersede all prior communications, agreements, and understandings."
           },
           {
             "subtitle": "8.9. Disputes",
-            "text": "If you have a dispute with the Foundation or a claim to raise in relation to Veridian, you agree to contact us using the form at <1>{{VeridianSupport}}</1> to attempt to resolve the issue informally first."
+            "text": "If you have a dispute with the Foundation or a claim to raise in relation to Fairwallet, you agree to contact us using the form at <1>{{VeridianSupport}}</1> to attempt to resolve the issue informally first."
           },
           {
             "subtitle": "8.10. Survival",
-            "text": "The provisions relating to disclaimers, limitations of liability, indemnification, governing law, and any other provisions intended to survive termination shall continue to apply after termination of your use of Veridian."
+            "text": "The provisions relating to disclaimers, limitations of liability, indemnification, governing law, and any other provisions intended to survive termination shall continue to apply after termination of your use of Fairwallet."
           }
         ]
       },

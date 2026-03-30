@@ -3,7 +3,7 @@ import { KeyboardResize } from "@capacitor/keyboard";
 
 const config: CapacitorConfig = {
   appId: "org.cardanofoundation.idw",
-  appName: "Veridian",
+  appName: "Fairwallet",
   webDir: "build",
   android: {
     webContentsDebuggingEnabled: process.env.ENVIRONMENT !== "prod",

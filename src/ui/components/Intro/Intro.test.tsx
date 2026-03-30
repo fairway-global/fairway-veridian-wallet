@@ -14,7 +14,7 @@ describe("Intro Component", () => {
 
   test("Render slide 1", () => {
     render(<Intro />);
-    const linkElement = screen.getByText("Welcome to Veridian");
+    const linkElement = screen.getByText("Welcome to Fairwallet");
     expect(linkElement).toBeInTheDocument();
   });
 

@@ -15,9 +15,18 @@ let customiseMockValue: {
     },
   },
 };
+let keriaMockValue:
+  | {
+      url?: string;
+      bootUrl?: string;
+    }
+  | undefined;
 const defaultConfigMock = {
   ConfigurationService: {
     env: {
+      get keri() {
+        return keriaMockValue ? { keria: keriaMockValue } : undefined;
+      },
       features: {
         cut: [],
         customContent: [],
@@ -143,6 +152,19 @@ jest.mock("../../components/CustomInput", () => ({
   },
 }));
 
+beforeEach(() => {
+  customiseMockValue = {
+    identifiers: {
+      creation: {
+        individualOnly: "FirstTime",
+      },
+    },
+  };
+  keriaMockValue = undefined;
+  jest.clearAllMocks();
+  createOrUpdateBasicRecordMock.mockImplementation(() => Promise.resolve());
+});
+
 describe("SSI agent page", () => {
   const mockStore = configureStore();
   const dispatchMock = jest.fn();
@@ -185,6 +207,38 @@ describe("SSI agent page", () => {
 
     expect(getByTestId("boot-url-input")).toBeVisible();
     expect(getByTestId("connect-url-input")).toBeVisible();
+  });
+
+  test("Uses configured Fairwallet urls without asking for them", async () => {
+    keriaMockValue = {
+      url: "https://connect.fairwallet.et",
+      bootUrl: "https://boot.fairwallet.et",
+    };
+
+    const history = createMemoryHistory();
+    history.push(RoutePath.SSI_AGENT);
+
+    const { getByTestId, queryByTestId } = render(
+      <IonReactMemoryRouter history={history}>
+        <Provider store={storeMocked}>
+          <CreateSSIAgent />
+        </Provider>
+      </IonReactMemoryRouter>
+    );
+
+    expect(queryByTestId("boot-url-input")).toBe(null);
+    expect(queryByTestId("connect-url-input")).toBe(null);
+
+    act(() => {
+      fireEvent.click(getByTestId("primary-button-create-ssi-agent"));
+    });
+
+    await waitFor(() => {
+      expect(bootAndConnectMock).toBeCalledWith({
+        bootUrl: "https://boot.fairwallet.et",
+        url: "https://connect.fairwallet.et",
+      });
+    });
   });
 
   test("Open scanner", () => {
@@ -761,6 +815,48 @@ describe("SSI agent page: recovery mode", () => {
 
     expect(queryByTestId("boot-url-input")).toBe(null);
     expect(getByTestId("connect-url-input")).toBeVisible();
+  });
+
+  test("Uses configured Fairwallet connect url in recovery without asking", async () => {
+    keriaMockValue = {
+      url: "https://connect.fairwallet.et",
+      bootUrl: "https://boot.fairwallet.et",
+    };
+
+    const history = createMemoryHistory();
+    history.push(RoutePath.SSI_AGENT);
+
+    const recoveryStore = {
+      ...mockStore({
+        ...initialState,
+        seedPhraseCache: {
+          seedPhrase: "mock-seed",
+        },
+      }),
+      dispatch: dispatchMock,
+    };
+
+    const { getByTestId, queryByTestId } = render(
+      <IonReactMemoryRouter history={history}>
+        <Provider store={recoveryStore}>
+          <CreateSSIAgent />
+        </Provider>
+      </IonReactMemoryRouter>
+    );
+
+    expect(queryByTestId("boot-url-input")).toBe(null);
+    expect(queryByTestId("connect-url-input")).toBe(null);
+
+    act(() => {
+      fireEvent.click(getByTestId("primary-button-create-ssi-agent"));
+    });
+
+    await waitFor(() => {
+      expect(recoverKeriaAgentMock).toBeCalledWith(
+        ["mock-seed"],
+        "https://connect.fairwallet.et"
+      );
+    });
   });
 
   test("Connect success", async () => {

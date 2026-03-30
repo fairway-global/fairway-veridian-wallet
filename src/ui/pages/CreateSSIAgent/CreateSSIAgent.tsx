@@ -54,6 +54,7 @@ import { addNotification } from "../../../store/reducers/notificationsCache";
 
 const SSI_URLS_EMPTY = "SSI url is empty";
 const SEED_PHRASE_EMPTY = "Invalid seed phrase";
+const normalizeUrl = (url?: string) => (url || "").trim().replace(/\/+$/, "");
 
 const InputError = ({
   showError,
@@ -91,17 +92,37 @@ const CreateSSIAgent = () => {
   const isIndividualOnlyFirstCreateMode =
     ConfigurationService.env.features.customise?.identifiers?.creation
       ?.individualOnly === IndividualOnlyMode.FirstTime;
+  const configuredConnectUrl = normalizeUrl(
+    ConfigurationService.env?.keri?.keria?.url
+  );
+  const configuredBootUrl = normalizeUrl(
+    ConfigurationService.env?.keri?.keria?.bootUrl
+  );
+  const resolvedConnectUrl = normalizeUrl(
+    ssiAgent.connectUrl || configuredConnectUrl
+  );
+  const resolvedBootUrl = normalizeUrl(ssiAgent.bootUrl || configuredBootUrl);
+  const usesManagedConnectUrl = !!configuredConnectUrl;
+  const usesManagedBootUrl = !isRecoveryMode && !!configuredBootUrl;
+  const showBootUrlInput = !isRecoveryMode && !usesManagedBootUrl;
+  const showConnectUrlInput = !usesManagedConnectUrl;
 
   useEffect(() => {
-    if (!ssiAgent.bootUrl && !ssiAgent.connectUrl) {
-      dispatch(
-        setConnectUrl(ConfigurationService.env?.keri?.keria?.url || undefined)
-      );
-      dispatch(
-        setBootUrl(ConfigurationService.env?.keri?.keria?.bootUrl || undefined)
-      );
+    if (!ssiAgent.connectUrl && configuredConnectUrl) {
+      dispatch(setConnectUrl(configuredConnectUrl));
     }
-  }, [dispatch, ssiAgent.bootUrl, ssiAgent.connectUrl]);
+
+    if (!isRecoveryMode && !ssiAgent.bootUrl && configuredBootUrl) {
+      dispatch(setBootUrl(configuredBootUrl));
+    }
+  }, [
+    configuredBootUrl,
+    configuredConnectUrl,
+    dispatch,
+    isRecoveryMode,
+    ssiAgent.bootUrl,
+    ssiAgent.connectUrl,
+  ]);
 
   const setTouchedConnectUrlInput = () => {
     setConnectUrlTouched(true);
@@ -112,21 +133,24 @@ const CreateSSIAgent = () => {
   };
 
   const validBootUrl =
-    isRecoveryMode || (ssiAgent.bootUrl && isValidHttpUrl(ssiAgent.bootUrl));
+    isRecoveryMode ||
+    Boolean(resolvedBootUrl && isValidHttpUrl(resolvedBootUrl));
 
-  const validConnectUrl =
-    ssiAgent.connectUrl && isValidHttpUrl(ssiAgent.connectUrl);
+  const validConnectUrl = Boolean(
+    resolvedConnectUrl && isValidHttpUrl(resolvedConnectUrl)
+  );
 
   const displayBootUrlError =
-    !isRecoveryMode &&
+    showBootUrlInput &&
     bootUrlInputTouched &&
-    ssiAgent.bootUrl &&
-    !isValidHttpUrl(ssiAgent.bootUrl);
+    !!resolvedBootUrl &&
+    !isValidHttpUrl(resolvedBootUrl);
 
   const displayConnectUrlError =
+    showConnectUrlInput &&
     connectUrlInputTouched &&
-    ssiAgent.connectUrl &&
-    !isValidHttpUrl(ssiAgent.connectUrl);
+    !!resolvedConnectUrl &&
+    !isValidHttpUrl(resolvedConnectUrl);
 
   const validated = validBootUrl && validConnectUrl;
 
@@ -211,7 +235,7 @@ const CreateSSIAgent = () => {
   const handleRecoveryWallet = async () => {
     setLoading(true);
     try {
-      if (!ssiAgent.connectUrl) {
+      if (!resolvedConnectUrl) {
         throw new Error(SSI_URLS_EMPTY);
       }
 
@@ -219,13 +243,11 @@ const CreateSSIAgent = () => {
         throw new Error(SEED_PHRASE_EMPTY);
       }
 
-      const connectUrl = removeLastSlash(ssiAgent.connectUrl.trim());
-
-      dispatch(setConnectUrl(connectUrl));
+      dispatch(setConnectUrl(resolvedConnectUrl));
 
       await Agent.agent.recoverKeriaAgent(
         seedPhraseCache.seedPhrase.split(" "),
-        connectUrl
+        resolvedConnectUrl
       );
 
       dispatch(setRecoveryCompleteNoInterruption());
@@ -269,19 +291,16 @@ const CreateSSIAgent = () => {
   const handleCreateSSI = async () => {
     setLoading(true);
     try {
-      if (!ssiAgent.bootUrl || !ssiAgent.connectUrl) {
+      if (!resolvedBootUrl || !resolvedConnectUrl) {
         throw new Error(SSI_URLS_EMPTY);
       }
 
-      const bootUrl = removeLastSlash(ssiAgent.bootUrl.trim());
-      const connectUrl = removeLastSlash(ssiAgent.connectUrl.trim());
-
-      dispatch(setBootUrl(bootUrl));
-      dispatch(setConnectUrl(connectUrl));
+      dispatch(setBootUrl(resolvedBootUrl));
+      dispatch(setConnectUrl(resolvedConnectUrl));
 
       await Agent.agent.bootAndConnect({
-        bootUrl: bootUrl,
-        url: connectUrl,
+        bootUrl: resolvedBootUrl,
+        url: resolvedConnectUrl,
       });
 
       await updateFirstInstallValue(true);
@@ -339,16 +358,6 @@ const CreateSSIAgent = () => {
     event.stopPropagation();
     dispatch(setCurrentOperation(OperationType.SCAN_SSI_CONNECT_URL));
     setTouchedConnectUrlInput();
-  };
-
-  const removeLastSlash = (url: string) => {
-    let result = url;
-
-    while (result && result.length > 0 && url[result.length - 1] === "/") {
-      result = result.substring(0, result.length - 1);
-    }
-
-    return result;
   };
 
   const handleChangeConnectUrl = (connectionUrl: string) => {
@@ -446,7 +455,7 @@ const CreateSSIAgent = () => {
                 {i18n.t("ssiagent.button.info")}
               </IonButton>
             </div>
-            {!isRecoveryMode && (
+            {showBootUrlInput ? (
               <>
                 <CustomInput
                   className="boot-url-input"
@@ -461,9 +470,7 @@ const CreateSSIAgent = () => {
                     setTouchedBootUrlInput();
 
                     if (!result && ssiAgent.bootUrl) {
-                      dispatch(
-                        setBootUrl(removeLastSlash(ssiAgent.bootUrl.trim()))
-                      );
+                      dispatch(setBootUrl(normalizeUrl(ssiAgent.bootUrl)));
                     }
                   }}
                   error={!!displayBootUrlError || isInvalidBootUrl}
@@ -478,31 +485,47 @@ const CreateSSIAgent = () => {
                   }
                 />
               </>
+            ) : (
+              isInvalidBootUrl && (
+                <InputError
+                  showError={isInvalidBootUrl}
+                  errorMessage={`${i18n.t("ssiagent.error.invalidbooturl")}`}
+                />
+              )
             )}
-            <CustomInput
-              className="connect-url-input"
-              dataTestId="connect-url-input"
-              title={`${i18n.t("ssiagent.input.connect.label")}`}
-              placeholder={`${i18n.t("ssiagent.input.connect.placeholder")}`}
-              actionIcon={scanOutline}
-              action={scanConnectUrl}
-              onChangeInput={handleChangeConnectUrl}
-              onChangeFocus={(result) => {
-                setTouchedConnectUrlInput();
+            {showConnectUrlInput ? (
+              <>
+                <CustomInput
+                  className="connect-url-input"
+                  dataTestId="connect-url-input"
+                  title={`${i18n.t("ssiagent.input.connect.label")}`}
+                  placeholder={`${i18n.t("ssiagent.input.connect.placeholder")}`}
+                  actionIcon={scanOutline}
+                  action={scanConnectUrl}
+                  onChangeInput={handleChangeConnectUrl}
+                  onChangeFocus={(result) => {
+                    setTouchedConnectUrlInput();
 
-                if (!result && ssiAgent.connectUrl) {
-                  dispatch(
-                    setConnectUrl(removeLastSlash(ssiAgent.connectUrl.trim()))
-                  );
-                }
-              }}
-              value={ssiAgent.connectUrl || ""}
-              error={showConnectionUrlError}
-            />
-            <InputError
-              showError={showConnectionUrlError}
-              errorMessage={`${i18n.t(connectionUrlError)}`}
-            />
+                    if (!result && ssiAgent.connectUrl) {
+                      dispatch(setConnectUrl(normalizeUrl(ssiAgent.connectUrl)));
+                    }
+                  }}
+                  value={ssiAgent.connectUrl || ""}
+                  error={showConnectionUrlError}
+                />
+                <InputError
+                  showError={showConnectionUrlError}
+                  errorMessage={`${i18n.t(connectionUrlError)}`}
+                />
+              </>
+            ) : (
+              showConnectionUrlError && (
+                <InputError
+                  showError={showConnectionUrlError}
+                  errorMessage={`${i18n.t(connectionUrlError)}`}
+                />
+              )
+            )}
           </div>
           <PageFooter
             pageId={pageId}

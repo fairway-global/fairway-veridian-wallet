@@ -2,7 +2,7 @@
   "onboarding": {
     "slides": [
       {
-        "title": "Welcome to Veridian",
+        "title": "Welcome to Fairwallet",
         "description": "Take full control of your digital identity with secure and seamless management"
       },
       {
@@ -46,7 +46,7 @@
   },
   "setupbiometrics": {
     "title": "Enable biometrics",
-    "description": "Use biometrics for quicker access to your Veridian wallet. You can turn this on or off anytime in settings.",
+    "description": "Use biometrics for quicker access to Fairwallet. You can turn this on or off anytime in settings.",
     "button": {
       "enable": "Enable biometrics",
       "skip": "Set up later"
@@ -1001,8 +1001,8 @@
             },
             "support": {
               "title": "Support & Legal",
-              "contact": "Veridian support",
-              "learnmore": "Learn More About Veridian",
+              "contact": "Fairwallet support",
+              "learnmore": "Learn More About Fairwallet",
               "terms": {
                 "title": "Terms and Privacy Policy",
                 "submenu": {
@@ -1560,7 +1560,7 @@
     "iosfallbackpasswordtitle": "Enter Password",
     "androidtitle": "Authentication",
     "androidsubtitle": "Authentication using biometrics",
-    "setupbiometryheader": "Do you want to allow “Veridian” to use biometrics?",
+    "setupbiometryheader": "Do you want to allow “Fairwallet” to use biometrics?",
     "setupbiometryconfirm": "Ok",
     "setupbiometrycancel": "Don't allow",
     "cancelbiometryheader": "You canceled Biometrics. You can set this up later via the settings page."
