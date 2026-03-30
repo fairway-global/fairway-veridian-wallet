@@ -212,11 +212,11 @@ services:
       - issuer-server-data:/app/data
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.credentials.rule=Host(`${CRED_HOST:-cred-issuance}`)"
+      - "traefik.http.routers.credentials.rule=Host(`${CRED_HOST:-api-new.fairwallet.et}`)"
       - "traefik.http.routers.credentials.entrypoints=websecure"
       - "traefik.http.routers.credentials.tls.certresolver=myresolver"
       - "traefik.http.services.credentials.loadbalancer.server.port=3001"
-      - "traefik.http.routers.credentials-http.rule=Host(`${CRED_HOST:-cred-issuance}`)"
+      - "traefik.http.routers.credentials-http.rule=Host(`${CRED_HOST:-api-new.fairwallet.et}`)"
       - "traefik.http.routers.credentials-http.entrypoints=web"
       - "traefik.http.routers.credentials-http.middlewares=redirect-to-https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
@@ -226,14 +226,14 @@ services:
     image: ${CRED_UI_IMAGE:-cardanofoundation/cf-cred-issuance-ui:main}
     restart: unless-stopped
     environment:
-      - VITE_SERVER_URL=${CRED_UI_SERVER_URL:-http://localhost:3001}
+      - VITE_SERVER_URL=${CRED_UI_SERVER_URL:-https://api-new.fairwallet.et}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.credentials-ui.rule=Host(`${CRED_UI_HOST:-cred-issuance-ui}`)"
+      - "traefik.http.routers.credentials-ui.rule=Host(`${CRED_UI_HOST:-dashboard.fairwallet.et}`)"
       - "traefik.http.routers.credentials-ui.entrypoints=websecure"
       - "traefik.http.routers.credentials-ui.tls.certresolver=myresolver"
       - "traefik.http.services.credentials-ui.loadbalancer.server.port=80"
-      - "traefik.http.routers.credentials-ui-http.rule=Host(`${CRED_UI_HOST:-cred-issuance-ui}`)"
+      - "traefik.http.routers.credentials-ui-http.rule=Host(`${CRED_UI_HOST:-dashboard.fairwallet.et}`)"
       - "traefik.http.routers.credentials-ui-http.entrypoints=web"
       - "traefik.http.routers.credentials-ui-http.middlewares=redirect-to-https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
