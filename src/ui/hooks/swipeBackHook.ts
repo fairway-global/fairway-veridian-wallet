@@ -11,7 +11,7 @@ const useSwipeBack = (
 ) => {
   useEffect(() => {
     const platforms = getPlatforms();
-    if (!platforms.includes("mobile") && !platforms.includes("ios")) return;
+    if (!platforms.includes("ios") || !platforms.includes("hybrid")) return;
 
     const swipeEl = getSwipeEl();
 

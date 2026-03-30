@@ -35,10 +35,6 @@
     justify-content: center;
   }
 
-  > ion-content {
-    overflow: initial;
-  }
-
   .page-header {
     height: calc(var(--ion-safe-area-top, 0) + 4.25rem);
     transition: all 0.25s;

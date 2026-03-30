@@ -9,6 +9,38 @@ import { TabsMenu, TabsRoutePath, tabsRoutes } from "./TabsMenu";
 import { setCurrentRoute } from "../../../../store/reducers/stateCache";
 import { notificationsFix } from "../../../__fixtures__/notificationsFix";
 
+jest.mock("../../../pages/Identifiers", () => ({
+  Identifiers: () => <div>Identifiers Page</div>,
+}));
+
+jest.mock("../../../pages/Credentials", () => ({
+  Credentials: () => <div>Credentials Page</div>,
+}));
+
+jest.mock("../../../pages/Scan", () => ({
+  Scan: () => <div>Scan Page</div>,
+}));
+
+jest.mock("../../../pages/Notifications", () => ({
+  Notifications: () => <div>Notifications Page</div>,
+}));
+
+jest.mock("../../../pages/Menu", () => ({
+  Menu: () => <div>Menu Page</div>,
+}));
+
+jest.mock("../../../pages/IdentifierDetails", () => ({
+  IdentifierDetails: () => <div>Identifier Details Page</div>,
+}));
+
+jest.mock("../../../pages/CredentialDetails", () => ({
+  CredentialDetails: () => <div>Credential Details Page</div>,
+}));
+
+jest.mock("../../../pages/NotificationDetails", () => ({
+  NotificationDetails: () => <div>Notification Details Page</div>,
+}));
+
 describe("Tab menu", () => {
   const mockStore = configureStore();
   const dispatchMock = jest.fn();
@@ -52,10 +84,7 @@ describe("Tab menu", () => {
     const { getByTestId, getByText } = render(
       <IonReactMemoryRouter history={history}>
         <Provider store={storeMocked}>
-          <TabsMenu
-            tab={() => <></>}
-            path={TabsRoutePath.IDENTIFIERS}
-          />
+          <TabsMenu />
         </Provider>
       </IonReactMemoryRouter>
     );
@@ -66,11 +95,7 @@ describe("Tab menu", () => {
       expect(getByText(tab.label)).toBeVisible();
 
       act(() => {
-        fireEvent.click(
-          getByTestId(
-            "tab-button-" + tab.label.toLowerCase().replace(/\s/g, "-")
-          )
-        );
+        fireEvent.click(getByTestId(`tab-button-${tab.id}`));
       });
 
       expect(dispatchMock).toBeCalledWith(setCurrentRoute({ path: tab.path }));
@@ -100,10 +125,7 @@ describe("Tab menu", () => {
     const { getAllByText } = render(
       <IonReactMemoryRouter history={history}>
         <Provider store={storeMocked}>
-          <TabsMenu
-            tab={() => <></>}
-            path={TabsRoutePath.NOTIFICATIONS}
-          />
+          <TabsMenu />
         </Provider>
       </IonReactMemoryRouter>
     );
@@ -136,10 +158,7 @@ describe("Tab menu", () => {
     const { getAllByText } = render(
       <IonReactMemoryRouter history={history}>
         <Provider store={storeMocked}>
-          <TabsMenu
-            tab={() => <></>}
-            path={TabsRoutePath.NOTIFICATIONS}
-          />
+          <TabsMenu />
         </Provider>
       </IonReactMemoryRouter>
     );

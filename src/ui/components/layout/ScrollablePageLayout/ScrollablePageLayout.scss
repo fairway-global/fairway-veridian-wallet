@@ -9,8 +9,20 @@
   }
 
   .scrollable-page-content {
+    --scrollbar-compensation: 0.5rem;
+    --background: var(--ion-color-neutral-200);
+    width: calc(100% + var(--scrollbar-compensation));
+    margin-right: calc(var(--scrollbar-compensation) * -1);
     display: flex;
     flex-direction: column;
+
+    &::part(scroll) {
+      background: var(--ion-color-neutral-200);
+      overflow-x: hidden;
+      padding-right: var(--scrollbar-compensation);
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
 
     > * {
       flex: 0 1 auto;

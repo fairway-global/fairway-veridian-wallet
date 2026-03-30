@@ -2,7 +2,7 @@ import { render, waitFor } from "@testing-library/react";
 import { useRef } from "react";
 import { useSwipeBack } from "./swipeBackHook";
 
-const getPlatformsMock = jest.fn(() => ["ios", "mobile"]);
+const getPlatformsMock = jest.fn(() => ["ios", "mobileweb"]);
 const enableFunc = jest.fn();
 const destroyFnc = jest.fn();
 const createGestureMock = jest.fn(() => ({
@@ -33,7 +33,23 @@ const TestComponent = () => {
 };
 
 describe("Swipe back hook", () => {
-  test("run", async () => {
+  beforeEach(() => {
+    getPlatformsMock.mockReturnValue(["ios", "mobileweb"]);
+    createGestureMock.mockClear();
+    enableFunc.mockClear();
+    destroyFnc.mockClear();
+  });
+
+  test("does not attach on mobile web", async () => {
+    render(<TestComponent />);
+
+    await waitFor(() => {
+      expect(createGestureMock).not.toBeCalled();
+    });
+  });
+
+  test("runs on native ios", async () => {
+    getPlatformsMock.mockReturnValue(["ios", "hybrid", "mobile"]);
     const { unmount } = render(<TestComponent />);
 
     await waitFor(() => {

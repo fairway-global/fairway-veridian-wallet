@@ -7,23 +7,20 @@ import {
   getStateCache,
   setCurrentRoute,
 } from "../store/reducers/stateCache";
-import { TabsMenu, tabsRoutes } from "../ui/components/navigation/TabsMenu";
+import { TabsMenu } from "../ui/components/navigation/TabsMenu";
 import { CreatePassword } from "../ui/pages/CreatePassword";
 import { CreateSSIAgent } from "../ui/pages/CreateSSIAgent";
-import { CredentialDetails } from "../ui/pages/CredentialDetails";
 import { GenerateSeedPhrase } from "../ui/pages/GenerateSeedPhrase";
-import { IdentifierDetails } from "../ui/pages/IdentifierDetails";
-import { NotificationDetails } from "../ui/pages/NotificationDetails";
 import { Onboarding } from "../ui/pages/Onboarding";
 import { SetPasscode } from "../ui/pages/SetPasscode";
 import { SetupBiometrics } from "../ui/pages/SetupBiometrics/SetupBiometrics";
 import { VerifyRecoverySeedPhrase } from "../ui/pages/VerifyRecoverySeedPhrase";
 import { VerifySeedPhrase } from "../ui/pages/VerifySeedPhrase";
 import { getNextRoute } from "./nextRoute";
-import { RoutePath, TabsRoutePath } from "./paths";
+import { RoutePath } from "./paths";
 import { FaydaCallback } from "../ui/pages/faydaCallback/FaydaCallback";
 
-const Routes = () => {
+const Routes = ({ className }: { className?: string }) => {
   const stateCache = useAppSelector(getStateCache);
   const dispatch = useAppDispatch();
   const routes = useAppSelector(getRoutes);
@@ -37,7 +34,10 @@ const Routes = () => {
   }, [routes, nextPath.pathname, dispatch]);
 
   return (
-    <IonRouterOutlet animated={false}>
+    <IonRouterOutlet
+      animated={false}
+      className={className}
+    >
       <Route
         path={RoutePath.SET_PASSCODE}
         component={SetPasscode}
@@ -61,7 +61,6 @@ const Routes = () => {
       <Route
         path={RoutePath.TABS_MENU}
         component={TabsMenu}
-        exact
       />
       <Route
         path={RoutePath.CREATE_PASSWORD}
@@ -79,39 +78,9 @@ const Routes = () => {
         component={CreateSSIAgent}
         exact
       />
-      {tabsRoutes.map((tab, index: number) => {
-        return (
-          <Route
-            key={index}
-            path={tab.path}
-            exact
-            render={() => (
-              <TabsMenu
-                tab={tab.component}
-                path={tab.path}
-              />
-            )}
-          />
-        );
-      })}
-      <Route
-        path={TabsRoutePath.IDENTIFIER_DETAILS}
-        component={IdentifierDetails}
-        exact
-      />
       <Route
         path={RoutePath.SETUP_BIOMETRICS}
         component={SetupBiometrics}
-        exact
-      />
-      <Route
-        path={TabsRoutePath.CREDENTIAL_DETAILS}
-        component={CredentialDetails}
-        exact
-      />
-      <Route
-        path={TabsRoutePath.NOTIFICATION_DETAILS}
-        component={NotificationDetails}
         exact
       />
       <Redirect
@@ -119,8 +88,11 @@ const Routes = () => {
         from="/"
         to={nextPath}
       />
-      <Route path="/callback" component={FaydaCallback} exact />
-
+      <Route
+        path="/callback"
+        component={FaydaCallback}
+        exact
+      />
     </IonRouterOutlet>
   );
 };

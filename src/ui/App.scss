@@ -69,15 +69,6 @@ body {
   }
 }
 
-ion-content {
-  --offset-bottom: auto !important;
-  --overflow: hidden;
-  overflow: auto;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
 ion-list {
   &.md {
     padding: 0;

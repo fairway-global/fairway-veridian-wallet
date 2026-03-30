@@ -79,6 +79,19 @@
     }
   }
 
+  ion-content.tab-content {
+    --scrollbar-compensation: 0.5rem;
+    --background: transparent;
+    width: calc(100% + var(--scrollbar-compensation));
+    margin-right: calc(var(--scrollbar-compensation) * -1);
+
+    &::part(scroll) {
+      padding-right: var(--scrollbar-compensation);
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+  }
+
   @media screen and (min-width: 250px) and (max-width: 370px) {
     padding-inline: 0.9rem;
     font-size: 0.8rem;

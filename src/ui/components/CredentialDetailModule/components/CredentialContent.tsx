@@ -3,6 +3,7 @@ import {
   informationCircleOutline,
   keyOutline,
 } from "ionicons/icons";
+import { IonButton } from "@ionic/react";
 import { useState } from "react";
 import { JSONObject } from "../../../../core/agent/agent.types";
 import { i18n } from "../../../../i18n";
@@ -20,13 +21,11 @@ import {
   CardDetailsBlock,
   CardDetailsExpandAttributes,
   CardDetailsItem,
-  FlatBorderType,
 } from "../../CardDetails";
 import { CardTheme } from "../../CardTheme";
 import { FallbackIcon } from "../../FallbackIcon";
 import { IdentifierDetailModal } from "../../IdentifierDetailModule";
 import { ListHeader } from "../../ListHeader";
-import { ReadMore } from "../../ReadMore";
 import {
   CredentialContentProps,
   IssuedIdentifierProps,
@@ -126,14 +125,16 @@ const CredentialContent = ({
   const issuedAt = `${formatShortDate(cardData.a.dt)} - ${formatTimeToSec(
     cardData.a.dt
   )} (${getUTCOffset(cardData.a.dt)})`;
+  const [showAboutDetails, setShowAboutDetails] = useState(false);
+  const description = String(cardData.s.description || "").trim();
 
   return (
     <>
       <ListHeader title={i18n.t("tabs.credentials.details.about")} />
       <CardBlock
-        flatBorder={FlatBorderType.BOT}
         title={i18n.t("tabs.credentials.details.type")}
-        testId="credential-details-type-block"
+        testId="credential-details-about"
+        className="credential-details-about-block"
       >
         <CardDetailsItem
           info={cardData.s.title}
@@ -142,50 +143,69 @@ const CredentialContent = ({
           mask={false}
           fullText={false}
         />
-      </CardBlock>
-      <CardBlock
-        flatBorder={FlatBorderType.TOP}
-        testId="credential-details-about-summary"
-      >
-        <CardDetailsItem
-          keyValue={`${i18n.t("tabs.credentials.details.name")}:`}
-          info={cardData.s.title}
-          testId="credential-about-name"
-          mask={false}
-          fullText={true}
-        />
-        <CardDetailsItem
-          keyValue={`${i18n.t("tabs.credentials.details.id")}:`}
-          info={cardData.id}
-          testId="credential-about-id"
-          mask={false}
-          fullText={true}
-        />
-        <CardDetailsItem
-          keyValue={`${i18n.t("tabs.credentials.details.issuer")}:`}
-          info={
-            connectionShortDetails
-              ? connectionShortDetails.label
-              : i18n.t("connections.unknown")
-          }
-          testId="credential-about-issuer"
-          mask={false}
-          fullText={true}
-        />
-        <CardDetailsItem
-          keyValue={`${i18n.t("tabs.credentials.details.status.issued")}:`}
-          info={issuedAt}
-          testId="credential-about-issued"
-          mask={false}
-          fullText={true}
-        />
-      </CardBlock>
-      <CardBlock
-        className={"credential-details-read-more-block"}
-        flatBorder={FlatBorderType.TOP}
-        testId="readmore-block"
-      >
-        <ReadMore content={cardData.s.description} />
+        {showAboutDetails && (
+          <div
+            className="credential-details-about-expanded"
+            data-testid="credential-details-about-expanded"
+          >
+            <CardDetailsItem
+              keyValue={`${i18n.t("tabs.credentials.details.name")}:`}
+              info={cardData.s.title}
+              testId="credential-about-name"
+              mask={false}
+              fullText={true}
+            />
+            <CardDetailsItem
+              keyValue={`${i18n.t("tabs.credentials.details.id")}:`}
+              info={cardData.id}
+              testId="credential-about-id"
+              mask={false}
+              fullText={true}
+            />
+            <CardDetailsItem
+              keyValue={`${i18n.t("tabs.credentials.details.issuer")}:`}
+              info={
+                connectionShortDetails
+                  ? connectionShortDetails.label
+                  : i18n.t("connections.unknown")
+              }
+              testId="credential-about-issuer"
+              mask={false}
+              fullText={true}
+            />
+            <CardDetailsItem
+              keyValue={`${i18n.t("tabs.credentials.details.status.issued")}:`}
+              info={issuedAt}
+              testId="credential-about-issued"
+              mask={false}
+              fullText={true}
+            />
+            {description && (
+              <div
+                className="credential-details-about-description"
+                data-testid="credential-about-description"
+              >
+                <p className="credential-details-about-description-label">
+                  {i18n.t("tabs.credentials.details.description")}
+                </p>
+                <p className="credential-details-about-description-text">
+                  {description}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="credential-details-about-toggle">
+          <IonButton
+            className="credential-details-about-toggle-button"
+            data-testid="credential-details-about-toggle-button"
+            onClick={() => setShowAboutDetails((current) => !current)}
+          >
+            {showAboutDetails
+              ? i18n.t("readmore.less")
+              : i18n.t("readmore.more")}
+          </IonButton>
+        </div>
       </CardBlock>
       {joinedCredRequestMembers && joinedCredRequestMembers.length > 0 && (
         <CardDetailsBlock

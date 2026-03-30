@@ -1,4 +1,5 @@
 import {
+  IonBadge,
   IonIcon,
   IonLabel,
   IonRouterOutlet,
@@ -19,7 +20,6 @@ import {
   apps,
   appsOutline,
 } from "ionicons/icons";
-import { ComponentType } from "react";
 import { useLocation } from "react-router-dom";
 import { i18n } from "../../../../i18n";
 import "./TabsMenu.scss";
@@ -29,6 +29,9 @@ import { Credentials } from "../../../pages/Credentials";
 import { Scan } from "../../../pages/Scan";
 import { Notifications } from "../../../pages/Notifications";
 import { Menu } from "../../../pages/Menu";
+import { IdentifierDetails } from "../../../pages/IdentifierDetails";
+import { CredentialDetails } from "../../../pages/CredentialDetails";
+import { NotificationDetails } from "../../../pages/NotificationDetails";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
 import { getNotificationsCache } from "../../../../store/reducers/notificationsCache";
 import {
@@ -40,37 +43,42 @@ import { getNextRootRoute } from "../../../../routes/nextRoute";
 
 const tabsRoutes = [
   {
+    id: "identifiers",
     label: i18n.t("tabsmenu.label.identifiers"),
     path: TabsRoutePath.IDENTIFIERS,
     component: Identifiers,
     icon: [fingerPrint, fingerPrintOutline],
   },
   {
+    id: "credentials",
     label: i18n.t("tabsmenu.label.creds"),
     path: TabsRoutePath.CREDENTIALS,
     component: Credentials,
     icon: [idCard, idCardOutline],
   },
   {
+    id: "scan",
     label: i18n.t("tabsmenu.label.scan"),
     path: TabsRoutePath.SCAN,
     component: Scan,
     icon: [scan, scanOutline],
   },
   {
+    id: "notifications",
     label: i18n.t("tabsmenu.label.notifications"),
     path: TabsRoutePath.NOTIFICATIONS,
     component: Notifications,
     icon: [notifications, notificationsOutline],
   },
   {
+    id: "menu",
     label: i18n.t("tabsmenu.label.menu"),
     path: TabsRoutePath.MENU,
     component: Menu,
     icon: [apps, appsOutline],
   },
 ];
-const TabsMenu = ({ tab, path }: { tab: ComponentType; path: string }) => {
+const TabsMenu = () => {
   const stateCache = useAppSelector(getStateCache);
   const location = useLocation();
   const dispatch = useAppDispatch();
@@ -98,11 +106,30 @@ const TabsMenu = ({ tab, path }: { tab: ComponentType; path: string }) => {
           from={TabsRoutePath.ROOT}
           to={TabsRoutePath.IDENTIFIERS}
         />
+        {tabsRoutes.map((tabRoute) => (
+          <Route
+            key={tabRoute.id}
+            path={tabRoute.path}
+            component={tabRoute.component}
+            exact
+          />
+        ))}
         <Route
-          path={path}
-          component={tab}
-          exact={true}
+          path={TabsRoutePath.IDENTIFIER_DETAILS}
+          component={IdentifierDetails}
+          exact
         />
+        <Route
+          path={TabsRoutePath.CREDENTIAL_DETAILS}
+          component={CredentialDetails}
+          exact
+        />
+        <Route
+          path={TabsRoutePath.NOTIFICATION_DETAILS}
+          component={NotificationDetails}
+          exact
+        />
+        <Route render={() => <Redirect to={TabsRoutePath.IDENTIFIERS} />} />
       </IonRouterOutlet>
 
       <IonTabBar
@@ -114,14 +141,10 @@ const TabsMenu = ({ tab, path }: { tab: ComponentType; path: string }) => {
           return (
             <IonTabButton
               key={`${tab.label}-${index}`}
-              tab={tab.label}
+              tab={tab.id}
               href={tab.path}
-              data-testid={
-                "tab-button-" + tab.label.toLowerCase().replace(/\s/g, "-")
-              }
-              className={
-                "tab-button-" + tab.label.toLowerCase().replace(/\s/g, "-")
-              }
+              data-testid={`tab-button-${tab.id}`}
+              className={`tab-button-${tab.id}`}
               onClick={() => {
                 handleTabClick(tab.path);
               }}
@@ -129,13 +152,15 @@ const TabsMenu = ({ tab, path }: { tab: ComponentType; path: string }) => {
               <div className="border-top" />
               <div className="icon-container">
                 {!!notificationsCounter && (
-                  <span className="notifications-counter">
+                  <IonBadge className="notifications-counter">
                     {notificationsCounter > 99 ? "99+" : notificationsCounter}
-                  </span>
+                  </IonBadge>
                 )}
                 <IonIcon
                   icon={
-                    tab.path === location.pathname ? tab.icon[0] : tab.icon[1]
+                    location.pathname.startsWith(tab.path)
+                      ? tab.icon[0]
+                      : tab.icon[1]
                   }
                 />
               </div>

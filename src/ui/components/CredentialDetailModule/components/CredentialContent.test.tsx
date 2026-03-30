@@ -3,6 +3,8 @@ import { Provider } from "react-redux";
 import configureStore from "redux-mock-store";
 import { act } from "react";
 import EN_TRANSLATIONS from "../../../../locales/en/en.json";
+import AM_TRANSLATIONS from "../../../../locales/am/am.json";
+import { i18n } from "../../../../i18n";
 import { store } from "../../../../store";
 import {
   connectionDetailsFix,
@@ -56,6 +58,10 @@ jest.mock("../../../../core/agent/agent", () => ({
 }));
 
 describe("Creds content", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
   test("Render ACDC cedential content", () => {
     const state = {
       stateCache: {
@@ -86,7 +92,7 @@ describe("Creds content", () => {
       dispatch: jest.fn(),
     };
 
-    const { getByText, getByTestId } = render(
+    const { getByText, getByTestId, queryByTestId } = render(
       <Provider store={storeMocked}>
         <CredentialContent
           cardData={credsFixAcdc[0]}
@@ -102,6 +108,16 @@ describe("Creds content", () => {
     expect(getByTestId("credential-details-type-text-value").innerHTML).toBe(
       credsFixAcdc[0].s.title
     );
+    expect(
+      getByTestId("credential-details-about-toggle-button")
+    ).toHaveTextContent(EN_TRANSLATIONS.readmore.more);
+    expect(queryByTestId("credential-about-name")).not.toBeInTheDocument();
+    expect(
+      queryByTestId("credential-details-about-expanded")
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(getByTestId("credential-details-about-toggle-button"));
+
     expect(getByTestId("credential-about-name-text-value").innerHTML).toBe(
       credsFixAcdc[0].s.title
     );
@@ -116,7 +132,19 @@ describe("Creds content", () => {
         credsFixAcdc[0].a.dt
       )} (${getUTCOffset(credsFixAcdc[0].a.dt)})`
     );
-    expect(getByTestId("read-more")).toBeVisible();
+    expect(getByTestId("credential-about-description")).toHaveTextContent(
+      credsFixAcdc[0].s.description
+    );
+    expect(
+      getByTestId("credential-details-about-toggle-button")
+    ).toHaveTextContent(EN_TRANSLATIONS.readmore.less);
+
+    fireEvent.click(getByTestId("credential-details-about-toggle-button"));
+
+    expect(queryByTestId("credential-about-name")).not.toBeInTheDocument();
+    expect(
+      getByTestId("credential-details-about-toggle-button")
+    ).toHaveTextContent(EN_TRANSLATIONS.readmore.more);
     expect(
       getByText(EN_TRANSLATIONS.tabs.credentials.details.attributes.label)
     ).toBeVisible();
@@ -192,6 +220,31 @@ describe("Creds content", () => {
         )
       ).toBeVisible();
     });
+  });
+
+  test("Render translated about toggle button in Amharic", async () => {
+    await i18n.changeLanguage("am");
+
+    const { getByTestId } = render(
+      <Provider store={store}>
+        <CredentialContent
+          cardData={credsFixAcdc[0]}
+          joinedCredRequestMembers={[]}
+          connectionShortDetails={connectionDetailsFix}
+          setOpenConnectionlModal={jest.fn()}
+        />
+      </Provider>
+    );
+
+    expect(
+      getByTestId("credential-details-about-toggle-button")
+    ).toHaveTextContent(AM_TRANSLATIONS.readmore.more);
+
+    fireEvent.click(getByTestId("credential-details-about-toggle-button"));
+
+    expect(
+      getByTestId("credential-details-about-toggle-button")
+    ).toHaveTextContent(AM_TRANSLATIONS.readmore.less);
   });
 
   test("Open related identifier", async () => {

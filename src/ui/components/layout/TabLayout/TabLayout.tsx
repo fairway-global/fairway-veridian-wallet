@@ -141,15 +141,13 @@ const TabLayout = ({
           </IonToolbar>
         </IonHeader>
       )}
-      {placeholder || (
-        <IonContent
-          id={pageId}
-          className="tab-content"
-          color="transparent"
-        >
-          {children}
-        </IonContent>
-      )}
+      <IonContent
+        id={pageId}
+        className="tab-content"
+        color="transparent"
+      >
+        {placeholder || children}
+      </IonContent>
     </IonPage>
   );
 };
