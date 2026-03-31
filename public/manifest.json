@@ -1,6 +1,7 @@
 {
   "short_name": "Fairwallet",
   "name": "Fairwallet",
+  "description": "Fairwallet lets you manage digital identity credentials securely from your device.",
   "icons": [
     {
       "src": "assets/icons/icon-48.webp",

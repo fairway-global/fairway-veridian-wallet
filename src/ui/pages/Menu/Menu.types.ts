@@ -48,6 +48,7 @@ enum SubMenuKey {
   ManagePassword,
   TermsAndPrivacy,
   RecoverySeedPhrase,
+  ReleaseInfo,
 }
 
 export type { SubMenuProps, MenuItemProps, SubMenuData };

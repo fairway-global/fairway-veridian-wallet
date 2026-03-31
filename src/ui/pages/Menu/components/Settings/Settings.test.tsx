@@ -154,6 +154,12 @@ describe("Settings page", () => {
     ).toBeInTheDocument();
     expect(
       getByText(
+        EN_TRANSLATIONS.tabs.menu.tab.settings.sections.support.releaseinfo
+          .title
+      )
+    ).toBeInTheDocument();
+    expect(
+      getByText(
         EN_TRANSLATIONS.tabs.menu.tab.settings.sections.support.terms.title
       )
     ).toBeInTheDocument();
@@ -379,6 +385,14 @@ describe("Settings page", () => {
 
     await waitFor(() => {
       expect(switchViewMock).toBeCalledWith(SubMenuKey.TermsAndPrivacy);
+    });
+
+    act(() => {
+      fireEvent.click(getByTestId(`settings-item-${OptionIndex.ReleaseInfo}`));
+    });
+
+    await waitFor(() => {
+      expect(switchViewMock).toBeCalledWith(SubMenuKey.ReleaseInfo);
     });
 
     expect(

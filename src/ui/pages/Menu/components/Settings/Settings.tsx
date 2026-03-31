@@ -7,6 +7,7 @@ import {
 } from "capacitor-native-settings";
 import {
   checkboxOutline,
+  documentTextOutline,
   fingerPrintOutline,
   helpCircleOutline,
   informationCircleOutline,
@@ -123,6 +124,11 @@ const Settings = ({ switchView, handleClose }: SettingsProps) => {
       href: SUPPORT_EMAIL,
     },
     {
+      index: OptionIndex.ReleaseInfo,
+      icon: documentTextOutline,
+      label: i18n.t("tabs.menu.tab.settings.sections.support.releaseinfo.title"),
+    },
+    {
       index: OptionIndex.Version,
       icon: layersOutline,
       label: i18n.t("tabs.menu.tab.settings.sections.support.version"),
@@ -204,6 +210,10 @@ const Settings = ({ switchView, handleClose }: SettingsProps) => {
       }
       case OptionIndex.Term: {
         switchView && switchView(SubMenuKey.TermsAndPrivacy);
+        break;
+      }
+      case OptionIndex.ReleaseInfo: {
+        switchView && switchView(SubMenuKey.ReleaseInfo);
         break;
       }
       case OptionIndex.RecoverySeedPhrase: {

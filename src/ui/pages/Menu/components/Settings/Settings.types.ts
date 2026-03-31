@@ -23,6 +23,7 @@ enum OptionIndex {
   Documentation,
   Term,
   Contact,
+  ReleaseInfo,
   Version,
   DeleteAccount,
 }

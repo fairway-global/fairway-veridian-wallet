@@ -1003,6 +1003,24 @@
               "title": "Support & Legal",
               "contact": "Fairwallet support",
               "learnmore": "Learn More About Fairwallet",
+              "releaseinfo": {
+                "title": "Android release info",
+                "details": "Release details",
+                "releasedate": "Release date",
+                "filesize": "APK file size",
+                "checksum": "SHA-256 checksum",
+                "changelog": "Changelog",
+                "emptychangelog": "No changelog has been added for this build yet.",
+                "installtitle": "Install instructions",
+                "notset": "Not set",
+                "installsteps": {
+                  "download": "Download the APK from your trusted website or private file host.",
+                  "open": "Open the downloaded APK from your browser or file manager.",
+                  "allow": "If Android blocks the install, allow installs from that source for this app.",
+                  "install": "Return to the installer and tap Install.",
+                  "verify": "Check the app name, version, and checksum before sharing or installing."
+                }
+              },
               "terms": {
                 "title": "Terms and Privacy Policy",
                 "submenu": {

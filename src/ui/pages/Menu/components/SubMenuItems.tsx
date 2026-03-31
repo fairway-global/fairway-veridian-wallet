@@ -7,6 +7,7 @@ import { i18n } from "../../../../i18n";
 import { ConnectWallet, ConnectWalletOptionRef } from "./ConnectWallet";
 import { Settings } from "./Settings";
 import { ManagePassword } from "./Settings/components/ManagePassword";
+import { ReleaseInfo } from "./Settings/components/ReleaseInfo";
 import { RecoverySeedPhrase } from "./Settings/components/RecoverySeedPhrase";
 import { TermsAndPrivacy } from "./Settings/components/TermsAndPrivacy";
 import { ProfileOptionRef } from "./Profile/Profile.types";
@@ -151,6 +152,17 @@ const SubMenuItems = (
         Component: TermsAndPrivacy,
         title: "tabs.menu.tab.settings.sections.support.terms.submenu.title",
         pageId: "term-and-privacy",
+        nestedMenu: true,
+        additionalButtons: <></>,
+        renderAsModal: RENDER_SETTING_AS_MODAL,
+      },
+    ],
+    [
+      SubMenuKey.ReleaseInfo,
+      {
+        Component: ReleaseInfo,
+        title: "tabs.menu.tab.settings.sections.support.releaseinfo.title",
+        pageId: "release-info",
         nestedMenu: true,
         additionalButtons: <></>,
         renderAsModal: RENDER_SETTING_AS_MODAL,
