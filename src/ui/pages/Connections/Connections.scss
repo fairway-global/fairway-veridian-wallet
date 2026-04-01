@@ -19,6 +19,17 @@
   ion-content.scrollable-page-content {
     --offset-bottom: 1px !important;
     --background: var(--ion-color-neutral-200);
+
+    &::part(scroll) {
+      overflow: hidden;
+    }
+
+    > .connections-body {
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+      margin: 0;
+    }
   }
 
   .cards-placeholder-container {
@@ -69,12 +80,17 @@
   }
 
   .connections-body {
+    width: 100%;
     height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: row;
     margin-bottom: 0 !important;
 
     .connections-list {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
       height: 100%;
     }
   }
@@ -117,7 +133,13 @@
 
   .connections-list {
     --top-space-space: 7.5rem;
+    --background: var(--ion-color-neutral-200);
     height: calc(100vh - (var(--top-space-space) + var(--ion-safe-area-top)));
+
+    &::part(background),
+    &::part(scroll) {
+      background: var(--ion-color-neutral-200);
+    }
 
     &.md {
       --top-space-space: calc(8.125rem + var(--ion-safe-area-bottom));
@@ -141,6 +163,7 @@
   }
 
   .connections-list-alphabetic-block {
+    background: var(--ion-color-neutral-200);
     padding: 0 0 0 1.25rem;
 
     ion-row {

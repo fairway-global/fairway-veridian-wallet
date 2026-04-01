@@ -12,7 +12,14 @@ import {
   IonSpinner,
   IonText,
   IonButton,
+  IonIcon,
 } from "@ionic/react";
+import {
+  alertCircleOutline,
+  checkmarkCircle,
+  personCircleOutline,
+  shieldCheckmarkOutline,
+} from "ionicons/icons";
 import * as jose from "jose";
 import "./FaydaCallback.scss";
 
@@ -336,109 +343,160 @@ export const FaydaCallback = () => {
   };
 
   return (
-    <IonPage>
-      <IonContent className="ion-padding">
+    <IonPage className="fayda-callback-page">
+      <IonContent
+        fullscreen
+        className="fayda-callback-content"
+      >
+        <div className="fayda-callback-shell">
         {!error && !userInfo && (
-          <>
-            <IonText>
+          <section
+            className={`fayda-callback-panel fayda-callback-panel--${
+              completionDestination ? "success" : "progress"
+            }`}
+          >
+            <div className="fayda-callback-panel-badge">
+              <IonIcon
+                icon={
+                  completionDestination
+                    ? checkmarkCircle
+                    : shieldCheckmarkOutline
+                }
+              />
+            </div>
+
+            <IonText className="fayda-callback-message">
               <p>{status}</p>
             </IonText>
 
-            {!completionDestination && <IonSpinner />}
-
-            {completionDestination === "notifications" && (
-              <IonButton
-                expand="block"
-                onClick={() => history.replace("/tabs/notifications")}
-              >
-                {tr("faydacallback.actions.openNotifications")}
-              </IonButton>
+            {!completionDestination && (
+              <div className="fayda-callback-spinner-wrap">
+                <IonSpinner name="crescent" />
+              </div>
             )}
 
-            {completionDestination && (
-              <IonButton
-                expand="block"
-                fill="outline"
-                onClick={() => history.replace("/tabs/menu")}
-              >
-                {tr("faydacallback.actions.backToMenu")}
-              </IonButton>
-            )}
-          </>
+            <div className="fayda-callback-actions">
+              {completionDestination === "notifications" && (
+                <IonButton
+                  expand="block"
+                  className="fayda-callback-button fayda-callback-button--primary"
+                  onClick={() => history.replace("/tabs/notifications")}
+                >
+                  {tr("faydacallback.actions.openNotifications")}
+                </IonButton>
+              )}
+
+              {completionDestination && (
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  className="fayda-callback-button fayda-callback-button--secondary"
+                  onClick={() => history.replace("/tabs/menu")}
+                >
+                  {tr("faydacallback.actions.backToMenu")}
+                </IonButton>
+              )}
+            </div>
+          </section>
         )}
 
         {userInfo && (
-          <div className="fayda-callback-review">
-            <div className="fayda-callback-review-card">
+          <section className="fayda-callback-panel fayda-callback-panel--review">
+            <div className="fayda-callback-review-header">
+              <div className="fayda-callback-panel-badge">
+                <IonIcon icon={personCircleOutline} />
+              </div>
               <h3 className="fayda-callback-review-title">
                 {tr("faydacallback.review.title")}
               </h3>
+              <p className="fayda-callback-review-copy">{status}</p>
+            </div>
+
+            <div className="fayda-callback-review-card">
+              {userInfo.picture && (
+                <div className="fayda-callback-review-image-wrap">
+                  <img
+                    src={userInfo.picture}
+                    alt="User"
+                    className="fayda-callback-review-image"
+                  />
+                </div>
+              )}
+
               <ul className="fayda-callback-review-list">
                 <li className="fayda-callback-review-item">
-                  <strong>{tr("faydacallback.review.name")}</strong>{" "}
-                  {userInfo.name || tr("faydacallback.review.na")}
+                  <strong>{tr("faydacallback.review.name")}</strong>
+                  <span>{userInfo.name || tr("faydacallback.review.na")}</span>
                 </li>
                 <li className="fayda-callback-review-item">
-                  <strong>{tr("faydacallback.review.email")}</strong>{" "}
-                  {userInfo.email || tr("faydacallback.review.na")}
+                  <strong>{tr("faydacallback.review.email")}</strong>
+                  <span>{userInfo.email || tr("faydacallback.review.na")}</span>
                 </li>
                 <li className="fayda-callback-review-item">
-                  <strong>{tr("faydacallback.review.phone")}</strong>{" "}
-                  {userInfo.phone_number || tr("faydacallback.review.na")}
+                  <strong>{tr("faydacallback.review.phone")}</strong>
+                  <span>
+                    {userInfo.phone_number || tr("faydacallback.review.na")}
+                  </span>
                 </li>
                 {userInfo.birthdate && (
                   <li className="fayda-callback-review-item">
-                    <strong>{tr("faydacallback.review.dob")}</strong>{" "}
-                    {userInfo.birthdate}
-                  </li>
-                )}
-                {userInfo.picture && (
-                  <li className="fayda-callback-review-image-wrap">
-                    <img
-                      src={userInfo.picture}
-                      alt="User"
-                      className="fayda-callback-review-image"
-                    />
+                    <strong>{tr("faydacallback.review.dob")}</strong>
+                    <span>{userInfo.birthdate}</span>
                   </li>
                 )}
               </ul>
-
-              <div className="fayda-callback-review-actions">
-                <IonButton
-                  color="primary"
-                  disabled={issuingCredential}
-                  onClick={confirmAndContinue}
-                >
-                  {issuingCredential
-                    ? tr("faydacallback.actions.issuing")
-                    : tr("faydacallback.actions.acceptContinue")}
-                </IonButton>
-                <IonButton
-                  fill="outline"
-                  disabled={issuingCredential}
-                  onClick={cancel}
-                >
-                  {tr("faydacallback.actions.cancel")}
-                </IonButton>
-              </div>
             </div>
-          </div>
+
+            <div className="fayda-callback-actions fayda-callback-actions--review">
+              <IonButton
+                expand="block"
+                color="primary"
+                className="fayda-callback-button fayda-callback-button--primary"
+                disabled={issuingCredential}
+                onClick={confirmAndContinue}
+              >
+                {issuingCredential
+                  ? tr("faydacallback.actions.issuing")
+                  : tr("faydacallback.actions.acceptContinue")}
+              </IonButton>
+              <IonButton
+                expand="block"
+                fill="outline"
+                className="fayda-callback-button fayda-callback-button--secondary"
+                disabled={issuingCredential}
+                onClick={cancel}
+              >
+                {tr("faydacallback.actions.cancel")}
+              </IonButton>
+            </div>
+          </section>
         )}
 
         {error && (
-          <>
-            <IonText color="danger">
+          <section className="fayda-callback-panel fayda-callback-panel--error">
+            <div className="fayda-callback-panel-badge">
+              <IonIcon icon={alertCircleOutline} />
+            </div>
+
+            <IonText
+              color="danger"
+              className="fayda-callback-message"
+            >
               <p>{error}</p>
             </IonText>
 
-            <IonButton
-              expand="block"
-              onClick={() => history.replace("/tabs/menu")}
-            >
-              {tr("faydacallback.actions.backToConnections")}
-            </IonButton>
-          </>
+            <div className="fayda-callback-actions">
+              <IonButton
+                expand="block"
+                className="fayda-callback-button fayda-callback-button--primary"
+                onClick={() => history.replace("/tabs/menu")}
+              >
+                {tr("faydacallback.actions.backToConnections")}
+              </IonButton>
+            </div>
+          </section>
         )}
+        </div>
 
         <IonAlert
           isOpen={showIssuedModal}

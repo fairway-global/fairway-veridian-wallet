@@ -12,10 +12,27 @@ import { ScrollablePageLayout } from "../../components/layout/ScrollablePageLayo
 import { PageFooter } from "../../components/PageFooter";
 import "./SystemThreatAlert.scss";
 import { SystemThreatAlertProps } from "./SystemThreatAlert.types";
-import { SUPPORT_EMAIL } from "../../globals/constants";
+
+const THREAT_SUPPORT_EMAIL =
+  process.env.APP_WATCHER_MAIL || "abrham@fairway.global";
+
+const buildThreatSupportMailTo = (errors: string[]) => {
+  const subject = "Fairwallet threat alert";
+  const body = [
+    "A Fairwallet install triggered the threat alert screen.",
+    "",
+    "Detected threats:",
+    ...errors.map((error, index) => `${index + 1}. ${error}`),
+  ].join("\n");
+
+  return `mailto:${THREAT_SUPPORT_EMAIL}?subject=${encodeURIComponent(
+    subject
+  )}&body=${encodeURIComponent(body)}`;
+};
 
 const SystemThreatAlert: React.FC<SystemThreatAlertProps> = ({ errors }) => {
   const pageId = "system-threat-alert-page";
+  const supportEmailLink = buildThreatSupportMailTo(errors);
 
   return (
     <ScrollablePageLayout
@@ -55,11 +72,11 @@ const SystemThreatAlert: React.FC<SystemThreatAlertProps> = ({ errors }) => {
         <PageFooter
           primaryButtonText={`${i18n.t("systemthreats.help")}`}
           primaryButtonIcon={helpCircleOutline}
-          primaryButtonAction={SUPPORT_EMAIL}
+          primaryButtonAction={supportEmailLink}
         />
       </div>
     </ScrollablePageLayout>
   );
 };
 
-export { SystemThreatAlert };
+export { SystemThreatAlert, buildThreatSupportMailTo };

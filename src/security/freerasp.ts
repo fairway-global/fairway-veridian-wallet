@@ -30,6 +30,12 @@ export type FreeRASPInitResult =
   | { success: true }
   | { success: false; error: unknown };
 
+const createNonBlockingThreatAction = (threatName: ThreatName) => {
+  return () => {
+    console.warn(`[freeRASP] Non-blocking threat detected: ${threatName}`);
+  };
+};
+
 const createThreatAction = (
   setThreatsDetected: React.Dispatch<React.SetStateAction<ThreatCheck[]>>,
   threatName: ThreatName,
@@ -57,6 +63,14 @@ const createThreatAction = (
 export const initializeFreeRASP = async (
   setThreatsDetected: Dispatch<SetStateAction<ThreatCheck[]>>
 ): Promise<FreeRASPInitResult> => {
+  const certificateHashes = [process.env.APP_CERT_HASH].filter(
+    (value): value is string => Boolean(value)
+  );
+  const watcherMail =
+    process.env.APP_WATCHER_MAIL ||
+    process.env.WATCHER_MAIL ||
+    "abrham@fairway.global";
+
   const actions = {
     privilegedAccess: createThreatAction(
       setThreatsDetected,
@@ -78,11 +92,10 @@ export const initializeFreeRASP = async (
       ThreatName.APP_INTEGRITY,
       i18n.t("systemthreats.rules.appintegrity")
     ),
-    unofficialStore: createThreatAction(
-      setThreatsDetected,
-      ThreatName.UNOFFICIAL_STORE,
-      i18n.t("systemthreats.rules.unofficialstore")
-    ),
+    // This app is intentionally distributed as a signed APK outside Play/App Store.
+    // freeRASP flags direct APK installs as "unofficial store" by default, so we
+    // keep this as a warning instead of blocking the whole app.
+    unofficialStore: createNonBlockingThreatAction(ThreatName.UNOFFICIAL_STORE),
     hooks: createThreatAction(
       setThreatsDetected,
       ThreatName.HOOKS,
@@ -107,10 +120,10 @@ export const initializeFreeRASP = async (
     screenshot: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     screenRecording: () => {},
-    obfuscationIssues: createThreatAction(
-      setThreatsDetected,
-      ThreatName.OBFUSCATION_ISSUES,
-      i18n.t("systemthreats.rules.obfuscationissues")
+    // The current freeRASP Gradle 8 / R8 integration can raise false positives
+    // here even on valid release builds, so do not hard-block app startup.
+    obfuscationIssues: createNonBlockingThreatAction(
+      ThreatName.OBFUSCATION_ISSUES
     ),
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     devMode: () => {},
@@ -123,13 +136,13 @@ export const initializeFreeRASP = async (
   const freeRASPConfig = {
     androidConfig: {
       packageName: "org.cardanofoundation.idw",
-      certificateHashes: [process.env.APP_CERT_HASH || ""],
+      certificateHashes,
     },
     iosConfig: {
       appBundleId: "org.cardanofoundation.idw",
       appTeamId: process.env.APP_TEAM_ID || "",
     },
-    watcherMail: process.env.WATCHER_MAIL || "",
+    watcherMail,
     isProd: ConfigurationService.env.security.rasp.enabled,
   };
 

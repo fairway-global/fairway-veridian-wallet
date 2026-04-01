@@ -8,8 +8,7 @@ const SUPPORT_EMAIL = "mailto:support@veridian.id";
 const DOCUMENTATION_LINK = "https://docs.veridian.id/";
 const ONBOARDING_DOCUMENTATION_LINK =
   "https://docs.veridian.id/walletGuide/onboarding";
-const RECOVERY_DOCUMENTATION_LINK =
-  "https://docs.veridian.id/walletGuide/recovery";
+const RECOVERY_DOCUMENTATION_LINK = "https://fairwallet.et/";
 const FEDERAL_DATA_PROTECTION_LINK = "https://www.edoeb.admin.ch/de";
 const DATA_PROTECTION_AUTHORITIES_LINK =
   "https://ec.europa.eu/justice/article-29/structure/data-protection-authorities/index_en.htm";
