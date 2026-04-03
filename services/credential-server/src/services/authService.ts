@@ -1,5 +1,6 @@
 import argon2 from "argon2";
 import { randomUUID } from "crypto";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { config } from "../config";
 import { hashToken } from "./cryptoService";
 import {
@@ -32,6 +33,10 @@ export interface LoginResult {
   user: AuthSessionUser;
 }
 
+const googleJwks = createRemoteJWKSet(
+  new URL("https://www.googleapis.com/oauth2/v3/certs")
+);
+
 function buildRefreshExpiry(): Date {
   const ms = config.refreshTokenTtlSeconds * 1000;
   return new Date(Date.now() + ms);
@@ -63,6 +68,44 @@ async function createSession(user: AuthSessionUser): Promise<LoginResult> {
     refreshToken,
     user,
   };
+}
+
+async function createSessionForUserRecord(userRecord: {
+  id: string;
+  issuerId: string;
+  issuerCode: string;
+  email: string;
+  role: AccessTokenRole;
+}): Promise<LoginResult> {
+  await updateIssuerUserLastLogin(userRecord.id);
+  return createSession({
+    id: userRecord.id,
+    issuerId: userRecord.issuerId,
+    issuerCode: userRecord.issuerCode,
+    email: userRecord.email,
+    role: userRecord.role,
+  });
+}
+
+async function verifyGoogleIdToken(idToken: string): Promise<string> {
+  if (!config.googleClientId) {
+    throw new Error("Google sign in is not configured");
+  }
+
+  const { payload } = await jwtVerify(idToken, googleJwks, {
+    issuer: ["https://accounts.google.com", "accounts.google.com"],
+    audience: config.googleClientId,
+  });
+
+  const email = typeof payload.email === "string" ? payload.email.trim() : "";
+  const emailVerified =
+    payload.email_verified === true || payload.email_verified === "true";
+
+  if (!email || !emailVerified) {
+    throw new Error("Google account email is not verified");
+  }
+
+  return email;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -110,14 +153,31 @@ export async function login(input: {
     throw new Error("Invalid credentials");
   }
 
-  await updateIssuerUserLastLogin(userRecord.id);
-  return createSession({
-    id: userRecord.id,
-    issuerId: userRecord.issuerId,
-    issuerCode: userRecord.issuerCode,
-    email: userRecord.email,
-    role: userRecord.role,
-  });
+  return createSessionForUserRecord(userRecord);
+}
+
+export async function loginWithGoogleIdToken(input: {
+  idToken: string;
+}): Promise<LoginResult> {
+  const email = await verifyGoogleIdToken(String(input.idToken || "").trim());
+  const matches = await listIssuerUsersByEmail(email);
+
+  if (!matches.length) {
+    throw new Error("No dashboard account found for this Google account");
+  }
+
+  if (matches.length > 1) {
+    throw new Error(
+      "Multiple accounts found for this email. Contact admin to keep email unique."
+    );
+  }
+
+  const userRecord = matches[0];
+  if (!userRecord.isActive) {
+    throw new Error("User account is disabled");
+  }
+
+  return createSessionForUserRecord(userRecord);
 }
 
 export async function refresh(input: {

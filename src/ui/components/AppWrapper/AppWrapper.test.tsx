@@ -51,6 +51,7 @@ import {
   AppWrapper,
   acdcChangeHandler,
   connectionStateChangedHandler,
+  getFallbackUserNameFromIdentifiers,
   peerConnectRequestSignChangeHandler,
   peerConnectedChangeHandler,
   peerConnectionBrokenChangeHandler,
@@ -63,6 +64,7 @@ import {
   operationFailureHandler,
 } from "./coreEventListeners";
 import {
+  filteredIdentifierFix,
   pendingIdentifierFix,
   pendingGroupIdentifierFix,
 } from "../../__fixtures__/filteredIdentifierFix";
@@ -137,6 +139,7 @@ jest.mock("../../../core/agent/agent", () => ({
         getPeerConnection: jest.fn(),
       },
       basicStorage: {
+        createOrUpdateBasicRecord: jest.fn(),
         findById: jest.fn(),
         save: jest.fn(),
       },
@@ -293,6 +296,12 @@ describe("Connection state changed handler", () => {
       })
     );
     expect(dispatch).toBeCalledWith(showConnections(true));
+  });
+
+  test("derives a fallback user name from the first complete individual identifier", () => {
+    expect(getFallbackUserNameFromIdentifiers(filteredIdentifierFix)).toBe(
+      "Professional ID"
+    );
   });
 });
 

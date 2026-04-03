@@ -21,17 +21,18 @@ import {
   shieldCheckmarkOutline,
 } from "ionicons/icons";
 import * as jose from "jose";
+import { normalizeApiBaseUrl } from "../../utils/envUrl";
 import "./FaydaCallback.scss";
 
 // ===== CONFIG =====
-const FAYDA_AUTH_API_BASE = (
-  process.env.REACT_APP_FAYDA_AUTH_API ||
-  process.env.REACT_APP_BACKEND_API ||
+const FAYDA_AUTH_API_BASE = normalizeApiBaseUrl(
+  process.env.REACT_APP_FAYDA_AUTH_API || process.env.REACT_APP_BACKEND_API,
   "http://localhost:3001"
-).trim().replace(/\/+$/, "");
-const FAYDA_ISSUER_API_BASE = (
-  process.env.REACT_APP_FAYDA_ISSUER_API || "http://localhost:3001"
-).trim().replace(/\/+$/, "");
+);
+const FAYDA_ISSUER_API_BASE = normalizeApiBaseUrl(
+  process.env.REACT_APP_FAYDA_ISSUER_API,
+  "http://localhost:3001"
+);
 
 const TOKEN_ENDPOINT = `${FAYDA_AUTH_API_BASE}/token`;
 const USERINFO_ENDPOINT = `${FAYDA_AUTH_API_BASE}/userinfo`;

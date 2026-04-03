@@ -26,6 +26,16 @@ const AuthService = {
     return response.data.data;
   },
 
+  googleLogin: async (payload: {
+    idToken: string;
+  }): Promise<AuthSessionResponse> => {
+    const response = await httpInstance.post<ApiEnvelope<AuthSessionResponse>>(
+      config.path.authGoogleV2,
+      payload
+    );
+    return response.data.data;
+  },
+
   refresh: async (refreshToken: string): Promise<AuthSessionResponse> => {
     const response = await httpInstance.post<ApiEnvelope<AuthSessionResponse>>(
       config.path.authRefreshV2,

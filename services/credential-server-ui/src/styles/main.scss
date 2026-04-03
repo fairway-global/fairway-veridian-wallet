@@ -12,11 +12,22 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(212, 244, 231, 0.88), transparent 24%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.92), transparent 30%),
+    linear-gradient(180deg, #f7f9f7 0%, #edf1ee 100%);
+
+  .dashboard-shell {
+    min-height: 100vh;
+    padding: 0 clamp(0.75rem, 2vw, 1.5rem) 2rem;
+    box-sizing: border-box;
+  }
 
   .dashboard-main {
     margin: 0 auto;
     width: 100%;
     overflow-x: hidden;
+    max-width: 1536px;
   }
 
   .dashboard-main > .MuiBox-root,

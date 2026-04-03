@@ -55,6 +55,7 @@ const jwtAccessSecret =
   process.env.JWT_ACCESS_SECRET ?? "dev-change-me-access-secret";
 const jwtRefreshSecret =
   process.env.JWT_REFRESH_SECRET ?? "dev-change-me-refresh-secret";
+const googleClientId = process.env.GOOGLE_CLIENT_ID ?? "";
 const gatewayJwtSecret =
   process.env.GATEWAY_JWT_SECRET ?? "dev-change-me-gateway-secret";
 const gatewayJwtIssuer =
@@ -96,6 +97,7 @@ export const config = {
   databaseUrl,
   jwtAccessSecret,
   jwtRefreshSecret,
+  googleClientId,
   gatewayJwtSecret,
   gatewayJwtIssuer,
   gatewayJwtAudience,
@@ -139,6 +141,7 @@ export const config = {
     revokeCredentialApi: "/api/credentials/:id/revoke",
     deleteCredentialApi: "/api/credentials/:id",
     authLoginV2: "/api/v2/auth/login",
+    authGoogleV2: "/api/v2/auth/google",
     authRefreshV2: "/api/v2/auth/refresh",
     authLogoutV2: "/api/v2/auth/logout",
     authMeV2: "/api/v2/auth/me",

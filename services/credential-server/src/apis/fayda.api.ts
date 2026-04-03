@@ -729,18 +729,16 @@ export async function getFaydaDataStatus(
     const verifiedCredentialId = verifiedCredential
       ? getCredentialId(verifiedCredential)
       : null;
-    const persistedVerificationStatus =
-      storedVerification?.status === "credential_issued" &&
-      !verifiedCredential
-        ? null
-        : storedVerification?.status || null;
+    // Keep honoring persisted Fayda verification state even when the issued
+    // credential is not returned in the latest list call yet. The issuer-side
+    // saveFayda record is the source of truth for whether this holder has
+    // already completed verification, and the wallet should not prompt them to
+    // verify again just because credential lookup lagged or rotated.
+    const persistedVerificationStatus = storedVerification?.status || null;
     const verificationStatus = verifiedCredential
       ? "credential_issued"
       : persistedVerificationStatus;
-    const hasPersistedVerification = Boolean(
-      persistedVerificationStatus &&
-        persistedVerificationStatus !== "credential_issued"
-    );
+    const hasPersistedVerification = Boolean(persistedVerificationStatus);
 
     res.status(200).send({
       success: true,
@@ -757,7 +755,8 @@ export async function getFaydaDataStatus(
           verificationStatus === "pending_manual_review"
             ? storedVerification?.missingFields || []
             : [],
-        credentialId: verifiedCredentialId || null,
+        credentialId:
+          verifiedCredentialId || storedVerification?.credentialId || null,
         autoIssueConfigured,
         autoIssueTemplateId: autoIssueTemplate?.id || null,
       },

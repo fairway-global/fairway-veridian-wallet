@@ -8,12 +8,12 @@ interface LayoutProps {
 
 const Layout = ({ mode }: LayoutProps) => {
   return (
-    <>
+    <div className={`dashboard-shell dashboard-shell--${mode}`}>
       <NavBar mode={mode} />
       <main className="dashboard-main">
         <Outlet />
       </main>
-    </>
+    </div>
   );
 };
 

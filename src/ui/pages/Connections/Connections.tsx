@@ -57,12 +57,17 @@ import { SearchInput } from "./components/SearchInput";
 import { FaydaModal } from "../faydaFlow/faydaModal";
 import { setFaydaVerified } from "../../../store/reducers/faydaVerifiedCache";
 import { selectFaydaVerified } from "../../../store/selectors/faydaVerifiedSelectors";
+import { normalizeApiBaseUrl } from "../../utils/envUrl";
 
-const FAYDA_STATUS_API_BASE = (
-  process.env.REACT_APP_FAYDA_ISSUER_API || "http://localhost:3001"
-)
-  .trim()
-  .replace(/\/+$/, "");
+const FAYDA_STATUS_API_BASE = normalizeApiBaseUrl(
+  process.env.REACT_APP_FAYDA_ISSUER_API,
+  "http://localhost:3001"
+);
+const FAYDA_VERIFIED_STATUSES = new Set([
+  "verified",
+  "pending_manual_review",
+  "credential_issued",
+]);
 
 const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
   ({ showConnections, setShowConnections }, ref) => {
@@ -251,7 +256,12 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
         }
 
         const payload = await response.json();
-        const verified = Boolean(payload?.data?.verified);
+        const verificationStatus = String(
+          payload?.data?.verificationStatus || ""
+        ).trim();
+        const verified =
+          Boolean(payload?.data?.verified) ||
+          FAYDA_VERIFIED_STATUSES.has(verificationStatus);
         dispatch(setFaydaVerified(verified));
         return verified;
       } catch {

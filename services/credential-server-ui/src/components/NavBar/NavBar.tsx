@@ -1,10 +1,13 @@
 import {
   Badge as BadgeFull,
   BadgeOutlined,
+  DashboardOutlined,
+  DashboardRounded,
   Description as DescriptionFull,
   DescriptionOutlined,
   Group as GroupFull,
   GroupOutlined,
+  LogoutRounded,
   ManageAccounts,
   ManageAccountsOutlined,
   Menu as MenuIcon,
@@ -55,13 +58,12 @@ interface Props {
 const drawerWidth = 240;
 
 const issuerMenuItems = [
-  // TODO: Removing until Overview is ready to be implemented
-  // {
-  //   key: "overview",
-  //   label: i18n.t("navbar.overview"),
-  //   path: "/",
-  //   icons: [<DashboardFull />, <DashboardOutlined />],
-  // },
+  {
+    key: "activities",
+    label: i18n.t("navbar.activities"),
+    path: RoutePath.Activities,
+    icons: [<DashboardRounded />, <DashboardOutlined />],
+  },
   {
     key: "connections",
     label: i18n.t("navbar.connections"),
@@ -83,6 +85,12 @@ const issuerMenuItems = [
 ];
 
 const verifierMenuItems = [
+  {
+    key: "activities",
+    label: i18n.t("navbar.activities"),
+    path: RoutePath.Activities,
+    icons: [<DashboardRounded />, <DashboardOutlined />],
+  },
   {
     key: "connections",
     label: i18n.t("navbar.connections"),
@@ -128,6 +136,23 @@ const NavBar = ({ mode, window }: Props) => {
       : mode === "verifier"
         ? verifierMenuItems
         : issuerMenuItems;
+  const homePath = mode === "admin" ? RoutePath.AdminUsers : RoutePath.Activities;
+  const dashboardLabel = user
+    ? mode === "admin"
+      ? "Admin dashboard"
+      : `${mode === "verifier" ? "Verifier" : "Issuer"} workspace`
+    : "";
+  const dashboardMeta = user
+    ? mode === "admin"
+      ? user.email
+      : `${user.email} / ${user.issuerCode}`
+    : "";
+  const profileInitial = (
+    user?.email?.trim().charAt(0) ||
+    user?.issuerCode?.trim().charAt(0) ||
+    user?.role?.trim().charAt(0) ||
+    "U"
+  ).toUpperCase();
 
   const handleDrawerToggle = () => {
     setMobileOpen((prevState) => !prevState);
@@ -152,7 +177,7 @@ const NavBar = ({ mode, window }: Props) => {
     <AppBar
       id="navBar"
       position="static"
-      sx={{ boxShadow: 0, backgroundColor: "background.default" }}
+      sx={{ boxShadow: 0, backgroundColor: "transparent" }}
     >
       <Container maxWidth="xl">
         <Toolbar
@@ -177,7 +202,7 @@ const NavBar = ({ mode, window }: Props) => {
             </IconButton>
             <Button
               component={Link}
-              to={RoutePath.Connections}
+              to={homePath}
               className="logo-button mobile-logo-button"
               disableRipple
             >
@@ -221,7 +246,7 @@ const NavBar = ({ mode, window }: Props) => {
           >
             <Button
               component={Link}
-              to={RoutePath.Connections}
+              to={homePath}
               disableRipple
               className="logo-button"
             >
@@ -255,23 +280,6 @@ const NavBar = ({ mode, window }: Props) => {
             className="nav-right"
             sx={{ display: { xs: "none", sm: "flex" } }}
           >
-            <Typography
-              variant="body2"
-              className="nav-user-copy"
-              sx={{ alignSelf: "center", marginRight: 1 }}
-            >
-              {user
-                ? mode === "admin"
-                  ? "Admin dashboard"
-                  : `${mode === "verifier" ? "Verifier" : "Issuer"} dashboard - ${user.issuerCode} / ${user.role}`
-                : ""}
-            </Typography>
-            <Button
-              variant="text"
-              onClick={handleLogout}
-            >
-              Logout
-            </Button>
             {mode !== "admin" && (
               <>
                 <IconButton
@@ -313,6 +321,31 @@ const NavBar = ({ mode, window }: Props) => {
                 </IconButton>
               </>
             )}
+            <Box className="nav-profile-pill">
+              <Box className="nav-profile-avatar">{profileInitial}</Box>
+              <Box className="nav-profile-copy">
+                <Typography
+                  variant="body2"
+                  className="nav-profile-title"
+                >
+                  {dashboardLabel}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  className="nav-profile-subtitle"
+                >
+                  {dashboardMeta}
+                </Typography>
+              </Box>
+            </Box>
+            <Button
+              variant="text"
+              onClick={handleLogout}
+              className="nav-logout-button"
+              startIcon={<LogoutRounded />}
+            >
+              Logout
+            </Button>
           </Box>
         </Toolbar>
       </Container>

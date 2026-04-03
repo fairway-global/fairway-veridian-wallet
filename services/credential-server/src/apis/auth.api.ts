@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import {
   getAuthUserFromAccessToken,
   login,
+  loginWithGoogleIdToken,
   logout,
   refresh,
 } from "../services/authService";
@@ -51,6 +52,29 @@ export async function refreshApi(req: Request, res: Response): Promise<void> {
       res,
       401,
       error instanceof Error ? error.message : "Invalid refresh token"
+    );
+  }
+}
+
+export async function googleLoginApi(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const idToken = String(req.body?.idToken || "").trim();
+
+    if (!idToken) {
+      sendError(res, 400, "idToken is required");
+      return;
+    }
+
+    const session = await loginWithGoogleIdToken({ idToken });
+    sendSuccess(res, session);
+  } catch (error) {
+    sendError(
+      res,
+      401,
+      error instanceof Error ? error.message : "Google sign in failed"
     );
   }
 }

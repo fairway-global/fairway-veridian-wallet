@@ -2,6 +2,7 @@
 interface CustomWindow extends Window {
   __RUNTIME_CONFIG__?: {
     SERVER_URL?: string;
+    GOOGLE_CLIENT_ID?: string;
   };
 }
 
@@ -12,10 +13,16 @@ const serverUrl =
   (typeof window !== "undefined" && window.__RUNTIME_CONFIG__?.SERVER_URL) ||
   import.meta.env.VITE_SERVER_URL || // Vite's .env system
   "http://localhost:3001"; // Default fallback
+const googleClientId =
+  (typeof window !== "undefined" &&
+    window.__RUNTIME_CONFIG__?.GOOGLE_CLIENT_ID) ||
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  "";
 
 // Define the config object
 const config = {
   endpoint: serverUrl,
+  googleClientId,
   path: {
     ping: "/ping",
     getConnectionByDid: "/getConnectionByDid",
@@ -47,6 +54,7 @@ const config = {
     deleteCredentialApi: "/api/v2/credentials/:id",
     keriOobiV2: "/api/v2/keriOobi",
     authLoginV2: "/api/v2/auth/login",
+    authGoogleV2: "/api/v2/auth/google",
     authRefreshV2: "/api/v2/auth/refresh",
     authLogoutV2: "/api/v2/auth/logout",
     authMeV2: "/api/v2/auth/me",

@@ -51,7 +51,7 @@ export const Credentials = () => {
   const [selectedCredType, setSelectedCredType] = useState<string>();
 
   useEffect(() => {
-    if (roleViewIndex !== RoleIndex.ISSUER) nav(RoutePath.Connections);
+    if (roleViewIndex !== RoleIndex.ISSUER) nav(RoutePath.Activities);
   }, [nav, roleViewIndex]);
 
   const [filterData, setFilterData] = useState<FilterData>({

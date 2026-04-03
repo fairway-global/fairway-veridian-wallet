@@ -1,7 +1,10 @@
 import { IonModal, isPlatform } from "@ionic/react";
 import { useEffect, useState } from "react";
 import { Agent } from "../../../core/agent/agent";
-import { MiscRecordId } from "../../../core/agent/agent.types";
+import {
+  CreationStatus,
+  MiscRecordId,
+} from "../../../core/agent/agent.types";
 import { BasicRecord } from "../../../core/agent/records";
 import { OobiQueryParams } from "../../../core/agent/services/connectionService.types";
 import { StorageMessage } from "../../../core/storage/storage.types";
@@ -13,6 +16,7 @@ import {
   setMissingAliasConnection,
   setOpenConnectionId,
 } from "../../../store/reducers/connectionsCache";
+import { getIdentifiersCache } from "../../../store/reducers/identifiersCache";
 import {
   getAuthentication,
   getCurrentRoute,
@@ -31,6 +35,7 @@ import "./InputRequest.scss";
 const InputRequest = () => {
   const dispatch = useAppDispatch();
   const connections = useAppSelector(getConnectionsCache);
+  const identifiers = useAppSelector(getIdentifiersCache) || {};
   const authentication = useAppSelector(getAuthentication);
   const missingAliasConnection = useAppSelector(getMissingAliasConnection);
   const currentRoute = useAppSelector(getCurrentRoute);
@@ -43,13 +48,18 @@ const InputRequest = () => {
   const errorMessage = inputChange
     ? nameChecker.getError(inputValue)
     : undefined;
+  const hasExistingIdentifier = Object.values(identifiers).some(
+    (identifier) => identifier.creationStatus === CreationStatus.COMPLETE
+  );
+  const shouldPromptForUserName =
+    authentication.loggedIn &&
+    (authentication.userName === undefined ||
+      authentication.userName.trim().length === 0) &&
+    !authentication.recoveryWalletProgress &&
+    !hasExistingIdentifier &&
+    currentRoute?.path?.includes(TabsRoutePath.ROOT);
 
-  const showModal =
-    (authentication.loggedIn &&
-      (authentication.userName === undefined ||
-        authentication.userName?.length === 0) &&
-      currentRoute?.path?.includes(TabsRoutePath.ROOT)) ||
-    !!missingAliasUrl;
+  const showModal = shouldPromptForUserName || !!missingAliasUrl;
 
   useEffect(() => {
     if (!showModal) {

@@ -8,10 +8,14 @@ import {
 } from "ionicons/icons";
 import { MouseEvent as ReactMouseEvent, useEffect, useState } from "react";
 import { Agent } from "../../../core/agent/agent";
-import { MiscRecordId } from "../../../core/agent/agent.types";
+import {
+  CreationStatus,
+  MiscRecordId,
+} from "../../../core/agent/agent.types";
 import { BasicRecord } from "../../../core/agent/records";
 import { ConfigurationService } from "../../../core/configuration";
 import { IndividualOnlyMode } from "../../../core/configuration/configurationService.types";
+import { IdentifierShortDetails } from "../../../core/agent/services/identifier.types";
 import { i18n } from "../../../i18n";
 import { RoutePath } from "../../../routes";
 import { getNextRoute } from "../../../routes/nextRoute";
@@ -26,6 +30,7 @@ import {
 } from "../../../store/reducers/ssiAgent";
 import {
   getStateCache,
+  setAuthentication,
   setCurrentOperation,
   setRecoveryCompleteNoInterruption,
   setShowWelcomePage,
@@ -55,6 +60,25 @@ import { addNotification } from "../../../store/reducers/notificationsCache";
 const SSI_URLS_EMPTY = "SSI url is empty";
 const SEED_PHRASE_EMPTY = "Invalid seed phrase";
 const normalizeUrl = (url?: string) => (url || "").trim().replace(/\/+$/, "");
+const getRecoveredUserName = (
+  identifiers: IdentifierShortDetails[]
+): string => {
+  const preferredIdentifier =
+    identifiers.find(
+      (identifier) =>
+        identifier.creationStatus === CreationStatus.COMPLETE &&
+        !identifier.groupMetadata &&
+        !identifier.groupMemberPre &&
+        identifier.displayName.trim().length > 0
+    ) ||
+    identifiers.find(
+      (identifier) =>
+        identifier.creationStatus === CreationStatus.COMPLETE &&
+        identifier.displayName.trim().length > 0
+    );
+
+  return preferredIdentifier?.displayName.trim() || "";
+};
 
 const InputError = ({
   showError,
@@ -250,22 +274,48 @@ const CreateSSIAgent = () => {
         resolvedConnectUrl
       );
 
+      const recoveredIdentifiers = await Agent.agent.identifiers
+        .getIdentifiers()
+        .catch(() => []);
+      const recoveredUserName = getRecoveredUserName(recoveredIdentifiers);
+      const recoveredAuthentication = recoveredUserName
+        ? {
+            ...stateCache.authentication,
+            userName: recoveredUserName,
+          }
+        : stateCache.authentication;
+
+      if (recoveredUserName) {
+        await Agent.agent.basicStorage.createOrUpdateBasicRecord(
+          new BasicRecord({
+            id: MiscRecordId.USER_NAME,
+            content: {
+              userName: recoveredUserName,
+            },
+          })
+        );
+        dispatch(
+          setAuthentication(recoveredAuthentication)
+        );
+      }
+
       dispatch(setRecoveryCompleteNoInterruption());
 
       await updateFirstInstallValue(false);
 
-      const { nextPath, updateRedux } = getNextRoute(RoutePath.SSI_AGENT, {
-        store: { stateCache },
-      });
-
-      updateReduxState(
-        nextPath.pathname,
-        {
-          store: { stateCache },
-        },
-        dispatch,
-        updateRedux
+      const recoveryStateCache = {
+        ...stateCache,
+        authentication: recoveredAuthentication,
+      };
+      const routeData = {
+        store: { stateCache: recoveryStateCache },
+      };
+      const { nextPath, updateRedux } = getNextRoute(
+        RoutePath.SSI_AGENT,
+        routeData
       );
+
+      updateReduxState(nextPath.pathname, routeData, dispatch, updateRedux);
 
       Agent.agent.basicStorage.deleteById(MiscRecordId.APP_RECOVERY_WALLET);
 

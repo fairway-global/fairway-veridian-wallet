@@ -44,7 +44,13 @@ import {
   listCredentialsApiV2,
   revokeCredentialByIdApiV2,
 } from "./apis/dashboardCredentialV2.api";
-import { loginApi, logoutApi, meApi, refreshApi } from "./apis/auth.api";
+import {
+  googleLoginApi,
+  loginApi,
+  logoutApi,
+  meApi,
+  refreshApi,
+} from "./apis/auth.api";
 import {
   adminCreateUserApi,
   adminListRequestsApi,
@@ -73,6 +79,7 @@ export const router: Router = express.Router();
 router.get(config.path.ping, ping);
 
 router.post(config.path.authLoginV2, loginApi);
+router.post(config.path.authGoogleV2, googleLoginApi);
 router.post(config.path.authRefreshV2, refreshApi);
 router.post(config.path.authLogoutV2, logoutApi);
 router.get(config.path.authMeV2, requireAccessToken, meApi);

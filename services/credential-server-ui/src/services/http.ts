@@ -36,7 +36,13 @@ httpInstance.interceptors.response.use(
     const path = String(originalConfig.url || "");
     const isAuthRefreshCall = path.includes(config.path.authRefreshV2);
     const isAuthLoginCall = path.includes(config.path.authLoginV2);
-    if (statusCode !== 401 || isAuthRefreshCall || isAuthLoginCall) {
+    const isAuthGoogleCall = path.includes(config.path.authGoogleV2);
+    if (
+      statusCode !== 401 ||
+      isAuthRefreshCall ||
+      isAuthLoginCall ||
+      isAuthGoogleCall
+    ) {
       return Promise.reject(error);
     }
 

@@ -1,0 +1,320 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top left, rgba(194, 244, 220, 0.95), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(205, 240, 247, 0.75), transparent 28%),
+    linear-gradient(135deg, #eef8f3 0%, #f5faf7 100%);
+
+  .login-card {
+    width: min(1060px, 100%);
+    min-height: min(680px, calc(100vh - 3rem));
+    display: grid;
+    grid-template-columns: minmax(0, 0.96fr) minmax(0, 0.9fr);
+    border-radius: 2rem;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(var(--text-color-rgb), 0.08);
+    box-shadow: 0 2rem 4rem rgba(var(--text-color-rgb), 0.1);
+    backdrop-filter: blur(18px);
+  }
+
+  .login-panel {
+    position: relative;
+    padding: clamp(1.5rem, 3vw, 2.35rem);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .login-panel--form {
+    justify-content: center;
+    background:
+      radial-gradient(circle at top left, rgba(125, 220, 183, 0.08), transparent 28%),
+      linear-gradient(180deg, #081512 0%, #0d1f1a 100%);
+    color: var(--color-neutral-100);
+  }
+
+  .login-panel--welcome {
+    justify-content: center;
+    background:
+      radial-gradient(circle at top left, rgba(255, 255, 255, 0.35), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(13, 61, 57, 0.18), transparent 24%),
+      linear-gradient(160deg, #dff4e8 0%, #bcebd4 48%, #85cfb0 100%);
+    color: #0d2d26;
+    overflow: hidden;
+  }
+
+  .login-brand {
+    margin-bottom: 1.2rem;
+
+    img {
+      width: min(9.75rem, 100%);
+      height: auto;
+      object-fit: contain;
+    }
+  }
+
+  .login-copy {
+    margin-bottom: 1.15rem;
+  }
+
+  .login-title {
+    margin: 0;
+    font-size: clamp(1.85rem, 3vw, 2.45rem);
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .login-subtitle {
+    margin-top: 0.65rem;
+    color: rgba(255, 255, 255, 0.74);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    max-width: 28rem;
+  }
+
+  .login-google-button,
+  .login-submit-button {
+    min-height: 3rem;
+    border-radius: 999px;
+    font-weight: 800;
+  }
+
+  .login-google-button {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--color-neutral-100);
+    background-color: rgba(255, 255, 255, 0.04);
+    justify-content: center;
+    text-transform: none;
+
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.28);
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .google-mark {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 0.35rem 0.8rem rgba(0, 0, 0, 0.18);
+  }
+
+  .google-mark__g {
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1;
+    background: linear-gradient(90deg, #4285f4 0 25%, #34a853 25% 50%, #fbbc05 50% 75%, #ea4335 75% 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .login-divider {
+    margin: 1rem 0 0.95rem;
+    color: rgba(255, 255, 255, 0.56);
+
+    &::before,
+    &::after {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+  }
+
+  .login-form {
+    display: grid;
+    gap: 0.8rem;
+
+    .MuiTextField-root {
+      .MuiOutlinedInput-root {
+        border-radius: 1rem;
+        background-color: rgba(255, 255, 255, 0.08);
+        color: var(--color-neutral-100);
+
+        input {
+          padding: 0.85rem 1rem;
+          color: var(--color-neutral-100);
+        }
+
+        input::placeholder {
+          color: rgba(255, 255, 255, 0.5);
+          opacity: 1;
+        }
+
+        fieldset {
+          border-color: rgba(255, 255, 255, 0.14);
+        }
+
+        &:hover fieldset {
+          border-color: rgba(255, 255, 255, 0.24);
+        }
+
+        &.Mui-focused fieldset {
+          border-color: rgba(125, 220, 183, 0.8);
+        }
+      }
+    }
+  }
+
+  .login-form-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.05rem;
+
+    .MuiFormControlLabel-root {
+      margin-right: 0;
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .MuiCheckbox-root {
+      color: rgba(255, 255, 255, 0.48);
+    }
+
+    .Mui-checked {
+      color: var(--color-primary-500);
+    }
+  }
+
+  .login-forgot-button {
+    padding: 0;
+    min-width: 0;
+    color: #97e8bf;
+    font-weight: 700;
+    text-transform: none;
+
+    &:hover {
+      background: transparent;
+      color: #c6f4da;
+    }
+  }
+
+  .login-submit-button {
+    margin-top: 0.1rem;
+
+    .MuiCircularProgress-root {
+      margin-right: 0.55rem;
+    }
+  }
+
+  .login-footer-copy {
+    margin-top: 1rem;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .welcome-orb {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(0.5px);
+  }
+
+  .welcome-orb--top {
+    width: 14rem;
+    height: 14rem;
+    top: -4rem;
+    right: -4rem;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.44) 0%, rgba(255, 255, 255, 0) 70%);
+  }
+
+  .welcome-orb--bottom {
+    width: 13rem;
+    height: 13rem;
+    bottom: -4rem;
+    left: -3rem;
+    background: radial-gradient(circle, rgba(7, 54, 47, 0.16) 0%, rgba(7, 54, 47, 0) 70%);
+  }
+
+  .welcome-eyebrow {
+    position: relative;
+    margin: 0;
+    color: rgba(13, 45, 38, 0.68);
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .welcome-title {
+    position: relative;
+    margin: 0.65rem 0 0;
+    max-width: 28rem;
+    font-size: clamp(2rem, 4vw, 3.3rem);
+    font-weight: 800;
+    line-height: 0.96;
+    letter-spacing: -0.04em;
+  }
+
+  .welcome-body {
+    position: relative;
+    margin: 1.1rem 0 0;
+    max-width: 28rem;
+    font-size: 0.98rem;
+    line-height: 1.6;
+    color: rgba(13, 45, 38, 0.82);
+  }
+
+  .welcome-stat {
+    position: relative;
+    margin-top: 1.4rem;
+    width: min(26rem, 100%);
+    padding: 1rem 1.05rem;
+    border-radius: 1.4rem;
+    background: rgba(255, 255, 255, 0.38);
+    border: 1px solid rgba(13, 45, 38, 0.08);
+    backdrop-filter: blur(10px);
+  }
+
+  .welcome-stat-label {
+    margin: 0;
+    color: rgba(13, 45, 38, 0.62);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .welcome-stat-value {
+    margin-top: 0.45rem;
+    color: #0d2d26;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.4;
+  }
+
+  @media only screen and (max-width: 980px) {
+    .login-card {
+      grid-template-columns: 1fr;
+    }
+
+    .login-panel--welcome {
+      min-height: 18rem;
+    }
+  }
+
+  @media only screen and (max-width: 744px) {
+    padding: 1rem;
+
+    .login-card {
+      min-height: auto;
+      border-radius: 1.5rem;
+    }
+
+    .login-panel {
+      padding: 1.5rem;
+    }
+
+    .login-form-meta {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+}
