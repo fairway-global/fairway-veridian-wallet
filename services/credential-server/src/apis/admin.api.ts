@@ -313,6 +313,7 @@ export async function adminReviewIssuerApplicationApi(
   }
 
   let provisionedUserId: string | null = null;
+  let temporaryPassword: string | null = null;
 
   if (status === "approved") {
     const conflicts = await listIssuerUsersByEmail(existing.email);
@@ -336,6 +337,7 @@ export async function adminReviewIssuerApplicationApi(
       createdBy: reviewedBy,
     });
     provisionedUserId = provisionedUser.id;
+    temporaryPassword = tempPassword;
 
     const issuerSignifyService = req.app.get(
       "issuerSignifyService"
@@ -369,6 +371,7 @@ export async function adminReviewIssuerApplicationApi(
     await sendIssuerApplicationApprovedEmail({
       email: existing.email,
       organizationName: existing.organizationName,
+      temporaryPassword,
     });
   } else {
     await sendIssuerApplicationRejectedEmail({

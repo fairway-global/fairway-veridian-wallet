@@ -176,6 +176,50 @@ export function buildAccountCreatedEmail(input: {
   };
 }
 
+export function buildVerifierSignupEmail(input: {
+  issuerName: string;
+  signInUrl: string;
+  resetUrl: string;
+  authMethod: "password" | "google";
+}): { subject: string; html: string; text: string } {
+  const subject = "Your Fairwallet verifier access is ready";
+  const lines = [
+    `Your verifier access for ${input.issuerName} has been created successfully.`,
+    input.authMethod === "google"
+      ? "Use Google sign in with the same email address to open your verifier workspace."
+      : "Use the same email address and password you created during signup to open your verifier workspace.",
+    input.authMethod === "google"
+      ? "You can sign in right away from the dashboard link below."
+      : "If you forget your password later, you can reset it from the sign-in page.",
+  ];
+
+  return {
+    subject,
+    html: buildEmailTemplate({
+      eyebrow: "Fairwallet Access",
+      title: "Verifier access created",
+      intro: "Your verifier workspace is ready to use.",
+      lines,
+      ctaLabel: "Open sign in",
+      ctaUrl: input.signInUrl,
+      footer:
+        input.authMethod === "password"
+          ? `Need a password reset later? Open ${input.resetUrl} from your browser.`
+          : undefined,
+    }),
+    text: [
+      subject,
+      "",
+      ...lines,
+      "",
+      `Sign in: ${input.signInUrl}`,
+      ...(input.authMethod === "password"
+        ? [`Reset password: ${input.resetUrl}`]
+        : []),
+    ].join("\n"),
+  };
+}
+
 export function buildIssuerApplicationReceivedEmail(input: {
   organizationName: string;
 }): { subject: string; html: string; text: string } {
@@ -202,11 +246,17 @@ export function buildIssuerApplicationApprovedEmail(input: {
   organizationName: string;
   signInUrl: string;
   resetUrl: string;
+  temporaryPassword?: string | null;
 }): { subject: string; html: string; text: string } {
   const subject = "Your Fairwallet issuer access is ready";
   const lines = [
     `Your issuer request for ${input.organizationName} has been approved.`,
-    "Your access is now ready. If you do not already have a password, use the password reset option from sign in to set one securely.",
+    input.temporaryPassword
+      ? `Temporary password: ${input.temporaryPassword}`
+      : "Your access is now ready.",
+    input.temporaryPassword
+      ? "Use this temporary password to sign in, then change it immediately from the password reset flow for a secure permanent password."
+      : "If you do not already have a password, use the password reset option from sign in to set one securely.",
   ];
 
   return {

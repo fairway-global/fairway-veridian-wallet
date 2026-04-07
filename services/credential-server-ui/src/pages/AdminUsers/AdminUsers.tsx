@@ -15,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { PasswordField } from "../../components/PasswordField";
 import { AdminService, ManagedRole, ManagedUser } from "../../services";
 import { triggerToast } from "../../utils/toast";
 
@@ -162,10 +163,9 @@ const AdminUsers = () => {
             onChange={(event) => setEmail(event.target.value)}
             disabled={creating}
           />
-          <TextField
+          <PasswordField
             size="small"
             label="Password"
-            type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             disabled={creating}

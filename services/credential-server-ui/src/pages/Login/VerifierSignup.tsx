@@ -16,6 +16,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { config } from "../../config";
 import { RoutePath } from "../../const/route";
+import { PasswordField } from "../../components/PasswordField";
 import { AuthService } from "../../services/auth";
 import { RoleIndex } from "../../components/NavBar/constants/roles";
 import { useAppDispatch } from "../../store/hooks";
@@ -302,23 +303,21 @@ const VerifierSignup = () => {
           required
           fullWidth
         />
-        <TextField
+        <PasswordField
           size="small"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Create a password"
           aria-label="Create a password"
-          type="password"
           required
           fullWidth
         />
-        <TextField
+        <PasswordField
           size="small"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
           placeholder="Confirm your password"
           aria-label="Confirm your password"
-          type="password"
           required
           fullWidth
         />

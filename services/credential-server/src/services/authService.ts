@@ -33,6 +33,7 @@ import {
   buildIssuerApplicationRejectedEmail,
   buildPasswordChangedEmail,
   buildPasswordResetEmail,
+  buildVerifierSignupEmail,
 } from "./mailTemplateService";
 import {
   isMailConfigured,
@@ -635,6 +636,29 @@ export async function sendAccountCreatedEmail(input: {
   );
 }
 
+export async function sendVerifierSignupEmail(input: {
+  email: string;
+  issuerName: string;
+  authMethod: "password" | "google";
+}): Promise<void> {
+  const mail = buildVerifierSignupEmail({
+    issuerName: input.issuerName,
+    signInUrl: buildSignInUrl(),
+    resetUrl: buildForgotPasswordUrl(),
+    authMethod: input.authMethod,
+  });
+
+  await sendTransactionalEmailBestEffort(
+    {
+      to: input.email,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+    },
+    "verifier signup notification"
+  );
+}
+
 export async function sendIssuerApplicationReceivedEmail(input: {
   email: string;
   organizationName: string;
@@ -657,11 +681,13 @@ export async function sendIssuerApplicationReceivedEmail(input: {
 export async function sendIssuerApplicationApprovedEmail(input: {
   email: string;
   organizationName: string;
+  temporaryPassword?: string | null;
 }): Promise<void> {
   const mail = buildIssuerApplicationApprovedEmail({
     organizationName: input.organizationName,
     signInUrl: buildSignInUrl(),
     resetUrl: buildForgotPasswordUrl(),
+    temporaryPassword: input.temporaryPassword || null,
   });
 
   await sendTransactionalEmailBestEffort(

@@ -12,6 +12,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { config } from "../../config";
 import { RoutePath } from "../../const/route";
+import { PasswordField } from "../../components/PasswordField";
 import { AuthService, AuthSessionResponse } from "../../services/auth";
 import { useAppDispatch } from "../../store/hooks";
 import { setSession } from "../../store/reducers/authSlice";
@@ -298,13 +299,12 @@ const Login = () => {
               required
               fullWidth
             />
-            <TextField
+            <PasswordField
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter your password"
               aria-label="Enter your password"
               size="medium"
-              type="password"
               required
               fullWidth
             />

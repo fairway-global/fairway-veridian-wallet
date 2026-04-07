@@ -5,8 +5,8 @@ import {
   login,
   loginWithGoogleIdToken,
   logout,
-  sendAccountCreatedEmail,
   sendIssuerApplicationReceivedEmail,
+  sendVerifierSignupEmail,
   requestPasswordReset,
   resetPassword,
   refresh,
@@ -154,10 +154,10 @@ export async function registerVerifierWithGoogleApi(
       createdBy: null,
     });
 
-    await sendAccountCreatedEmail({
+    await sendVerifierSignupEmail({
       email,
-      role: "verifier",
       issuerName,
+      authMethod: "google",
     });
 
     const session = await loginWithGoogleIdToken({ idToken });
@@ -223,10 +223,10 @@ export async function registerVerifierApi(
       createdBy: null,
     });
 
-    await sendAccountCreatedEmail({
+    await sendVerifierSignupEmail({
       email,
-      role: "verifier",
       issuerName,
+      authMethod: "password",
     });
 
     const session = await login({ email, password });

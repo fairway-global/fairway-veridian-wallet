@@ -1,11 +1,11 @@
 import {
   Button,
   CircularProgress,
-  TextField,
   Typography,
 } from "@mui/material";
 import { FormEvent, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { PasswordField } from "../../components/PasswordField";
 import { RoutePath } from "../../const/route";
 import { AuthService } from "../../services";
 import { triggerToast } from "../../utils/toast";
@@ -98,21 +98,19 @@ const ResetPassword = () => {
       }
     >
       <form className="login-form" onSubmit={onSubmit}>
-        <TextField
+        <PasswordField
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Enter your new password"
           aria-label="Enter your new password"
-          type="password"
           required
           fullWidth
         />
-        <TextField
+        <PasswordField
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
           placeholder="Confirm your new password"
           aria-label="Confirm your new password"
-          type="password"
           required
           fullWidth
         />
