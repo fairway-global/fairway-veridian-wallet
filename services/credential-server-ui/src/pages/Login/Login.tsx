@@ -5,13 +5,11 @@ import {
   CircularProgress,
   Divider,
   FormControlLabel,
-  Paper,
   TextField,
   Typography,
 } from "@mui/material";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import LogoLong from "../../assets/fw-white-logo.png";
 import { config } from "../../config";
 import { RoutePath } from "../../const/route";
 import { AuthService, AuthSessionResponse } from "../../services/auth";
@@ -20,47 +18,15 @@ import { setSession } from "../../store/reducers/authSlice";
 import { setRoleView } from "../../store/reducers/stateCache";
 import { triggerToast } from "../../utils/toast";
 import { RoleIndex } from "../../components/NavBar/constants/roles";
+import { AuthShell } from "./AuthShell";
+import {
+  GoogleCredentialResponse,
+  GoogleMark,
+} from "./GoogleIdentity";
 import "./Login.scss";
 
 const GOOGLE_SCRIPT_ID = "fairway-google-identity-script";
 const REMEMBERED_EMAIL_KEY = "credential_server_ui_remembered_email";
-
-interface GoogleCredentialResponse {
-  credential?: string;
-}
-
-interface GooglePromptMomentNotification {
-  isNotDisplayed?: () => boolean;
-  isSkippedMoment?: () => boolean;
-  getNotDisplayedReason?: () => string;
-  getSkippedReason?: () => string;
-}
-
-interface GoogleAccountsIdApi {
-  initialize: (input: {
-    client_id: string;
-    callback: (response: GoogleCredentialResponse) => void;
-    auto_select?: boolean;
-    cancel_on_tap_outside?: boolean;
-  }) => void;
-  prompt: (listener?: (notification: GooglePromptMomentNotification) => void) => void;
-}
-
-declare global {
-  interface Window {
-    google?: {
-      accounts?: {
-        id?: GoogleAccountsIdApi;
-      };
-    };
-  }
-}
-
-const GoogleMark = () => (
-  <Box className="google-mark" aria-hidden="true">
-    <span className="google-mark__g">G</span>
-  </Box>
-);
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
   if (
@@ -237,7 +203,7 @@ const Login = () => {
   const handleGoogleLogin = () => {
     if (!config.googleClientId) {
       triggerToast(
-        "Google sign in is not configured. Set GOOGLE_CLIENT_ID first.",
+        "Google sign in is not configured. Set GOOGLE_CLIENT_ID or VITE_GOOGLE_CLIENT_ID and restart the UI.",
         "warning"
       );
       return;
@@ -261,7 +227,7 @@ const Login = () => {
   };
 
   const handleForgotPassword = () => {
-    triggerToast("Forgot password? Contact your administrator.", "info");
+    navigate(RoutePath.ForgotPassword);
   };
 
   const loginButtonContent = useMemo(
@@ -278,22 +244,36 @@ const Login = () => {
   );
 
   return (
-    <Box className="login-page">
-      <Paper className="login-card">
-        <Box className="login-panel login-panel--form">
-          <Box className="login-brand">
-            <img src={LogoLong} alt="Fairway" />
-          </Box>
-
-          <Box className="login-copy">
-            <Typography className="login-title" component="h1">
-              Sign in to Fairway
+    <AuthShell
+      title="Sign in to Fairwallet"
+      subtitle="Access your credential operations workspace securely."
+      footer={
+        <Box className="auth-access-cta">
+          <Typography component="span" className="auth-access-label">
+            Need access?
+          </Typography>
+          <Box className="auth-access-actions">
+            <Button
+              type="button"
+              className="auth-access-link"
+              onClick={() => navigate(RoutePath.VerifierSignup)}
+            >
+              Sign up as verifier
+            </Button>
+            <Typography component="span" className="auth-access-separator">
+              or
             </Typography>
-            <Typography className="login-subtitle">
-              Access your credential operations dashboard securely.
-            </Typography>
+            <Button
+              type="button"
+              className="auth-access-link"
+              onClick={() => navigate(RoutePath.IssuerRequest)}
+            >
+              Request issuer access
+            </Button>
           </Box>
-
+        </Box>
+      }
+    >
           <Button
             className="login-google-button"
             variant="outlined"
@@ -358,34 +338,7 @@ const Login = () => {
               {loginButtonContent}
             </Button>
           </Box>
-
-          <Typography className="login-footer-copy">
-            Need access? Contact your administrator
-          </Typography>
-        </Box>
-
-        <Box className="login-panel login-panel--welcome">
-          <Box className="welcome-orb welcome-orb--top" />
-          <Box className="welcome-orb welcome-orb--bottom" />
-          <Typography className="welcome-eyebrow">Welcome to</Typography>
-          <Typography className="welcome-title">
-            Fairway Credential Manager
-          </Typography>
-          <Typography className="welcome-body">
-            Manage credential issuance, identity verification, and trusted digital workflows in one secure place.
-            Built for institutions to issue and manage credentials with clarity, speed, and confidence.
-          </Typography>
-          <Box className="welcome-stat">
-            <Typography className="welcome-stat-label">
-              Trusted dashboard
-            </Typography>
-            <Typography className="welcome-stat-value">
-              Secure credential operations for issuers and verifiers
-            </Typography>
-          </Box>
-        </Box>
-      </Paper>
-    </Box>
+    </AuthShell>
   );
 };
 

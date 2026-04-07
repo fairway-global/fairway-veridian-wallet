@@ -14,6 +14,23 @@ export interface AuthSessionResponse {
   user: DashboardUser;
 }
 
+export interface PasswordResetRequestResponse {
+  status: "sent" | "failed";
+  reason:
+    | "email_sent"
+    | "account_not_found"
+    | "multiple_accounts"
+    | "inactive_user";
+  message: string;
+  accountExists: boolean;
+}
+
+export interface IssuerAccessRequestResponse {
+  id: string;
+  status: "pending" | "approved" | "rejected";
+  message: string;
+}
+
 const AuthService = {
   login: async (payload: {
     email: string;
@@ -33,6 +50,67 @@ const AuthService = {
       config.path.authGoogleV2,
       payload
     );
+    return response.data.data;
+  },
+
+  registerVerifier: async (payload: {
+    displayName: string;
+    organizationName?: string;
+    email: string;
+    password: string;
+  }): Promise<AuthSessionResponse> => {
+    const response = await httpInstance.post<ApiEnvelope<AuthSessionResponse>>(
+      config.path.authRegisterVerifierV2,
+      payload
+    );
+    return response.data.data;
+  },
+
+  registerVerifierWithGoogle: async (payload: {
+    idToken: string;
+    organizationName?: string;
+  }): Promise<AuthSessionResponse> => {
+    const response = await httpInstance.post<ApiEnvelope<AuthSessionResponse>>(
+      config.path.authRegisterVerifierGoogleV2,
+      payload
+    );
+    return response.data.data;
+  },
+
+  requestIssuerAccess: async (payload: {
+    organizationName: string;
+    organizationType?: string;
+    contactName: string;
+    email: string;
+    phoneNumber?: string;
+    country?: string;
+    website?: string;
+    credentialUseCase: string;
+    expectedVolume?: string;
+    notes?: string;
+  }): Promise<IssuerAccessRequestResponse> => {
+    const response = await httpInstance.post<
+      ApiEnvelope<IssuerAccessRequestResponse>
+    >(config.path.authRequestIssuerV2, payload);
+    return response.data.data;
+  },
+
+  requestPasswordReset: async (payload: {
+    email: string;
+  }): Promise<PasswordResetRequestResponse> => {
+    const response = await httpInstance.post<
+      ApiEnvelope<PasswordResetRequestResponse>
+    >(config.path.authForgotPasswordV2, payload);
+    return response.data.data;
+  },
+
+  resetPassword: async (payload: {
+    token: string;
+    password: string;
+  }): Promise<{ reset: boolean }> => {
+    const response = await httpInstance.post<
+      ApiEnvelope<{ reset: boolean }>
+    >(config.path.authResetPasswordV2, payload);
     return response.data.data;
   },
 

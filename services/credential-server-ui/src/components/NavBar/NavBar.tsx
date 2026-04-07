@@ -139,7 +139,7 @@ const NavBar = ({ mode, window }: Props) => {
   const homePath = mode === "admin" ? RoutePath.AdminUsers : RoutePath.Activities;
   const dashboardLabel = user
     ? mode === "admin"
-      ? "Admin dashboard"
+      ? "Admin workspace"
       : `${mode === "verifier" ? "Verifier" : "Issuer"} workspace`
     : "";
   const dashboardMeta = user
@@ -208,7 +208,7 @@ const NavBar = ({ mode, window }: Props) => {
             >
               <img
                 className="header-logo"
-                alt="fairway-logo"
+                alt="fairwallet-logo"
                 src={LogoLong}
               />
             </Button>
@@ -252,7 +252,7 @@ const NavBar = ({ mode, window }: Props) => {
             >
               <img
                 className="header-logo"
-                alt="fairway-logo-long"
+                alt="fairwallet-logo-long"
                 src={LogoLong}
               />
             </Button>

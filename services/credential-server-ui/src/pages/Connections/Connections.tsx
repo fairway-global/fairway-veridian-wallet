@@ -58,7 +58,7 @@ const Connections = () => {
           Manage your active relationships in one focused workspace.
         </Typography>
         <Typography className="connections-intro-copy">
-          Review established contacts, launch connection actions, and keep the table workflow fast without the extra dashboard cards mixed in.
+          Review established contacts, launch connection actions, and keep the table workflow fast without extra summary cards getting in the way.
         </Typography>
         <Typography className="connections-intro-meta">
           {i18n.t("pages.connections.title", {

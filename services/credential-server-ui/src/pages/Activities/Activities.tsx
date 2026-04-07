@@ -202,7 +202,7 @@ const Activities = () => {
 
   const dashboardTitle = isVerifier ? "Verifier workspace" : "Issuer workspace";
   const dashboardDescription = isVerifier
-    ? "Track holder readiness, surface presentation activity, and keep the next move obvious from a single dashboard."
+    ? "Track holder readiness, surface presentation activity, and keep the next move obvious from a single workspace."
     : "Watch your network grow, keep credential issuance in focus, and jump straight into the operational pages that matter.";
 
   return (
@@ -412,7 +412,7 @@ const Activities = () => {
             Check our guide at fairwallet.et
           </Typography>
           <Typography className="activities-help-copy">
-            Walk through setup guidance, credential flows, and dashboard usage without leaving your workspace context.
+            Walk through setup guidance, credential flows, and product usage without leaving your workspace context.
           </Typography>
         </Box>
         <Button

@@ -37,11 +37,27 @@ httpInstance.interceptors.response.use(
     const isAuthRefreshCall = path.includes(config.path.authRefreshV2);
     const isAuthLoginCall = path.includes(config.path.authLoginV2);
     const isAuthGoogleCall = path.includes(config.path.authGoogleV2);
+    const isAuthRegisterVerifierCall = path.includes(
+      config.path.authRegisterVerifierV2
+    );
+    const isAuthRegisterVerifierGoogleCall = path.includes(
+      config.path.authRegisterVerifierGoogleV2
+    );
+    const isAuthRequestIssuerCall = path.includes(
+      config.path.authRequestIssuerV2
+    );
+    const isForgotPasswordCall = path.includes(config.path.authForgotPasswordV2);
+    const isResetPasswordCall = path.includes(config.path.authResetPasswordV2);
     if (
       statusCode !== 401 ||
       isAuthRefreshCall ||
       isAuthLoginCall ||
-      isAuthGoogleCall
+      isAuthGoogleCall ||
+      isAuthRegisterVerifierCall ||
+      isAuthRegisterVerifierGoogleCall ||
+      isAuthRequestIssuerCall ||
+      isForgotPasswordCall ||
+      isResetPasswordCall
     ) {
       return Promise.reject(error);
     }

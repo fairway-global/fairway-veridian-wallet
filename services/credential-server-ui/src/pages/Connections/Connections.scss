@@ -159,5 +159,47 @@
     .add-connection-button {
       width: 100%;
     }
+
+    .filter-bar {
+      .MuiFormControl-root,
+      .MuiPickersTextField-root {
+        min-width: 0;
+        width: 100%;
+      }
+    }
+
+    .connections-table {
+      .connection-table-toolbar {
+        min-height: auto;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+
+        .table-left,
+        .table-right {
+          width: 100%;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .table-right {
+          justify-content: space-between;
+
+          .delete-connections-button {
+            width: 100%;
+          }
+        }
+      }
+
+      .MuiTableContainer-root,
+      .app-table {
+        overflow-x: auto;
+      }
+
+      .MuiTablePagination-toolbar {
+        flex-wrap: wrap;
+      }
+    }
   }
 }

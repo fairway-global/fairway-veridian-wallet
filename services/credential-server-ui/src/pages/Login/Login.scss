@@ -141,6 +141,11 @@
           color: var(--color-neutral-100);
         }
 
+        .MuiSelect-select {
+          padding: 0.85rem 1rem;
+          color: var(--color-neutral-100);
+        }
+
         input::placeholder {
           color: rgba(255, 255, 255, 0.5);
           opacity: 1;
@@ -157,6 +162,19 @@
         &.Mui-focused fieldset {
           border-color: rgba(125, 220, 183, 0.8);
         }
+
+        &.MuiInputBase-sizeSmall {
+          input,
+          .MuiSelect-select,
+          textarea {
+            padding: 0.56rem 0.85rem;
+            font-size: 0.9rem;
+          }
+        }
+      }
+
+      .MuiSvgIcon-root {
+        color: rgba(255, 255, 255, 0.42);
       }
     }
   }
@@ -208,6 +226,110 @@
     color: rgba(255, 255, 255, 0.62);
     font-size: 0.9rem;
     line-height: 1.5;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .auth-access-cta {
+    margin-top: 0.9rem;
+    display: grid;
+    gap: 0.45rem;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .auth-access-label {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  .auth-access-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .auth-access-link {
+    min-width: 0;
+    padding: 0;
+    color: #97e8bf;
+    font-size: 0.96rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-transform: none;
+
+    &:hover {
+      background: transparent;
+      color: #c6f4da;
+    }
+  }
+
+  .auth-access-separator {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.86rem;
+    font-weight: 600;
+  }
+
+  .auth-inline-link {
+    color: #97e8bf;
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover {
+      color: #c6f4da;
+      text-decoration: underline;
+    }
+  }
+
+  .auth-action-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.85rem;
+  }
+
+  .auth-helper-copy {
+    margin-top: 1rem;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .auth-form-grid {
+    display: grid;
+    gap: 0.8rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .auth-success-card {
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem 1.05rem;
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .auth-success-title {
+    margin: 0;
+    color: var(--color-neutral-100);
+    font-size: 1.15rem;
+    font-weight: 800;
+  }
+
+  .auth-success-copy {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.74);
+    line-height: 1.65;
+  }
+
+  .auth-select-placeholder {
+    color: rgba(255, 255, 255, 0.5);
   }
 
   .welcome-orb {
@@ -290,6 +412,64 @@
     line-height: 1.4;
   }
 
+  &.login-page--auth-trimmed {
+    .login-brand {
+      margin-bottom: 0.9rem;
+
+      img {
+        width: min(8.75rem, 100%);
+      }
+    }
+
+    .login-copy {
+      margin-bottom: 0.85rem;
+    }
+
+    .login-title {
+      font-size: clamp(1.6rem, 2.5vw, 2.1rem);
+    }
+
+    .login-subtitle {
+      margin-top: 0.45rem;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .login-google-button,
+    .login-submit-button {
+      min-height: 2.7rem;
+      font-size: 0.95rem;
+    }
+
+    .login-divider {
+      margin: 0.8rem 0 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .login-footer-copy,
+    .auth-helper-copy {
+      margin-top: 0.75rem;
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .auth-access-cta {
+      margin-top: 0.65rem;
+      gap: 0.35rem;
+    }
+
+    .auth-access-label,
+    .auth-access-link,
+    .auth-access-separator {
+      font-size: 0.84rem;
+    }
+
+    .auth-action-stack {
+      gap: 0.6rem;
+      margin-top: 0.65rem;
+    }
+  }
+
   @media only screen and (max-width: 980px) {
     .login-card {
       grid-template-columns: 1fr;
@@ -315,6 +495,10 @@
     .login-form-meta {
       flex-direction: column;
       align-items: flex-start;
+    }
+
+    .auth-form-grid {
+      grid-template-columns: 1fr;
     }
   }
 }

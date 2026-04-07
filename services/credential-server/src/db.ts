@@ -47,6 +47,8 @@ export async function runMigrations(): Promise<void> {
     "008_template_auto_issue.sql",
     "009_fayda_verification_state.sql",
     "010_presentation_requests.sql",
+    "011_password_reset_tokens.sql",
+    "012_issuer_application_requests.sql",
   ];
 
   for (const migrationFile of migrationFiles) {

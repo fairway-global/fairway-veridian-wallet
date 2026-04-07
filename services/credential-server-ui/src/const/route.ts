@@ -1,5 +1,9 @@
 export const RoutePath = {
   Login: "/login",
+  VerifierSignup: "/sign-up/verifier",
+  IssuerRequest: "/request-access/issuer",
+  ForgotPassword: "/forgot-password",
+  ResetPassword: "/reset-password",
   AdminLogin: "/admin/login",
   VerifierLogin: "/verifier/login",
   Activities: "/",

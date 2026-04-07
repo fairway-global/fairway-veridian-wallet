@@ -1,4 +1,8 @@
 .app-table {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
   .MuiTableHead-root {
     background-color: var(--color-primary-200);
 
@@ -65,11 +69,51 @@
     background-color: var(--color-neutral-100);
     border-radius: 0.75rem;
     box-shadow: 0.25rem 0.25rem 1.25rem 0rem rgba(var(--text-color-rgb), 0.16);
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .MuiTablePagination-actions button {
     &:hover {
       background-color: var(--color-neutral-100);
+    }
+  }
+
+  @media only screen and (max-width: 744px) {
+    .MuiTableHead-root {
+      tr th {
+        .table-header-label {
+          max-width: none;
+        }
+      }
+    }
+
+    .MuiTableBody-root {
+      th,
+      td {
+        max-width: none;
+      }
+    }
+
+    tr {
+      height: auto;
+    }
+
+    .MuiTablePagination-root {
+      overflow-x: auto;
+    }
+
+    .MuiTablePagination-toolbar {
+      min-height: auto;
+      padding: 0.75rem 1rem;
+      flex-wrap: wrap;
+      row-gap: 0.5rem;
+    }
+
+    .MuiTablePagination-selectLabel,
+    .MuiTablePagination-displayedRows {
+      margin: 0;
     }
   }
 }

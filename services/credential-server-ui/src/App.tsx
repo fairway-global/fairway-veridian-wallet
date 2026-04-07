@@ -45,7 +45,13 @@ import {
   TemplateEdit,
   TemplatesList,
 } from "./pages/Templates";
-import { Login } from "./pages/Login";
+import {
+  ForgotPassword,
+  IssuerRequest,
+  Login,
+  ResetPassword,
+  VerifierSignup,
+} from "./pages/Login";
 import { AdminUsers } from "./pages/AdminUsers/AdminUsers";
 import { AdminRequests } from "./pages/AdminRequests/AdminRequests";
 import {
@@ -408,6 +414,58 @@ const App = () => {
                     />
                   ) : (
                     <Login />
+                  )
+                }
+              />
+              <Route
+                path={RoutePath.VerifierSignup}
+                element={
+                  isAuthenticated ? (
+                    <Navigate
+                      to={homePath}
+                      replace
+                    />
+                  ) : (
+                    <VerifierSignup />
+                  )
+                }
+              />
+              <Route
+                path={RoutePath.IssuerRequest}
+                element={
+                  isAuthenticated ? (
+                    <Navigate
+                      to={homePath}
+                      replace
+                    />
+                  ) : (
+                    <IssuerRequest />
+                  )
+                }
+              />
+              <Route
+                path={RoutePath.ForgotPassword}
+                element={
+                  isAuthenticated ? (
+                    <Navigate
+                      to={homePath}
+                      replace
+                    />
+                  ) : (
+                    <ForgotPassword />
+                  )
+                }
+              />
+              <Route
+                path={RoutePath.ResetPassword}
+                element={
+                  isAuthenticated ? (
+                    <Navigate
+                      to={homePath}
+                      replace
+                    />
+                  ) : (
+                    <ResetPassword />
                   )
                 }
               />

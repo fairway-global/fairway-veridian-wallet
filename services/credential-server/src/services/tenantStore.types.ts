@@ -45,6 +45,34 @@ export interface ManagedUserRecord extends IssuerUserRecord {
   aidPrefix: string | null;
 }
 
+export type IssuerApplicationRequestStatus =
+  | "pending"
+  | "approved"
+  | "rejected";
+
+export interface IssuerApplicationRequestRecord {
+  id: string;
+  organizationName: string;
+  organizationType: string | null;
+  contactName: string;
+  email: string;
+  phoneNumber: string | null;
+  country: string | null;
+  website: string | null;
+  credentialUseCase: string;
+  expectedVolume: string | null;
+  notes: string | null;
+  status: IssuerApplicationRequestStatus;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  adminNote: string | null;
+  provisionedUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reviewedByEmail?: string;
+  provisionedUserEmail?: string;
+}
+
 export type AccountChangeRequestField = "issuer_name" | "email";
 export type AccountChangeRequestStatus = "pending" | "approved" | "rejected";
 
@@ -77,6 +105,16 @@ export interface AuthRefreshTokenRecord {
   expiresAt: string;
   revokedAt: string | null;
   replacedBy: string | null;
+  createdAt: string;
+}
+
+export interface AuthPasswordResetTokenRecord {
+  id: string;
+  userId: string;
+  issuerId: string;
+  tokenHash: string;
+  expiresAt: string;
+  usedAt: string | null;
   createdAt: string;
 }
 

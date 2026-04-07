@@ -525,5 +525,44 @@
     .activities-side-card {
       border-radius: 1.35rem;
     }
+
+    .activities-hero-main {
+      min-height: auto;
+    }
+
+    .activities-hero-tags {
+      .MuiChip-root {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    .activities-hero-actions {
+      width: 100%;
+
+      .MuiButton-root {
+        width: 100%;
+      }
+    }
+
+    .hero-metric,
+    .activities-spotlight-item {
+      flex-direction: column;
+      align-items: flex-start;
+
+      strong {
+        text-align: left;
+      }
+    }
+
+    .activities-activity-chart {
+      min-height: 10rem;
+      gap: 0.45rem;
+    }
+
+    .activities-help-button {
+      width: 100%;
+      justify-content: center;
+    }
   }
 }
