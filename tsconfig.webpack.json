@@ -1,10 +1,14 @@
 {
   "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
   "include": ["src"],
   "exclude": [
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
     "src/**/__mocks__/**",
-    "src/setupTests.ts"
+    "src/setupTests.ts",
+    "src/ui/utils/passcodeFiller.ts"
   ]
 }
