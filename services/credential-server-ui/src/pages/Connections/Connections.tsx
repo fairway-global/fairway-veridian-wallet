@@ -1,5 +1,5 @@
 import AddIcon from "@mui/icons-material/Add";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { PageHeader } from "../../components/PageHeader";
@@ -31,11 +31,9 @@ const Connections = () => {
       sx={{ padding: "0 2.5rem 2.5rem" }}
     >
       <PageHeader
-        title={`${i18n.t("pages.connections.title", {
-          number: contacts.length,
-        })}`}
+        title={i18n.t("navbar.connections")}
         sx={{
-          margin: "1.5rem 0",
+          margin: "1.5rem 0 1rem",
         }}
         action={
           <Button
@@ -51,12 +49,33 @@ const Connections = () => {
           </Button>
         }
       />
+
+      <Box className="connections-intro-card">
+        <Typography className="connections-intro-kicker">
+          Contact directory
+        </Typography>
+        <Typography className="connections-intro-title">
+          Manage your active relationships in one focused workspace.
+        </Typography>
+        <Typography className="connections-intro-copy">
+          Review established contacts, launch connection actions, and keep the table workflow fast without extra summary cards getting in the way.
+        </Typography>
+        <Typography className="connections-intro-meta">
+          {i18n.t("pages.connections.title", {
+            number: contacts.length,
+          })}
+        </Typography>
+      </Box>
+
+      <Box className="connections-table-shell">
+        <ConnectionsTable />
+      </Box>
+
       <AddConnectionModal
         openModal={openModal}
         setOpenModal={setOpenModal}
         handleGetContacts={handleGetContacts}
       />
-      <ConnectionsTable />
     </Box>
   );
 };

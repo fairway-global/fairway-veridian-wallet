@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "sync-env": "node ./scripts/update-envfile.js",
+    "predev": "npm run sync-env",
     "dev": "vite",
+    "prebuild": "npm run sync-env",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

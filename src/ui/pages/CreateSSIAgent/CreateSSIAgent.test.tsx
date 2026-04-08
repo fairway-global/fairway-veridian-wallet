@@ -47,13 +47,16 @@ import { act } from "react";
 import { Provider } from "react-redux";
 import configureStore from "redux-mock-store";
 import { Agent } from "../../../core/agent/agent";
-import { MiscRecordId } from "../../../core/agent/agent.types";
+import { CreationStatus, MiscRecordId } from "../../../core/agent/agent.types";
 import EN_TRANSLATIONS from "../../../locales/en/en.json";
 import SSI_CREATE from "../../../locales/en/aboutssiagentcreate.json";
 import SSI_RECOVERY from "../../../locales/en/aboutssiagentrecovery.json";
 import { RoutePath } from "../../../routes";
 import { setBootUrl, setConnectUrl } from "../../../store/reducers/ssiAgent";
-import { setCurrentOperation } from "../../../store/reducers/stateCache";
+import {
+  setAuthentication,
+  setCurrentOperation,
+} from "../../../store/reducers/stateCache";
 import { CustomInputProps } from "../../components/CustomInput/CustomInput.types";
 import {
   ONBOARDING_DOCUMENTATION_LINK,
@@ -84,6 +87,9 @@ jest.mock("../../../core/agent/agent", () => ({
     agent: {
       bootAndConnect: bootAndConnectMock,
       recoverKeriaAgent: recoverKeriaAgentMock,
+      identifiers: {
+        getIdentifiers: jest.fn().mockResolvedValue([]),
+      },
       basicStorage: {
         deleteById: basicStorageDeleteMock,
         createOrUpdateBasicRecord: createOrUpdateBasicRecordMock,
@@ -916,6 +922,79 @@ describe("SSI agent page: recovery mode", () => {
     await waitFor(() => {
       expect(basicStorageDeleteMock).toBeCalledWith(
         MiscRecordId.APP_FIRST_INSTALL
+      );
+    });
+  });
+
+  test("Recovery persists the restored user name before navigation", async () => {
+    keriaMockValue = {
+      url: "https://connect.fairwallet.et",
+    };
+
+    Agent.agent.identifiers.getIdentifiers = jest.fn().mockResolvedValue([
+      {
+        id: "restored-id",
+        displayName: "tester 56",
+        createdAtUTC: "2026-04-03T08:00:00.000Z",
+        theme: 0,
+        creationStatus: CreationStatus.COMPLETE,
+      },
+    ]);
+
+    const recoveryStore = {
+      ...mockStore({
+        ...initialState,
+        seedPhraseCache: {
+          seedPhrase: "mock-seed",
+        },
+      }),
+      dispatch: dispatchMock,
+    };
+
+    const history = createMemoryHistory();
+    history.push(RoutePath.SSI_AGENT);
+
+    const { getByTestId } = render(
+      <IonReactMemoryRouter history={history}>
+        <Provider store={recoveryStore}>
+          <CreateSSIAgent />
+        </Provider>
+      </IonReactMemoryRouter>
+    );
+
+    act(() => {
+      fireEvent.click(getByTestId("primary-button-create-ssi-agent"));
+    });
+
+    await waitFor(() => {
+      expect(createOrUpdateBasicRecordMock).toBeCalledWith(
+        expect.objectContaining({
+          id: MiscRecordId.USER_NAME,
+          content: { userName: "tester 56" },
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(dispatchMock).toBeCalledWith(
+        setAuthentication(
+          expect.objectContaining({
+            userName: "tester 56",
+          })
+        )
+      );
+    });
+
+    await waitFor(() => {
+      expect(dispatchMock).toBeCalledWith(
+        setAuthentication(
+          expect.objectContaining({
+            userName: "tester 56",
+            ssiAgentIsSet: true,
+            recoveryWalletProgress: false,
+            seedPhraseIsSet: true,
+          })
+        )
       );
     });
   });

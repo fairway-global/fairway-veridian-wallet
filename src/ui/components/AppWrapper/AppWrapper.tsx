@@ -22,6 +22,7 @@ import {
   PeerConnectionBrokenEvent,
   PeerDisconnectedEvent,
 } from "../../../core/cardano/walletConnect/peerConnection.types";
+import { BasicRecord } from "../../../core/agent/records";
 import { KeyStoreKeys, SecureStorage } from "../../../core/storage";
 import { i18n } from "../../../i18n";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
@@ -85,6 +86,7 @@ import { OperationType, ToastMsgType } from "../../globals/types";
 import { CredentialsFilters } from "../../pages/Credentials/Credentials.types";
 import { IdentifiersFilters } from "../../pages/Identifiers/Identifiers.types";
 import { showError } from "../../utils/error";
+import { normalizeApiBaseUrl } from "../../utils/envUrl";
 import { Alert } from "../Alert";
 import { CardListViewType } from "../SwitchCardView";
 import "./AppWrapper.scss";
@@ -97,13 +99,39 @@ import {
 } from "./coreEventListeners";
 import { useActivityTimer } from "./hooks/useActivityTimer";
 
-const FAYDA_STATUS_API_BASE = (
-  process.env.REACT_APP_FAYDA_ISSUER_API || "http://localhost:3001"
-).trim().replace(/\/+$/, "");
+const FAYDA_STATUS_API_BASE = normalizeApiBaseUrl(
+  process.env.REACT_APP_FAYDA_ISSUER_API,
+  "http://localhost:3001"
+);
+const FAYDA_VERIFIED_STATUSES = new Set([
+  "verified",
+  "pending_manual_review",
+  "credential_issued",
+]);
 const FAYDA_VERIFIED_STORAGE_KEY = "fayda_verified";
 const FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY = "fayda_pending_connection_id";
 const FAYDA_PENDING_CONNECTION_LABEL_STORAGE_KEY =
   "fayda_pending_connection_label";
+
+const getFallbackUserNameFromIdentifiers = (
+  identifiers: IdentifierShortDetails[]
+): string => {
+  const preferredIdentifier =
+    identifiers.find(
+      (identifier) =>
+        identifier.creationStatus === CreationStatus.COMPLETE &&
+        !identifier.groupMetadata &&
+        !identifier.groupMemberPre &&
+        identifier.displayName.trim().length > 0
+    ) ||
+    identifiers.find(
+      (identifier) =>
+        identifier.creationStatus === CreationStatus.COMPLETE &&
+        identifier.displayName.trim().length > 0
+    );
+
+  return preferredIdentifier?.displayName.trim() || "";
+};
 
 function getLocalStorageItem(key: string): string | null {
   try {
@@ -465,7 +493,12 @@ const AppWrapper = (props: { children: ReactNode }) => {
         }
 
         const payload = await response.json();
-        const verified = Boolean(payload?.data?.verified);
+        const verificationStatus = String(
+          payload?.data?.verificationStatus || ""
+        ).trim();
+        const verified =
+          Boolean(payload?.data?.verified) ||
+          FAYDA_VERIFIED_STATUSES.has(verificationStatus);
         dispatch(setFaydaVerified(verified));
         return verified;
       } catch {
@@ -517,12 +550,33 @@ const AppWrapper = (props: { children: ReactNode }) => {
       const connectionsDetails = await Agent.agent.connections.getConnections();
       const multisigConnectionsDetails =
         await Agent.agent.connections.getMultisigConnections();
+      const storedIdentifiers = await Agent.agent.identifiers.getIdentifiers();
+
+      const fallbackUserName = String(authentication.userName || "").trim()
+        ? ""
+        : getFallbackUserNameFromIdentifiers(storedIdentifiers);
+
+      if (fallbackUserName) {
+        await Agent.agent.basicStorage.createOrUpdateBasicRecord(
+          new BasicRecord({
+            id: MiscRecordId.USER_NAME,
+            content: {
+              userName: fallbackUserName,
+            },
+          })
+        );
+        dispatch(
+          setAuthentication({
+            ...authentication,
+            userName: fallbackUserName,
+          })
+        );
+      }
 
       const credsCache = await Agent.agent.credentials.getCredentials();
       const credsArchivedCache = await Agent.agent.credentials.getCredentials(
         true
       );
-      const storedIdentifiers = await Agent.agent.identifiers.getIdentifiers();
       const storedPeerConnections =
         await Agent.agent.peerConnectionMetadataStorage.getAllPeerConnectionMetadata();
       const notifications =
@@ -879,6 +933,7 @@ export {
   AppWrapper,
   acdcChangeHandler,
   connectionStateChangedHandler,
+  getFallbackUserNameFromIdentifiers,
   peerConnectRequestSignChangeHandler,
   peerConnectedChangeHandler,
   peerConnectionBrokenChangeHandler,

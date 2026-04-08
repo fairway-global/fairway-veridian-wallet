@@ -32,14 +32,14 @@ const DrawerContent = ({
         <img
           className="drawer-logo"
           src={LogoSmall}
-          alt="fairway logo"
+          alt="fairwallet logo"
         />
         <Box className="drawer-copy">
           <Typography
             variant="overline"
             className="drawer-eyebrow"
           >
-            Fairway
+            Fairwallet
           </Typography>
           <Typography
             variant="h6"

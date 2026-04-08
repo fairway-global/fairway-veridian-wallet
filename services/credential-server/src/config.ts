@@ -55,6 +55,28 @@ const jwtAccessSecret =
   process.env.JWT_ACCESS_SECRET ?? "dev-change-me-access-secret";
 const jwtRefreshSecret =
   process.env.JWT_REFRESH_SECRET ?? "dev-change-me-refresh-secret";
+const googleClientId = process.env.GOOGLE_CLIENT_ID ?? "";
+const dashboardUiUrl =
+  process.env.DASHBOARD_UI_URL ?? "http://localhost:5173";
+const smtpHost = process.env.SMTP_HOST ?? "";
+const smtpPort = Number(process.env.SMTP_PORT || 587);
+const smtpSecure = String(process.env.SMTP_SECURE ?? "false").trim() === "true";
+const smtpUser = process.env.SMTP_USER ?? "";
+const smtpPassword = process.env.SMTP_PASSWORD ?? "";
+const smtpConnectionTimeoutMs = Number(
+  process.env.SMTP_CONNECTION_TIMEOUT_MS || 10000
+);
+const smtpGreetingTimeoutMs = Number(
+  process.env.SMTP_GREETING_TIMEOUT_MS || 10000
+);
+const smtpSocketTimeoutMs = Number(
+  process.env.SMTP_SOCKET_TIMEOUT_MS || 15000
+);
+const smtpDnsTimeoutMs = Number(process.env.SMTP_DNS_TIMEOUT_MS || 5000);
+const mailDebug = String(process.env.MAIL_DEBUG ?? "false").trim() === "true";
+const mailFromName = process.env.MAIL_FROM_NAME ?? "Fairwallet";
+const mailFromAddress =
+  process.env.MAIL_FROM_ADDRESS || smtpUser || "notifications@fairwallet.et";
 const gatewayJwtSecret =
   process.env.GATEWAY_JWT_SECRET ?? "dev-change-me-gateway-secret";
 const gatewayJwtIssuer =
@@ -64,6 +86,9 @@ const gatewayJwtAudience =
 const accessTokenTtlSeconds = Number(process.env.ACCESS_TOKEN_TTL_SECONDS || 900);
 const refreshTokenTtlSeconds = Number(
   process.env.REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 30
+);
+const passwordResetTtlSeconds = Number(
+  process.env.PASSWORD_RESET_TTL_SECONDS || 60 * 60
 );
 const gatewayTokenMaxAgeSeconds = Number(
   process.env.GATEWAY_TOKEN_MAX_AGE_SECONDS || 300
@@ -96,11 +121,26 @@ export const config = {
   databaseUrl,
   jwtAccessSecret,
   jwtRefreshSecret,
+  googleClientId,
+  dashboardUiUrl,
+  smtpHost,
+  smtpPort,
+  smtpSecure,
+  smtpUser,
+  smtpPassword,
+  smtpConnectionTimeoutMs,
+  smtpGreetingTimeoutMs,
+  smtpSocketTimeoutMs,
+  smtpDnsTimeoutMs,
+  mailDebug,
+  mailFromName,
+  mailFromAddress,
   gatewayJwtSecret,
   gatewayJwtIssuer,
   gatewayJwtAudience,
   accessTokenTtlSeconds,
   refreshTokenTtlSeconds,
+  passwordResetTtlSeconds,
   gatewayTokenMaxAgeSeconds,
   branEncryptionKey,
   defaultIssuerCode,
@@ -139,6 +179,12 @@ export const config = {
     revokeCredentialApi: "/api/credentials/:id/revoke",
     deleteCredentialApi: "/api/credentials/:id",
     authLoginV2: "/api/v2/auth/login",
+    authGoogleV2: "/api/v2/auth/google",
+    authRegisterVerifierV2: "/api/v2/auth/register/verifier",
+    authRegisterVerifierGoogleV2: "/api/v2/auth/register/verifier/google",
+    authRequestIssuerV2: "/api/v2/auth/request/issuer",
+    authForgotPasswordV2: "/api/v2/auth/forgot-password",
+    authResetPasswordV2: "/api/v2/auth/reset-password",
     authRefreshV2: "/api/v2/auth/refresh",
     authLogoutV2: "/api/v2/auth/logout",
     authMeV2: "/api/v2/auth/me",
@@ -146,8 +192,11 @@ export const config = {
     userByIdV2: "/api/v2/users/:id",
     adminUsersV2: "/api/v2/admin/users",
     adminUserByIdV2: "/api/v2/admin/users/:id",
+    adminUserSendResetV2: "/api/v2/admin/users/:id/send-reset-password",
     adminRequestsV2: "/api/v2/admin/requests",
     adminRequestByIdV2: "/api/v2/admin/requests/:id",
+    adminIssuerApplicationsV2: "/api/v2/admin/issuer-applications",
+    adminIssuerApplicationByIdV2: "/api/v2/admin/issuer-applications/:id",
     accountProfileV2: "/api/v2/account/profile",
     accountRequestsV2: "/api/v2/account/requests",
     templatesV2: "/api/v2/templates",

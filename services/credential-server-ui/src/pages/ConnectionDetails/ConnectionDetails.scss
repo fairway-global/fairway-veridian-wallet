@@ -95,8 +95,23 @@
   }
 
   @media screen and (max-width: 600px) {
+    padding-inline: 0;
+
+    .page-header {
+      margin: 1rem 0;
+    }
+
     .info-card {
       padding: 1rem;
+
+      .info-card-header {
+        align-items: flex-start;
+      }
+
+      .info-card-header .header-name {
+        max-width: none;
+        white-space: normal;
+      }
     }
   }
 }

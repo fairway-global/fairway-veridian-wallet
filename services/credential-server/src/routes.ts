@@ -44,13 +44,27 @@ import {
   listCredentialsApiV2,
   revokeCredentialByIdApiV2,
 } from "./apis/dashboardCredentialV2.api";
-import { loginApi, logoutApi, meApi, refreshApi } from "./apis/auth.api";
+import {
+  forgotPasswordApi,
+  googleLoginApi,
+  loginApi,
+  logoutApi,
+  meApi,
+  registerVerifierApi,
+  registerVerifierWithGoogleApi,
+  requestIssuerAccessApi,
+  resetPasswordApi,
+  refreshApi,
+} from "./apis/auth.api";
 import {
   adminCreateUserApi,
+  adminListIssuerApplicationsApi,
   adminListRequestsApi,
   adminListUsersApi,
   adminPatchUserApi,
   adminReviewRequestApi,
+  adminReviewIssuerApplicationApi,
+  adminSendPasswordResetApi,
 } from "./apis/admin.api";
 import {
   accountCreateRequestApi,
@@ -73,6 +87,15 @@ export const router: Router = express.Router();
 router.get(config.path.ping, ping);
 
 router.post(config.path.authLoginV2, loginApi);
+router.post(config.path.authGoogleV2, googleLoginApi);
+router.post(config.path.authRegisterVerifierV2, registerVerifierApi);
+router.post(
+  config.path.authRegisterVerifierGoogleV2,
+  registerVerifierWithGoogleApi
+);
+router.post(config.path.authRequestIssuerV2, requestIssuerAccessApi);
+router.post(config.path.authForgotPasswordV2, forgotPasswordApi);
+router.post(config.path.authResetPasswordV2, resetPasswordApi);
 router.post(config.path.authRefreshV2, refreshApi);
 router.post(config.path.authLogoutV2, logoutApi);
 router.get(config.path.authMeV2, requireAccessToken, meApi);
@@ -114,11 +137,26 @@ const adminAccess = [
 router.get(config.path.adminUsersV2, ...adminAccess, adminListUsersApi);
 router.post(config.path.adminUsersV2, ...adminAccess, adminCreateUserApi);
 router.patch(config.path.adminUserByIdV2, ...adminAccess, adminPatchUserApi);
+router.post(
+  config.path.adminUserSendResetV2,
+  ...adminAccess,
+  adminSendPasswordResetApi
+);
 router.get(config.path.adminRequestsV2, ...adminAccess, adminListRequestsApi);
+router.get(
+  config.path.adminIssuerApplicationsV2,
+  ...adminAccess,
+  adminListIssuerApplicationsApi
+);
 router.patch(
   config.path.adminRequestByIdV2,
   ...adminAccess,
   adminReviewRequestApi
+);
+router.patch(
+  config.path.adminIssuerApplicationByIdV2,
+  ...adminAccess,
+  adminReviewIssuerApplicationApi
 );
 router.get(config.path.accountProfileV2, ...accountAccess, accountProfileApi);
 router.get(config.path.accountRequestsV2, ...accountAccess, accountListRequestsApi);

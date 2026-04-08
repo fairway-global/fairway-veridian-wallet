@@ -63,21 +63,27 @@ export async function provisionManagedUser(input: {
   password: string;
   role: ManagedRole;
   displayName?: string;
-  createdBy: string;
+  issuerName?: string;
+  codeBase?: string;
+  createdBy?: string | null;
 }): Promise<ManagedUserRecord> {
   const email = String(input.email || "").trim().toLowerCase();
   const role = input.role;
   const displayName = String(input.displayName || "").trim();
+  const issuerName = String(input.issuerName || "").trim();
+  const codeBase = String(input.codeBase || "").trim();
 
   const issuerCode = await generateUniqueIssuerCode(
-    normalizeCodeBase({ email, displayName, role })
+    codeBase || normalizeCodeBase({ email, displayName, role })
   );
-  const issuerName =
-    displayName || `${role === "verifier" ? "Verifier" : "Issuer"} ${email}`;
+  const normalizedIssuerName =
+    issuerName ||
+    displayName ||
+    `${role === "verifier" ? "Verifier" : "Issuer"} ${email}`;
 
   const issuer = await createIssuer({
     code: issuerCode,
-    name: issuerName,
+    name: normalizedIssuerName,
     status: "active",
   });
 
@@ -92,7 +98,7 @@ export async function provisionManagedUser(input: {
     email,
     passwordHash: await hashPassword(input.password),
     role,
-    createdBy: input.createdBy,
+    createdBy: input.createdBy || null,
   });
 
   const managed = await getManagedUserById(user.id);

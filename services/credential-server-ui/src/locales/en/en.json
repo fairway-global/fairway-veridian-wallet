@@ -21,6 +21,7 @@
   },
   "navbar": {
     "menu": "Menu",
+    "activities": "Activities",
     "overview": "Overview",
     "connections": "Connections",
     "templates": "Templates",

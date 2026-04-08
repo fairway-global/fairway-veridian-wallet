@@ -6,9 +6,12 @@ import {
   AccountChangeRequestField,
   AccountChangeRequestRecord,
   AccountChangeRequestStatus,
+  AuthPasswordResetTokenRecord,
   AuthRefreshTokenRecord,
   CreateIssuerTemplateInput,
   IssuerCredentialRecord,
+  IssuerApplicationRequestRecord,
+  IssuerApplicationRequestStatus,
   IssuerFaydaVerificationRecord,
   IssuerRecord,
   IssuerSignifyAccountRecord,
@@ -85,6 +88,41 @@ function mapManagedUserRow(row: Record<string, unknown>): ManagedUserRecord {
   };
 }
 
+function mapIssuerApplicationRequestRow(
+  row: Record<string, unknown>
+): IssuerApplicationRequestRecord {
+  return {
+    id: String(row.id),
+    organizationName: String(row.organization_name || ""),
+    organizationType: row.organization_type
+      ? String(row.organization_type)
+      : null,
+    contactName: String(row.contact_name || ""),
+    email: String(row.email || ""),
+    phoneNumber: row.phone_number ? String(row.phone_number) : null,
+    country: row.country ? String(row.country) : null,
+    website: row.website ? String(row.website) : null,
+    credentialUseCase: String(row.credential_use_case || ""),
+    expectedVolume: row.expected_volume ? String(row.expected_volume) : null,
+    notes: row.notes ? String(row.notes) : null,
+    status: String(row.status) as IssuerApplicationRequestStatus,
+    reviewedAt: row.reviewed_at ? toIso(row.reviewed_at) : null,
+    reviewedBy: row.reviewed_by ? String(row.reviewed_by) : null,
+    adminNote: row.admin_note ? String(row.admin_note) : null,
+    provisionedUserId: row.provisioned_user_id
+      ? String(row.provisioned_user_id)
+      : null,
+    createdAt: toIso(row.created_at),
+    updatedAt: toIso(row.updated_at),
+    reviewedByEmail: row.reviewed_by_email
+      ? String(row.reviewed_by_email)
+      : undefined,
+    provisionedUserEmail: row.provisioned_user_email
+      ? String(row.provisioned_user_email)
+      : undefined,
+  };
+}
+
 function mapAccountChangeRequestRow(
   row: Record<string, unknown>
 ): AccountChangeRequestRecord {
@@ -121,6 +159,20 @@ function mapRefreshTokenRow(
     expiresAt: toIso(row.expires_at),
     revokedAt: row.revoked_at ? toIso(row.revoked_at) : null,
     replacedBy: row.replaced_by ? String(row.replaced_by) : null,
+    createdAt: toIso(row.created_at),
+  };
+}
+
+function mapPasswordResetTokenRow(
+  row: Record<string, unknown>
+): AuthPasswordResetTokenRecord {
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    issuerId: String(row.issuer_id),
+    tokenHash: String(row.token_hash),
+    expiresAt: toIso(row.expires_at),
+    usedAt: row.used_at ? toIso(row.used_at) : null,
     createdAt: toIso(row.created_at),
   };
 }
@@ -533,6 +585,163 @@ export async function getManagedUserById(
   return rows[0] ? mapManagedUserRow(rows[0]) : null;
 }
 
+export async function createIssuerApplicationRequest(input: {
+  organizationName: string;
+  organizationType?: string | null;
+  contactName: string;
+  email: string;
+  phoneNumber?: string | null;
+  country?: string | null;
+  website?: string | null;
+  credentialUseCase: string;
+  expectedVolume?: string | null;
+  notes?: string | null;
+}): Promise<IssuerApplicationRequestRecord> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      INSERT INTO issuer_application_requests(
+        id,
+        organization_name,
+        organization_type,
+        contact_name,
+        email,
+        phone_number,
+        country,
+        website,
+        credential_use_case,
+        expected_volume,
+        notes,
+        status,
+        created_at,
+        updated_at
+      )
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', NOW(), NOW())
+      RETURNING *
+    `,
+    [
+      randomUUID(),
+      String(input.organizationName || "").trim(),
+      input.organizationType ? String(input.organizationType).trim() : null,
+      String(input.contactName || "").trim(),
+      String(input.email || "").trim().toLowerCase(),
+      input.phoneNumber ? String(input.phoneNumber).trim() : null,
+      input.country ? String(input.country).trim() : null,
+      input.website ? String(input.website).trim() : null,
+      String(input.credentialUseCase || "").trim(),
+      input.expectedVolume ? String(input.expectedVolume).trim() : null,
+      input.notes ? String(input.notes).trim() : null,
+    ]
+  );
+
+  return mapIssuerApplicationRequestRow(rows[0]);
+}
+
+export async function getPendingIssuerApplicationRequestByEmail(
+  email: string
+): Promise<IssuerApplicationRequestRecord | null> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT
+        r.*,
+        reviewer.email AS reviewed_by_email,
+        provisioned.email AS provisioned_user_email
+      FROM issuer_application_requests r
+      LEFT JOIN issuer_users reviewer ON reviewer.id = r.reviewed_by
+      LEFT JOIN issuer_users provisioned ON provisioned.id = r.provisioned_user_id
+      WHERE LOWER(r.email) = LOWER($1)
+        AND r.status = 'pending'
+      LIMIT 1
+    `,
+    [String(email || "").trim()]
+  );
+
+  return rows[0] ? mapIssuerApplicationRequestRow(rows[0]) : null;
+}
+
+export async function listIssuerApplicationRequests(input?: {
+  status?: IssuerApplicationRequestStatus;
+}): Promise<IssuerApplicationRequestRecord[]> {
+  const clauses: string[] = [];
+  const params: unknown[] = [];
+
+  if (input?.status) {
+    params.push(input.status);
+    clauses.push(`r.status = $${params.length}`);
+  }
+
+  const whereClause = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT
+        r.*,
+        reviewer.email AS reviewed_by_email,
+        provisioned.email AS provisioned_user_email
+      FROM issuer_application_requests r
+      LEFT JOIN issuer_users reviewer ON reviewer.id = r.reviewed_by
+      LEFT JOIN issuer_users provisioned ON provisioned.id = r.provisioned_user_id
+      ${whereClause}
+      ORDER BY r.created_at DESC
+    `,
+    params
+  );
+
+  return rows.map(mapIssuerApplicationRequestRow);
+}
+
+export async function getIssuerApplicationRequestById(
+  id: string
+): Promise<IssuerApplicationRequestRecord | null> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT
+        r.*,
+        reviewer.email AS reviewed_by_email,
+        provisioned.email AS provisioned_user_email
+      FROM issuer_application_requests r
+      LEFT JOIN issuer_users reviewer ON reviewer.id = r.reviewed_by
+      LEFT JOIN issuer_users provisioned ON provisioned.id = r.provisioned_user_id
+      WHERE r.id = $1
+      LIMIT 1
+    `,
+    [id]
+  );
+
+  return rows[0] ? mapIssuerApplicationRequestRow(rows[0]) : null;
+}
+
+export async function updateIssuerApplicationRequestStatus(input: {
+  id: string;
+  status: IssuerApplicationRequestStatus;
+  reviewedBy: string;
+  adminNote?: string | null;
+  provisionedUserId?: string | null;
+}): Promise<IssuerApplicationRequestRecord | null> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      UPDATE issuer_application_requests
+      SET
+        status = $2,
+        reviewed_by = $3,
+        reviewed_at = NOW(),
+        admin_note = $4,
+        provisioned_user_id = COALESCE($5, provisioned_user_id),
+        updated_at = NOW()
+      WHERE id = $1
+        AND status = 'pending'
+      RETURNING *
+    `,
+    [
+      input.id,
+      input.status,
+      input.reviewedBy,
+      input.adminNote || null,
+      input.provisionedUserId || null,
+    ]
+  );
+
+  return rows[0] ? mapIssuerApplicationRequestRow(rows[0]) : null;
+}
+
 export async function createIssuerUser(input: {
   issuerId: string;
   email: string;
@@ -788,6 +997,76 @@ export async function replaceRefreshToken(
       WHERE id = $1
     `,
     [oldTokenId, newTokenId]
+  );
+}
+
+export async function revokeRefreshTokensByUserId(userId: string): Promise<void> {
+  await query(
+    `
+      UPDATE auth_refresh_tokens
+      SET revoked_at = NOW()
+      WHERE user_id = $1 AND revoked_at IS NULL
+    `,
+    [userId]
+  );
+}
+
+export async function createPasswordResetTokenRecord(input: {
+  id: string;
+  userId: string;
+  issuerId: string;
+  tokenHash: string;
+  expiresAt: Date;
+}): Promise<AuthPasswordResetTokenRecord> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      INSERT INTO auth_password_reset_tokens(
+        id, user_id, issuer_id, token_hash, expires_at, created_at
+      )
+      VALUES($1, $2, $3, $4, $5, NOW())
+      RETURNING *
+    `,
+    [input.id, input.userId, input.issuerId, input.tokenHash, input.expiresAt]
+  );
+  return mapPasswordResetTokenRow(rows[0]);
+}
+
+export async function getPasswordResetTokenRecordByHash(
+  tokenHash: string
+): Promise<AuthPasswordResetTokenRecord | null> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT *
+      FROM auth_password_reset_tokens
+      WHERE token_hash = $1
+      LIMIT 1
+    `,
+    [tokenHash]
+  );
+  return rows[0] ? mapPasswordResetTokenRow(rows[0]) : null;
+}
+
+export async function markPasswordResetTokenUsed(id: string): Promise<void> {
+  await query(
+    `
+      UPDATE auth_password_reset_tokens
+      SET used_at = NOW()
+      WHERE id = $1 AND used_at IS NULL
+    `,
+    [id]
+  );
+}
+
+export async function revokePasswordResetTokensByUserId(
+  userId: string
+): Promise<void> {
+  await query(
+    `
+      UPDATE auth_password_reset_tokens
+      SET used_at = NOW()
+      WHERE user_id = $1 AND used_at IS NULL
+    `,
+    [userId]
   );
 }
 

@@ -1,4 +1,5 @@
 import { IonSpinner } from "@ionic/react";
+import { useEffect, useState } from "react";
 import { i18n } from "../../../i18n";
 import { ResponsivePageLayout } from "../layout/ResponsivePageLayout";
 import "./AppOffline.scss";
@@ -9,6 +10,8 @@ import {
   getAuthentication,
   getIsOnline,
 } from "../../../store/reducers/stateCache";
+
+const OFFLINE_PAGE_DELAY_MS = 1200;
 
 const AppOfflinePage = () => {
   const loggedIn = useAppSelector(getAuthentication).loggedIn;
@@ -36,10 +39,28 @@ const AppOfflinePage = () => {
 const AppOffline = () => {
   const ssiAgentIsSet = useAppSelector(getAuthentication).ssiAgentIsSet;
   const isOnline = useAppSelector(getIsOnline);
+  const [delayElapsed, setDelayElapsed] = useState(false);
 
-  if (!ssiAgentIsSet || isOnline) return null;
+  const shouldShowOfflinePage = ssiAgentIsSet && !isOnline;
+
+  useEffect(() => {
+    if (!shouldShowOfflinePage) {
+      setDelayElapsed(false);
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setDelayElapsed(true);
+    }, OFFLINE_PAGE_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [shouldShowOfflinePage]);
+
+  if (!shouldShowOfflinePage || !delayElapsed) return null;
 
   return <AppOfflinePage />;
 };
 
-export { AppOffline };
+export { AppOffline, OFFLINE_PAGE_DELAY_MS };

@@ -159,6 +159,13 @@ const ipexSubmitAdmitMock = jest.fn().mockResolvedValue({
 const markNotificationMock = jest.fn();
 const ipexAdmitMock = jest.fn();
 const updateContactMock = jest.fn();
+const getContactMock = jest.fn().mockImplementation((id: string) => {
+  return {
+    alias: "e57ee6c2-2efb-4158-878e-ce36639c761f",
+    oobi: "oobi",
+    id,
+  };
+});
 
 const signifyClient = jest.mocked({
   connect: jest.fn(),
@@ -196,13 +203,7 @@ const signifyClient = jest.mocked({
   contacts: () => ({
     list: jest.fn(),
     update: updateContactMock,
-    get: jest.fn().mockImplementation((id: string) => {
-      return {
-        alias: "e57ee6c2-2efb-4158-878e-ce36639c761f",
-        oobi: "oobi",
-        id,
-      };
-    }),
+    get: getContactMock,
     delete: jest.fn(),
   }),
   notifications: () => ({
@@ -2256,8 +2257,395 @@ describe("IPEX communication service of agent", () => {
     });
   });
 
+  test("Falls back to locally stored matching credentials when the cloud list filter misses them", async () => {
+    Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValueOnce(true);
+    const mockExchange = {
+      exn: {
+        a: {
+          i: "holder-aid",
+          a: {},
+          s: "schemaSaid",
+        },
+        i: "verifier-aid",
+        rp: "holder-aid",
+        e: {},
+      },
+    };
+    getExchangeMock = jest.fn().mockResolvedValueOnce(mockExchange);
+    schemaGetMock.mockResolvedValue(QVISchema);
+    credentialListMock.mockResolvedValueOnce([]);
+    credentialStorage.getAllCredentialMetadata.mockResolvedValueOnce([
+      {
+        id: "local-cred",
+        status: "confirmed",
+        connectionId: "connectionId",
+        schema: "schemaSaid",
+        identifierId: "holder-aid",
+        isArchived: false,
+        pendingDeletion: false,
+      },
+    ]);
+    credentialGetMock.mockResolvedValueOnce({
+      sad: {
+        d: "local-cred",
+        a: {
+          i: "holder-aid",
+          dt: DATETIME.toISOString(),
+        },
+      },
+    });
+    credentialStorage.getCredentialMetadatasById.mockResolvedValueOnce([
+      {
+        id: "local-cred",
+        status: "confirmed",
+        connectionId: "connectionId",
+        isArchived: false,
+        pendingDeletion: false,
+      },
+    ]);
+
+    await expect(
+      ipexCommunicationService.getIpexApplyDetails({
+        a: {
+          d: "saidForUuid",
+        },
+      } as any)
+    ).resolves.toEqual({
+      credentials: [
+        {
+          acdc: {
+            d: "local-cred",
+            a: {
+              i: "holder-aid",
+              dt: DATETIME.toISOString(),
+            },
+          },
+          connectionId: "connectionId",
+        },
+      ],
+      schema: {
+        description: "Qualified vLEI Issuer Credential",
+        name: "Qualified vLEI Issuer Credential",
+      },
+      attributes: {},
+      identifier: "holder-aid",
+    });
+
+    expect(credentialGetMock).toHaveBeenCalledWith("local-cred");
+  });
+
+  test("Falls back to schema matches when the requested holder does not match local metadata", async () => {
+    Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValueOnce(true);
+    const mockExchange = {
+      exn: {
+        a: {
+          i: "requested-holder-aid",
+          a: {},
+          s: "schemaSaid",
+        },
+        i: "verifier-aid",
+        rp: "requested-holder-aid",
+        e: {},
+      },
+    };
+    getExchangeMock = jest.fn().mockResolvedValueOnce(mockExchange);
+    schemaGetMock.mockResolvedValue(QVISchema);
+    credentialListMock.mockResolvedValueOnce([]);
+    credentialStorage.getAllCredentialMetadata.mockResolvedValueOnce([
+      {
+        id: "schema-only-local-cred",
+        status: "confirmed",
+        connectionId: "connectionId",
+        schema: "schemaSaid",
+        identifierId: "different-local-holder-aid",
+        isArchived: false,
+        pendingDeletion: false,
+      },
+    ]);
+    credentialGetMock.mockResolvedValueOnce({
+      sad: {
+        d: "schema-only-local-cred",
+        i: "issuer-aid",
+        a: {
+          i: "different-local-holder-aid",
+          dt: DATETIME.toISOString(),
+        },
+      },
+    });
+    credentialStorage.getCredentialMetadatasById.mockResolvedValueOnce([
+      {
+        id: "schema-only-local-cred",
+        status: "confirmed",
+        connectionId: "connectionId",
+        isArchived: false,
+        pendingDeletion: false,
+      },
+    ]);
+
+    await expect(
+      ipexCommunicationService.getIpexApplyDetails({
+        a: {
+          d: "saidForUuid",
+        },
+      } as any)
+    ).resolves.toEqual({
+      credentials: [
+        {
+          acdc: {
+            d: "schema-only-local-cred",
+            i: "issuer-aid",
+            a: {
+              i: "different-local-holder-aid",
+              dt: DATETIME.toISOString(),
+            },
+          },
+          connectionId: "connectionId",
+        },
+      ],
+      schema: {
+        description: "Qualified vLEI Issuer Credential",
+        name: "Qualified vLEI Issuer Credential",
+      },
+      attributes: {},
+      identifier: "requested-holder-aid",
+    });
+  });
+
+  test("Keeps matched credentials available even when local metadata enrichment is missing", async () => {
+    Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValueOnce(true);
+    const mockExchange = {
+      exn: {
+        a: {
+          i: "holder-aid",
+          a: {},
+          s: "schemaSaid",
+        },
+        i: "verifier-aid",
+        rp: "holder-aid",
+        e: {},
+      },
+    };
+    getExchangeMock = jest.fn().mockResolvedValueOnce(mockExchange);
+    schemaGetMock.mockResolvedValue(QVISchema);
+    credentialListMock.mockResolvedValueOnce([
+      {
+        sad: {
+          d: "cloud-cred",
+          i: "issuer-aid",
+          a: {
+            i: "holder-aid",
+            dt: DATETIME.toISOString(),
+          },
+        },
+      },
+    ]);
+    credentialStorage.getCredentialMetadatasById.mockResolvedValueOnce([]);
+
+    await expect(
+      ipexCommunicationService.getIpexApplyDetails({
+        a: {
+          d: "saidForUuid",
+        },
+      } as any)
+    ).resolves.toEqual({
+      credentials: [
+        {
+          acdc: {
+            d: "cloud-cred",
+            i: "issuer-aid",
+            a: {
+              i: "holder-aid",
+              dt: DATETIME.toISOString(),
+            },
+          },
+          connectionId: "issuer-aid",
+        },
+      ],
+      schema: {
+        description: "Qualified vLEI Issuer Credential",
+        name: "Qualified vLEI Issuer Credential",
+      },
+      attributes: {},
+      identifier: "holder-aid",
+    });
+  });
+
+  test("Falls back to scanning all cloud credentials when filtered schema lookup still misses", async () => {
+    Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValueOnce(true);
+    credentialListMock.mockReset();
+    const mockExchange = {
+      exn: {
+        a: {
+          i: "holder-aid",
+          a: {},
+          s: "schemaSaid",
+        },
+        i: "verifier-aid",
+        rp: "holder-aid",
+        e: {},
+      },
+    };
+    getExchangeMock = jest.fn().mockResolvedValueOnce(mockExchange);
+    schemaGetMock.mockResolvedValue(QVISchema);
+    credentialListMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          sad: {
+            d: "full-scan-cred",
+            i: "issuer-aid",
+            s: "schemaSaid",
+            a: {
+              i: "holder-aid",
+              dt: DATETIME.toISOString(),
+            },
+          },
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    credentialStorage.getAllCredentialMetadata.mockResolvedValueOnce([]);
+    credentialStorage.getCredentialMetadatasById.mockResolvedValueOnce([]);
+
+    await expect(
+      ipexCommunicationService.getIpexApplyDetails({
+        a: {
+          d: "saidForUuid",
+        },
+      } as any)
+    ).resolves.toEqual({
+      credentials: [
+        {
+          acdc: {
+            d: "full-scan-cred",
+            i: "issuer-aid",
+            s: "schemaSaid",
+            a: {
+              i: "holder-aid",
+              dt: DATETIME.toISOString(),
+            },
+          },
+          connectionId: "issuer-aid",
+        },
+      ],
+      schema: {
+        description: "Qualified vLEI Issuer Credential",
+        name: "Qualified vLEI Issuer Credential",
+      },
+      attributes: {},
+      identifier: "holder-aid",
+    });
+  });
+
+  test("Falls back to grant history when the credential only exists locally", async () => {
+    Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValueOnce(true);
+    credentialListMock.mockReset();
+    credentialGetMock.mockReset();
+    getContactMock.mockReset().mockImplementation((id: string) => {
+      return {
+        alias: "e57ee6c2-2efb-4158-878e-ce36639c761f",
+        oobi: "oobi",
+        id,
+      };
+    });
+    const mockExchange = {
+      exn: {
+        a: {
+          i: "holder-aid",
+          a: {},
+          s: "schemaSaid",
+        },
+        i: "verifier-aid",
+        rp: "holder-aid",
+        e: {},
+      },
+    };
+    getExchangeMock = jest
+      .fn()
+      .mockResolvedValueOnce(mockExchange)
+      .mockResolvedValueOnce({
+        exn: {
+          r: "/ipex/grant",
+          e: {
+            acdc: {
+              d: "history-cred",
+              i: "issuer-aid",
+              s: "schemaSaid",
+              a: {
+                i: "holder-aid",
+                dt: DATETIME.toISOString(),
+              },
+            },
+          },
+        },
+      });
+    schemaGetMock.mockResolvedValue(QVISchema);
+    credentialListMock.mockResolvedValue([]);
+    credentialGetMock.mockRejectedValue(
+      new Error(
+        'Operation failed - 500 - HTTP GET /credentials/history-cred: {"title":"500 Internal Server Error"}'
+      )
+    );
+    credentialStorage.getAllCredentialMetadata.mockResolvedValueOnce([
+      {
+        id: "history-cred",
+        status: "confirmed",
+        connectionId: "connectionId",
+        schema: "schemaSaid",
+        identifierId: "holder-aid",
+        isArchived: false,
+        pendingDeletion: false,
+      },
+    ]);
+    credentialStorage.getCredentialMetadatasById.mockResolvedValueOnce([
+      {
+        id: "history-cred",
+        status: "confirmed",
+        connectionId: "connectionId",
+        isArchived: false,
+        pendingDeletion: false,
+      },
+    ]);
+    getContactMock.mockResolvedValueOnce({
+      id: "connectionId",
+      [`${KeriaContactKeyPrefix.HISTORY_IPEX}grant-history`]: JSON.stringify({
+        id: "grant-history",
+      }),
+    });
+
+    await expect(
+      ipexCommunicationService.getIpexApplyDetails({
+        a: {
+          d: "saidForUuid",
+        },
+      } as any)
+    ).resolves.toEqual({
+      credentials: [
+        {
+          acdc: {
+            d: "history-cred",
+            i: "issuer-aid",
+            s: "schemaSaid",
+            a: {
+              i: "holder-aid",
+              dt: DATETIME.toISOString(),
+            },
+          },
+          connectionId: "connectionId",
+        },
+      ],
+      schema: {
+        description: "Qualified vLEI Issuer Credential",
+        name: "Qualified vLEI Issuer Credential",
+      },
+      attributes: {},
+      identifier: "holder-aid",
+    });
+  });
+
   test("Falls back to schema and holder matches when requested attributes do not match exactly", async () => {
     Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValueOnce(true);
+    credentialListMock.mockReset();
     const mockExchange = {
       exn: {
         a: {
@@ -2319,6 +2707,68 @@ describe("IPEX communication service of agent", () => {
       attributes: {
         fullName: "Requested Name",
       },
+      identifier: "id",
+    });
+  });
+
+  test("Handles presentation requests that do not specify attribute filters", async () => {
+    Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValueOnce(true);
+    const mockExchange = {
+      exn: {
+        a: {
+          i: "uuid",
+          s: "schemaSaid",
+        },
+        i: "issuer-aid",
+        rp: "id",
+        e: {},
+      },
+    };
+    getExchangeMock = jest.fn().mockResolvedValueOnce(mockExchange);
+    schemaGetMock.mockResolvedValue(QVISchema);
+    credentialStorage.getCredentialMetadatasById.mockResolvedValue([
+      {
+        id: "no-attr-cred",
+        status: "confirmed",
+        connectionId: "connectionId",
+        isArchived: false,
+        pendingDeletion: false,
+      },
+    ]);
+    credentialListMock.mockResolvedValue([
+      {
+        sad: {
+          d: "no-attr-cred",
+          a: {
+            fullName: "Stored Name",
+          },
+        },
+      },
+    ]);
+
+    expect(
+      await ipexCommunicationService.getIpexApplyDetails({
+        a: {
+          d: "saidForUuid",
+        },
+      } as any)
+    ).toEqual({
+      credentials: [
+        {
+          acdc: {
+            d: "no-attr-cred",
+            a: {
+              fullName: "Stored Name",
+            },
+          },
+          connectionId: "connectionId",
+        },
+      ],
+      schema: {
+        description: "Qualified vLEI Issuer Credential",
+        name: "Qualified vLEI Issuer Credential",
+      },
+      attributes: {},
       identifier: "id",
     });
   });
@@ -2461,7 +2911,7 @@ describe("IPEX communication service of agent", () => {
     ).rejects.toThrowError(new Error("Unknown error"));
   });
 
-  test("Cannot get matching credential for apply if cannot get the schema", async () => {
+  test("Falls back to the schema SAID if apply schema metadata is still unavailable", async () => {
     Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValueOnce(true);
     const notiId = "notiId";
     getExchangeMock = jest.fn().mockResolvedValueOnce({
@@ -2472,6 +2922,7 @@ describe("IPEX communication service of agent", () => {
           s: "schemaSaid",
         },
         i: "i",
+        rp: "id",
         e: {},
       },
     });
@@ -2488,9 +2939,18 @@ describe("IPEX communication service of agent", () => {
     schemaGetMock.mockRejectedValue(
       new Error("request - 404 - SignifyClient message")
     );
-    await expect(
-      ipexCommunicationService.getIpexApplyDetails(noti)
-    ).rejects.toThrowError(IpexCommunicationService.SCHEMA_NOT_FOUND);
+    credentialStorage.getCredentialMetadatasById.mockResolvedValue([]);
+    credentialListMock.mockResolvedValue([]);
+
+    await expect(ipexCommunicationService.getIpexApplyDetails(noti)).resolves.toEqual({
+      credentials: [],
+      schema: {
+        description: "",
+        name: "schemaSaid",
+      },
+      attributes: {},
+      identifier: "id",
+    });
   });
 
   test("Should throw error when KERIA is offline", async () => {
@@ -2518,7 +2978,7 @@ describe("IPEX communication service of agent", () => {
     ).rejects.toThrowError(Agent.KERIA_CONNECTION_BROKEN);
   });
 
-  test("Cannot get ipex apply details if the schema cannot be located", async () => {
+  test("Falls back to schema SAID when ipex apply schema lookup returns 404", async () => {
     Agent.agent.getKeriaOnlineStatus = jest.fn().mockReturnValue(true);
     const mockNotification = {
       a: {
@@ -2532,17 +2992,28 @@ describe("IPEX communication service of agent", () => {
           s: "schemaSaid",
           a: {},
         },
+        i: "issuer-aid",
         rp: "recipient",
       },
     };
 
     getExchangeMock.mockResolvedValueOnce(mockMsg);
     const error404 = new Error("Not Found - 404");
-    schemaGetMock.mockRejectedValueOnce(error404);
+    schemaGetMock.mockRejectedValue(error404);
+    credentialStorage.getCredentialMetadatasById.mockResolvedValue([]);
+    credentialListMock.mockResolvedValue([]);
 
     await expect(
       ipexCommunicationService.getIpexApplyDetails(mockNotification)
-    ).rejects.toThrow(IpexCommunicationService.SCHEMA_NOT_FOUND);
+    ).resolves.toEqual({
+      credentials: [],
+      schema: {
+        description: "",
+        name: "schemaSaid",
+      },
+      attributes: {},
+      identifier: "recipient",
+    });
 
     expect(getExchangeMock).toHaveBeenCalledWith("msgSaid");
     expect(schemaGetMock).toHaveBeenCalledWith("schemaSaid");

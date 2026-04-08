@@ -13,6 +13,7 @@ import {
   showNoWitnessAlert,
 } from "../store/reducers/stateCache";
 import { App } from "./App";
+import { OFFLINE_PAGE_DELAY_MS } from "./components/AppOffline";
 import { OperationType } from "./globals/types";
 import {
   ANDROID_MIN_VERSION,
@@ -374,15 +375,31 @@ describe("App", () => {
       dispatch: dispatchMock,
     };
 
-    const { getByTestId } = render(
+    jest.useFakeTimers();
+
+    const { getByTestId, queryByTestId } = render(
       <Provider store={storeMocked}>
         <App />
       </Provider>
     );
 
+    expect(queryByTestId("offline-page")).toBe(null);
+
+    await act(async () => {
+      jest.advanceTimersByTime(OFFLINE_PAGE_DELAY_MS - 1);
+    });
+
+    expect(queryByTestId("offline-page")).toBe(null);
+
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+    });
+
     await waitFor(() => {
       expect(getByTestId("offline-page")).toBeVisible();
     });
+
+    jest.useRealTimers();
   });
 
   test("Should show spinner after login while booting agent", async () => {

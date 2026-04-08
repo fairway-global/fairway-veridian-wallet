@@ -12,6 +12,7 @@ import { RoutePath } from "./const/route";
 import { Layout } from "./layouts/Layout";
 import { RoleIndex } from "./components/NavBar/constants/roles";
 import { i18n } from "./i18n";
+import { Activities } from "./pages/Activities";
 import { ConnectionDetails } from "./pages/ConnectionDetails/ConnectionDetails";
 import { Connections } from "./pages/Connections";
 import { NoPage } from "./pages/NoPage";
@@ -44,7 +45,13 @@ import {
   TemplateEdit,
   TemplatesList,
 } from "./pages/Templates";
-import { Login } from "./pages/Login";
+import {
+  ForgotPassword,
+  IssuerRequest,
+  Login,
+  ResetPassword,
+  VerifierSignup,
+} from "./pages/Login";
 import { AdminUsers } from "./pages/AdminUsers/AdminUsers";
 import { AdminRequests } from "./pages/AdminRequests/AdminRequests";
 import {
@@ -75,6 +82,7 @@ const App = () => {
   const notifications = useAppSelector(getNotifications);
   const isAdmin = currentUser?.role === "admin";
   const isVerifier = currentUser?.role === "verifier";
+  const homePath = isAdmin ? RoutePath.AdminUsers : RoutePath.Activities;
   const eventSourceRef = useRef<EventSource | null>(null);
   const refreshContactsInFlightRef = useRef(false);
   const lastConnectionRefreshAtRef = useRef(0);
@@ -388,7 +396,7 @@ const App = () => {
                 element={
                   isAuthenticated ? (
                     <Navigate
-                      to={isAdmin ? RoutePath.AdminUsers : RoutePath.Connections}
+                      to={homePath}
                       replace
                     />
                   ) : (
@@ -401,7 +409,7 @@ const App = () => {
                 element={
                   isAuthenticated ? (
                     <Navigate
-                      to={isAdmin ? RoutePath.AdminUsers : RoutePath.Connections}
+                      to={homePath}
                       replace
                     />
                   ) : (
@@ -410,11 +418,63 @@ const App = () => {
                 }
               />
               <Route
+                path={RoutePath.VerifierSignup}
+                element={
+                  isAuthenticated ? (
+                    <Navigate
+                      to={homePath}
+                      replace
+                    />
+                  ) : (
+                    <VerifierSignup />
+                  )
+                }
+              />
+              <Route
+                path={RoutePath.IssuerRequest}
+                element={
+                  isAuthenticated ? (
+                    <Navigate
+                      to={homePath}
+                      replace
+                    />
+                  ) : (
+                    <IssuerRequest />
+                  )
+                }
+              />
+              <Route
+                path={RoutePath.ForgotPassword}
+                element={
+                  isAuthenticated ? (
+                    <Navigate
+                      to={homePath}
+                      replace
+                    />
+                  ) : (
+                    <ForgotPassword />
+                  )
+                }
+              />
+              <Route
+                path={RoutePath.ResetPassword}
+                element={
+                  isAuthenticated ? (
+                    <Navigate
+                      to={homePath}
+                      replace
+                    />
+                  ) : (
+                    <ResetPassword />
+                  )
+                }
+              />
+              <Route
                 path={RoutePath.VerifierLogin}
                 element={
                   isAuthenticated ? (
                     <Navigate
-                      to={RoutePath.Connections}
+                      to={RoutePath.Activities}
                       replace
                     />
                   ) : (
@@ -447,7 +507,19 @@ const App = () => {
               /> */}
                   <Route
                     index
-                    //path={RoutePath.Connections}
+                    element={
+                      isAdmin ? (
+                        <Navigate
+                          to={RoutePath.AdminUsers}
+                          replace
+                        />
+                      ) : (
+                        <Activities />
+                      )
+                    }
+                  />
+                  <Route
+                    path={RoutePath.Connections}
                     element={
                       isAdmin ? (
                         <Navigate
@@ -466,7 +538,7 @@ const App = () => {
                         <AdminUsers />
                       ) : (
                         <Navigate
-                          to={RoutePath.Connections}
+                          to={RoutePath.Activities}
                           replace
                         />
                       )
@@ -479,7 +551,7 @@ const App = () => {
                         <AdminRequests />
                       ) : (
                         <Navigate
-                          to={RoutePath.Connections}
+                          to={RoutePath.Activities}
                           replace
                         />
                       )
@@ -503,7 +575,7 @@ const App = () => {
                     element={
                       isAdmin || isVerifier ? (
                         <Navigate
-                          to={isAdmin ? RoutePath.AdminUsers : RoutePath.Connections}
+                          to={homePath}
                           replace
                         />
                       ) : (
@@ -516,7 +588,7 @@ const App = () => {
                     element={
                       isAdmin || isVerifier ? (
                         <Navigate
-                          to={isAdmin ? RoutePath.AdminUsers : RoutePath.Connections}
+                          to={homePath}
                           replace
                         />
                       ) : (
@@ -529,7 +601,7 @@ const App = () => {
                     element={
                       isAdmin || isVerifier ? (
                         <Navigate
-                          to={isAdmin ? RoutePath.AdminUsers : RoutePath.Connections}
+                          to={homePath}
                           replace
                         />
                       ) : (
@@ -542,7 +614,7 @@ const App = () => {
                     element={
                       isAdmin || isVerifier ? (
                         <Navigate
-                          to={isAdmin ? RoutePath.AdminUsers : RoutePath.Connections}
+                          to={homePath}
                           replace
                         />
                       ) : (
@@ -555,7 +627,7 @@ const App = () => {
                     element={
                       isAdmin || isVerifier ? (
                         <Navigate
-                          to={isAdmin ? RoutePath.AdminUsers : RoutePath.Connections}
+                          to={homePath}
                           replace
                         />
                       ) : (
@@ -568,7 +640,7 @@ const App = () => {
                     element={
                       isAdmin || isVerifier ? (
                         <Navigate
-                          to={isAdmin ? RoutePath.AdminUsers : RoutePath.Connections}
+                          to={homePath}
                           replace
                         />
                       ) : (
@@ -581,7 +653,7 @@ const App = () => {
                     element={
                       isAdmin || isVerifier ? (
                         <Navigate
-                          to={isAdmin ? RoutePath.AdminUsers : RoutePath.Connections}
+                          to={homePath}
                           replace
                         />
                       ) : (
@@ -627,7 +699,7 @@ const App = () => {
                         <RequestPresentation />
                       ) : (
                       <Navigate
-                        to={RoutePath.Connections}
+                        to={RoutePath.Activities}
                         replace
                       />
                     )
@@ -645,7 +717,7 @@ const App = () => {
                       <RequestPresentationDetail />
                     ) : (
                       <Navigate
-                        to={RoutePath.Connections}
+                        to={RoutePath.Activities}
                         replace
                       />
                     )

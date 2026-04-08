@@ -12,11 +12,22 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(212, 244, 231, 0.88), transparent 24%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.92), transparent 30%),
+    linear-gradient(180deg, #f7f9f7 0%, #edf1ee 100%);
+
+  .dashboard-shell {
+    min-height: 100vh;
+    padding: 0 clamp(0.75rem, 2vw, 1.5rem) 2rem;
+    box-sizing: border-box;
+  }
 
   .dashboard-main {
     margin: 0 auto;
     width: 100%;
     overflow-x: hidden;
+    max-width: 1536px;
   }
 
   .dashboard-main > .MuiBox-root,
@@ -163,6 +174,11 @@ body {
 
 @media screen and (max-width: 900px) {
   body {
+    .dashboard-shell {
+      padding-inline: 0.5rem;
+      padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    }
+
     .dashboard-main > .MuiBox-root,
     .dashboard-main > .connection-details-page,
     .dashboard-main > .credential-detail-page {
@@ -174,6 +190,11 @@ body {
 
 @media screen and (max-width: 600px) {
   body {
+    .dashboard-shell {
+      padding-inline: 0.25rem;
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+
     .dashboard-main > .MuiBox-root,
     .dashboard-main > .connection-details-page,
     .dashboard-main > .credential-detail-page {

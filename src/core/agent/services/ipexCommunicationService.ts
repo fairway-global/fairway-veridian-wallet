@@ -74,6 +74,25 @@ class IpexCommunicationService extends AgentService {
   protected readonly multisigService: MultiSigService;
   protected readonly connections: ConnectionService;
 
+  private static isMissingCredentialCloudError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    const message = error.message || "";
+    const status = message.split(" - ")[1] || "";
+
+    if (/404/gi.test(status)) {
+      return true;
+    }
+
+    return (
+      /500/gi.test(status) &&
+      /HTTP GET \/credentials\//i.test(message) &&
+      /"title"\s*:\s*"500 Internal Server Error"/i.test(message)
+    );
+  }
+
   constructor(
     agentServiceProps: AgentServicesProps,
     identifierStorage: IdentifierStorage,
@@ -392,36 +411,68 @@ class IpexCommunicationService extends AgentService {
       .exchanges()
       .get(notification.a.d as string);
 
-    const schemaSaid = exchange.exn.a.s;
-    const schema = await this.props.signifyClient
-      .schemas()
-      .get(schemaSaid)
-      .catch((error) => {
-        const status = error.message.split(" - ")[1];
-        if (/404/gi.test(status)) {
-          throw new Error(IpexCommunicationService.SCHEMA_NOT_FOUND);
-        } else {
-          throw error;
-        }
-      });
+    const schemaSaid = String(exchange?.exn?.a?.s || "").trim();
+    if (!schemaSaid) {
+      throw new Error(IpexCommunicationService.SCHEMA_NOT_FOUND);
+    }
 
-    const attributes = exchange.exn.a.a;
+    const fallbackSchema = {
+      title: schemaSaid,
+      description: "",
+    };
+    const schema = await this.withTimeout(
+      (async () => {
+        const issuerOobi = await this.getIssuerOobi(exchange.exn.i);
+        await this.ensureSchemasResolved([schemaSaid], exchange.exn.i, issuerOobi);
+        return this.props.signifyClient
+          .schemas()
+          .get(schemaSaid)
+          .catch((error) => {
+            const status =
+              error instanceof Error ? error.message.split(" - ")[1] : "";
+            if (/404/gi.test(status || "")) {
+              return fallbackSchema;
+            }
+            throw error;
+          });
+      })(),
+      IpexCommunicationService.SCHEMA_LOOKUP_TIMEOUT_MS,
+      fallbackSchema
+    );
+
+    const attributes = exchange?.exn?.a?.a || {};
+    const requestedHolderAids = this.getApplyRequestedHolderAids(exchange);
     const filter = {
       "-s": { $eq: schemaSaid },
-      "-a-i": exchange.exn.rp,
+      ...(requestedHolderAids[0]
+        ? {
+            "-a-i": requestedHolderAids[0],
+          }
+        : {}),
     };
 
-    const filtered = await this.props.signifyClient.credentials().list({
-      filter,
-    });
+    const filtered = await this.props.signifyClient
+      .credentials()
+      .list({
+        filter,
+      });
+    const availableCredentialsFromWallet =
+      filtered.length > 0
+        ? filtered
+        : await this.getApplyFallbackCredentialsByMetadata(
+            schemaSaid,
+            requestedHolderAids
+          );
     const matchingCredentials =
       Object.keys(attributes).length === 0
-        ? filtered
-        : filtered.filter((credential: any) =>
+        ? availableCredentialsFromWallet
+        : availableCredentialsFromWallet.filter((credential: any) =>
             this.matchesRequestedAttributes(credential?.sad?.a, attributes)
           );
     const availableCredentials =
-      matchingCredentials.length > 0 ? matchingCredentials : filtered;
+      matchingCredentials.length > 0
+        ? matchingCredentials
+        : availableCredentialsFromWallet;
     const localFiltered =
       await this.credentialStorage.getCredentialMetadatasById(
         availableCredentials.map((cred: any) => cred.sad.d),
@@ -429,24 +480,262 @@ class IpexCommunicationService extends AgentService {
           $and: [{ pendingDeletion: false }, { isArchived: false }],
         }
       );
+    const localMetadataById = new Map(
+      localFiltered.map((credential) => [credential.id, credential])
+    );
 
     return {
       schema: {
-        name: schema.title,
-        description: schema.description,
+        name: schema.title || schemaSaid,
+        description: schema.description || "",
       },
-      credentials: localFiltered.map((cr) => {
-        const credKeri = availableCredentials.find(
-          (cred: any) => cred.sad.d === cr.id
-        );
-        return {
-          connectionId: cr.connectionId,
-          acdc: credKeri.sad,
-        };
-      }),
+      credentials: availableCredentials
+        .map((credential: any) => {
+          const acdc = credential?.sad;
+          if (!acdc?.d) {
+            return undefined;
+          }
+
+          const metadata = localMetadataById.get(acdc.d);
+          return {
+            connectionId:
+              metadata?.connectionId ||
+              acdc.i ||
+              notification.connectionId ||
+              exchange.exn.i,
+            acdc,
+          };
+        })
+        .filter(Boolean),
       attributes: attributes,
       identifier: exchange.exn.rp,
     };
+  }
+
+  private getApplyRequestedHolderAids(exchange: any): string[] {
+    return [
+      String(exchange?.exn?.rp || "").trim(),
+      String(exchange?.exn?.a?.i || "").trim(),
+    ].filter((aid, index, list) => !!aid && list.indexOf(aid) === index);
+  }
+
+  private async getApplyFallbackCredentialsByMetadata(
+    schemaSaid: string,
+    requestedHolderAids: string[]
+  ): Promise<any[]> {
+    const localCredentials =
+      (await this.credentialStorage.getAllCredentialMetadata(false)) || [];
+    const schemaMatches = localCredentials.filter(
+      (credential) => String(credential.schema || "").trim() === schemaSaid
+    );
+    const requestedHolderMatches =
+      requestedHolderAids.length === 0
+        ? schemaMatches
+        : schemaMatches.filter((credential) =>
+            requestedHolderAids.includes(
+              String(credential.identifierId || "").trim()
+            )
+          );
+    const fallbackMetadata =
+      requestedHolderMatches.length > 0
+        ? requestedHolderMatches
+        : schemaMatches;
+
+    const fallbackCredentials = await this.getCredentialsByIds(
+      fallbackMetadata.map((credential) => credential.id)
+    );
+    if (fallbackCredentials.length > 0) {
+      return fallbackCredentials;
+    }
+
+    const grantHistoryFallbackCredentials =
+      await this.getApplyFallbackCredentialsFromGrantHistory(
+        fallbackMetadata,
+        schemaSaid
+      );
+    if (grantHistoryFallbackCredentials.length > 0) {
+      return grantHistoryFallbackCredentials;
+    }
+
+    const schemaOnlyCloudCredentials = await this.props.signifyClient
+      .credentials()
+      .list({
+        filter: {
+          "-s": { $eq: schemaSaid },
+        },
+      });
+    const schemaAndHolderMatches =
+      requestedHolderAids.length === 0
+        ? schemaOnlyCloudCredentials
+        : schemaOnlyCloudCredentials.filter((credential: any) =>
+            requestedHolderAids.includes(
+              String(credential?.sad?.a?.i || "").trim()
+            )
+          );
+    if (schemaAndHolderMatches.length > 0) {
+      return schemaAndHolderMatches;
+    }
+    if (schemaOnlyCloudCredentials.length > 0) {
+      return schemaOnlyCloudCredentials;
+    }
+
+    const allCloudCredentials = await this.listAllCredentialsFromCloud();
+    const fullScanSchemaMatches = allCloudCredentials.filter((credential: any) =>
+      this.matchesRequestedSchema(credential, schemaSaid)
+    );
+    const fullScanSchemaAndHolderMatches =
+      requestedHolderAids.length === 0
+        ? fullScanSchemaMatches
+        : fullScanSchemaMatches.filter((credential: any) =>
+            requestedHolderAids.includes(
+              String(credential?.sad?.a?.i || "").trim()
+            )
+          );
+
+    return fullScanSchemaAndHolderMatches.length > 0
+      ? fullScanSchemaAndHolderMatches
+      : fullScanSchemaMatches;
+  }
+
+  private async getCredentialsByIds(ids: string[]): Promise<any[]> {
+    const credentials = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          return await this.props.signifyClient.credentials().get(id);
+        } catch (error) {
+          if (IpexCommunicationService.isMissingCredentialCloudError(error)) {
+            return undefined;
+          }
+          throw error;
+        }
+      })
+    );
+
+    return credentials.filter(Boolean);
+  }
+
+  private async getApplyFallbackCredentialsFromGrantHistory(
+    metadatas: CredentialMetadataRecord[],
+    schemaSaid: string
+  ): Promise<any[]> {
+    const credentials = await Promise.all(
+      metadatas.map(async (metadata) => {
+        if (!metadata.connectionId) {
+          return undefined;
+        }
+
+        let contact;
+        try {
+          contact = await this.props.signifyClient
+            .contacts()
+            .get(metadata.connectionId);
+        } catch {
+          contact = undefined;
+        }
+
+        if (!contact || typeof contact !== "object") {
+          return undefined;
+        }
+
+        const ipexHistoryEntries = Object.entries(
+          contact as Record<string, unknown>
+        )
+          .filter(
+            ([key, value]) =>
+              key.startsWith(KeriaContactKeyPrefix.HISTORY_IPEX) &&
+              typeof value === "string"
+          )
+          .map(([, value]) => value as string);
+
+        for (const historyEntry of ipexHistoryEntries) {
+          let exchangeId = "";
+          try {
+            const parsed = JSON.parse(historyEntry) as { id?: unknown };
+            exchangeId =
+              typeof parsed.id === "string" ? parsed.id.trim() : "";
+          } catch {
+            continue;
+          }
+
+          if (!exchangeId) {
+            continue;
+          }
+
+          let exchange;
+          try {
+            exchange = await this.props.signifyClient.exchanges().get(exchangeId);
+          } catch {
+            exchange = undefined;
+          }
+
+          if (!exchange || exchange.exn?.r !== ExchangeRoute.IpexGrant) {
+            continue;
+          }
+
+          const grantAcdc = exchange.exn?.e?.acdc;
+          if (!grantAcdc || grantAcdc.d !== metadata.id) {
+            continue;
+          }
+
+          if (!this.matchesRequestedSchema({ sad: grantAcdc }, schemaSaid)) {
+            continue;
+          }
+
+          return {
+            sad: grantAcdc,
+          };
+        }
+
+        return undefined;
+      })
+    );
+
+    const uniqueCredentials = new Map<string, any>();
+    credentials.filter(Boolean).forEach((credential) => {
+      const credentialId = String(credential?.sad?.d || "").trim();
+      if (!credentialId || uniqueCredentials.has(credentialId)) {
+        return;
+      }
+      uniqueCredentials.set(credentialId, credential);
+    });
+
+    return [...uniqueCredentials.values()];
+  }
+
+  private async listAllCredentialsFromCloud(): Promise<any[]> {
+    const allCredentials: any[] = [];
+    let returned = -1;
+    let iteration = 0;
+
+    while (returned !== 0) {
+      const result = await this.props.signifyClient.credentials().list({
+        skip: iteration * 24,
+        limit: 24 + iteration * 24,
+      });
+
+      allCredentials.push(...result);
+      returned = result.length;
+      iteration += 1;
+    }
+
+    return allCredentials;
+  }
+
+  private matchesRequestedSchema(credential: any, schemaSaid: string): boolean {
+    const normalizedSchemaSaid = String(schemaSaid || "").trim();
+    if (!normalizedSchemaSaid) {
+      return false;
+    }
+
+    const candidates = [
+      credential?.schema?.$id,
+      credential?.schema?.id,
+      credential?.sad?.s,
+    ]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    return candidates.includes(normalizedSchemaSaid);
   }
 
   private matchesRequestedAttributes(
@@ -1297,8 +1586,9 @@ class IpexCommunicationService extends AgentService {
       for (const schemaOobiCandidate of schemaOobiCandidates) {
         try {
           resolved = await this.withTimeout(
-            this.connections
-              .resolveOobi(schemaOobiCandidate, true)
+            Promise.resolve(
+              this.connections.resolveOobi(schemaOobiCandidate, true)
+            )
               .then(() => true)
               .catch(() => false),
             IpexCommunicationService.SCHEMA_OOBI_RESOLVE_TIMEOUT_MS,

@@ -11,13 +11,14 @@ import {
   setToastMsg,
 } from "../../../store/reducers/stateCache";
 import { connectionsFix } from "../../__fixtures__/connectionsFix";
-import { filteredIdentifierFix } from "../../__fixtures__/filteredIdentifierFix";
+import { filteredIdentifierMapFix } from "../../__fixtures__/filteredIdentifierFix";
 import { ToastMsgType } from "../../globals/types";
 import { CustomInputProps } from "../CustomInput/CustomInput.types";
 import { InputRequest } from "./InputRequest";
 import { StorageMessage } from "../../../core/storage/storage.types";
 import { setOpenConnectionId } from "../../../store/reducers/connectionsCache";
 import { identifierFix } from "../../__fixtures__/identifierFix";
+import { TabsRoutePath } from "../../../routes/paths";
 
 const connectByOobiUrl = jest.fn();
 jest.mock("../../../core/agent/agent", () => ({
@@ -67,7 +68,13 @@ jest.mock("../CustomInput", () => ({
 
 jest.mock("@ionic/react", () => ({
   ...jest.requireActual("@ionic/react"),
-  IonModal: ({ children }: { children: any }) => children,
+  IonModal: ({
+    children,
+    isOpen,
+  }: {
+    children: any;
+    isOpen: boolean;
+  }) => (isOpen ? children : null),
 }));
 
 jest.mock("signify-ts", () => ({
@@ -81,7 +88,7 @@ describe("SetUserName component", () => {
   const dispatchMock = jest.fn();
   const initialState = {
     stateCache: {
-      routes: ["/"],
+      routes: [{ path: TabsRoutePath.ROOT }],
       authentication: {
         loggedIn: true,
         time: 0,
@@ -103,7 +110,7 @@ describe("SetUserName component", () => {
       connections: connectionsFix,
     },
     identifiersCache: {
-      identifiers: filteredIdentifierFix,
+      identifiers: {},
       favourites: [],
     },
   };
@@ -269,6 +276,30 @@ describe("SetUserName component", () => {
       expect(getByText(EN_TRANSLATIONS.nameerror.hasspecialchar)).toBeVisible();
     });
   });
+
+  test("does not render the username prompt when restored identifiers already exist", async () => {
+    const recoveredState = {
+      ...initialState,
+      identifiersCache: {
+        identifiers: filteredIdentifierMapFix,
+        favourites: [],
+      },
+    };
+    const recoveredStore = {
+      ...mockStore(recoveredState),
+      dispatch: dispatchMock,
+    };
+
+    const { queryByText } = render(
+      <Provider store={recoveredStore}>
+        <InputRequest />
+      </Provider>
+    );
+
+    expect(
+      queryByText(EN_TRANSLATIONS.inputrequest.title.username)
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe("Set connection alias", () => {
@@ -276,7 +307,7 @@ describe("Set connection alias", () => {
   const dispatchMock = jest.fn();
   const initialState = {
     stateCache: {
-      routes: ["/"],
+      routes: [{ path: TabsRoutePath.ROOT }],
       authentication: {
         loggedIn: true,
         time: 0,
@@ -299,6 +330,10 @@ describe("Set connection alias", () => {
         url: "http://keria:3902/oobi/EJ0XanWANawPeyCzyPxAbilMId9FNHY8eobED84Gxfij/agent/ENmmQwmKjO7UQdRMGd2STVUvjV8y1sKCkg1Wc_QvpZU3",
         identifier: identifierFix[0].id,
       },
+    },
+    identifiersCache: {
+      identifiers: {},
+      favourites: [],
     },
   };
 
