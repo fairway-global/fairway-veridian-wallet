@@ -1,7 +1,7 @@
 import { IonSpinner } from "@ionic/react";
 import "./LoadingPage.scss";
 import { LoadingPageProps, LoadingType } from "./LoadingPage.types";
-import splashImage from "../../assets/images/Splash.jpg";
+import splashImage from "../../../assets/splash.png";
 import { combineClassNames } from "../../utils/style";
 
 const LoadingPage = ({
@@ -17,10 +17,10 @@ const LoadingPage = ({
       style={
         type === LoadingType.Splash
           ? {
-            background: `url(${splashImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }
+              background: `url(${splashImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }
           : undefined
       }
     >

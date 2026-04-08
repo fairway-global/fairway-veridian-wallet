@@ -46,10 +46,17 @@ export interface TemplateUpsertInput {
   schemaId: string;
   attributes: TemplateAttribute[];
   autoIssue: boolean;
+  schemaPublic: boolean;
 }
 
 export interface IssueCredentialPayload {
   templateId: string;
   connectionId: string;
+  values: Record<string, unknown>;
+}
+
+export interface IssueCredentialPrefill {
+  hasSavedFaydaData: boolean;
+  matchedFields: string[];
   values: Record<string, unknown>;
 }

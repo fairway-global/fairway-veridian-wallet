@@ -1,0 +1,158 @@
+.dashboard-form-shell {
+  width: min(100%, 72rem);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dashboard-form-panel {
+  padding: 1.25rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(var(--text-color-rgb), 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(212, 244, 231, 0.36), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 250, 248, 0.92) 100%);
+  box-shadow: 0 1.25rem 2.5rem rgba(var(--text-color-rgb), 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.dashboard-form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-form-grid--two-up {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-form-grid--auto-fill {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.dashboard-form-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-form-toggle-card {
+  min-width: 0;
+  padding: 1rem 1.05rem;
+  border-radius: 1.2rem;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(var(--text-color-rgb), 0.06);
+
+  .MuiFormControlLabel-root {
+    margin: 0;
+    align-items: flex-start;
+  }
+
+  .MuiTypography-root {
+    color: rgba(var(--text-color-rgb), 0.74);
+    line-height: 1.5;
+  }
+}
+
+.dashboard-form-inline-note {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 1rem;
+  background: rgba(212, 244, 231, 0.48);
+  border: 1px solid rgba(47, 154, 115, 0.12);
+  color: rgba(var(--text-color-rgb), 0.76);
+}
+
+.dashboard-form-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  .MuiTypography-root {
+    color: var(--color-neutral-800);
+    font-weight: 800;
+  }
+}
+
+.dashboard-attribute-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.dashboard-attribute-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(9rem, 0.7fr) auto auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.95rem 1rem;
+  border-radius: 1.2rem;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(var(--text-color-rgb), 0.06);
+
+  .MuiFormControl-root,
+  .MuiTextField-root {
+    width: 100%;
+  }
+
+  .dashboard-attribute-select {
+    width: 100%;
+  }
+
+  .dashboard-attribute-required {
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .dashboard-attribute-delete {
+    justify-self: end;
+  }
+}
+
+.dashboard-form-actions {
+  .MuiButton-root {
+    min-height: 3rem;
+    border-radius: 999px;
+    padding-inline: 1.2rem;
+  }
+}
+
+@media only screen and (max-width: 960px) {
+  .dashboard-form-grid--two-up,
+  .dashboard-form-toggle-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-attribute-row {
+    grid-template-columns: minmax(0, 1fr) minmax(8.5rem, 0.7fr) auto auto;
+  }
+}
+
+@media only screen and (max-width: 744px) {
+  .dashboard-form-panel {
+    padding: 1rem;
+    border-radius: 1.25rem;
+  }
+
+  .dashboard-form-section-head {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-attribute-row {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .dashboard-attribute-row .dashboard-attribute-delete {
+    justify-self: start;
+  }
+
+  .dashboard-form-actions {
+    .MuiButton-root {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}

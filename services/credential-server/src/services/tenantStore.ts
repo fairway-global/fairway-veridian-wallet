@@ -20,6 +20,7 @@ import {
   IssuerUserWithIssuerRecord,
   ManagedUserRecord,
   PresentationRequestRecord,
+  SchemaRegistryRecord,
 } from "./tenantStore.types";
 
 function toIso(value: unknown): string {
@@ -204,6 +205,18 @@ function mapTemplateRow(row: Record<string, unknown>): IssuerTemplateRecord {
     schemaId: canonicalSchemaId(String(row.schema_id || "").trim()),
     attributes: parseTemplateAttributes(row.attributes),
     autoIssue: Boolean(row.is_auto_issue),
+    createdAt: toIso(row.created_at),
+    updatedAt: toIso(row.updated_at),
+  };
+}
+
+function mapSchemaRegistryRow(
+  row: Record<string, unknown>
+): SchemaRegistryRecord {
+  return {
+    schemaId: canonicalSchemaId(String(row.schema_id || "").trim()),
+    ownerIssuerId: row.owner_issuer_id ? String(row.owner_issuer_id) : null,
+    isPublic: Boolean(row.is_public),
     createdAt: toIso(row.created_at),
     updatedAt: toIso(row.updated_at),
   };
@@ -1090,6 +1103,147 @@ export async function insertGatewayTokenJti(input: {
 
 export async function cleanupExpiredGatewayTokenJti(): Promise<void> {
   await query(`DELETE FROM gateway_token_jti WHERE expires_at < NOW()`);
+}
+
+export async function getSchemaRegistryById(
+  schemaId: string
+): Promise<SchemaRegistryRecord | null> {
+  const normalizedSchemaId = canonicalSchemaId(String(schemaId || "").trim());
+  if (!normalizedSchemaId) {
+    return null;
+  }
+
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT *
+      FROM schema_registry
+      WHERE schema_id = $1
+      LIMIT 1
+    `,
+    [normalizedSchemaId]
+  );
+
+  return rows[0] ? mapSchemaRegistryRow(rows[0]) : null;
+}
+
+export async function listSchemaRegistryByIds(
+  schemaIds: string[]
+): Promise<SchemaRegistryRecord[]> {
+  const normalizedSchemaIds = Array.from(
+    new Set(
+      (Array.isArray(schemaIds) ? schemaIds : [])
+        .map((schemaId) => canonicalSchemaId(String(schemaId || "").trim()))
+        .filter(Boolean)
+    )
+  );
+
+  if (!normalizedSchemaIds.length) {
+    return [];
+  }
+
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT *
+      FROM schema_registry
+      WHERE schema_id = ANY($1::varchar[])
+    `,
+    [normalizedSchemaIds]
+  );
+
+  return rows.map(mapSchemaRegistryRow);
+}
+
+export async function upsertSchemaRegistry(input: {
+  schemaId: string;
+  ownerIssuerId?: string | null;
+  isPublic: boolean;
+}): Promise<SchemaRegistryRecord> {
+  const normalizedSchemaId = canonicalSchemaId(String(input.schemaId || "").trim());
+  if (!normalizedSchemaId) {
+    throw new Error("Schema id is required");
+  }
+
+  const rows = await query<Record<string, unknown>>(
+    `
+      INSERT INTO schema_registry(
+        schema_id,
+        owner_issuer_id,
+        is_public,
+        created_at,
+        updated_at
+      )
+      VALUES($1, $2, $3, NOW(), NOW())
+      ON CONFLICT(schema_id)
+      DO UPDATE SET
+        owner_issuer_id = COALESCE(
+          schema_registry.owner_issuer_id,
+          EXCLUDED.owner_issuer_id
+        ),
+        is_public = EXCLUDED.is_public,
+        updated_at = NOW()
+      RETURNING *
+    `,
+    [
+      normalizedSchemaId,
+      input.ownerIssuerId ? String(input.ownerIssuerId).trim() : null,
+      Boolean(input.isPublic),
+    ]
+  );
+
+  return mapSchemaRegistryRow(rows[0]);
+}
+
+export async function listReferencedSchemaIdsForIssuer(
+  issuerId: string,
+  schemaIds?: string[]
+): Promise<string[]> {
+  const normalizedSchemaIds = Array.from(
+    new Set(
+      (Array.isArray(schemaIds) ? schemaIds : [])
+        .map((schemaId) => canonicalSchemaId(String(schemaId || "").trim()))
+        .filter(Boolean)
+    )
+  );
+
+  const params: unknown[] = [issuerId];
+  const filterClause = normalizedSchemaIds.length
+    ? `
+      WHERE schema_id = ANY($2::varchar[])
+    `
+    : "";
+
+  if (normalizedSchemaIds.length) {
+    params.push(normalizedSchemaIds);
+  }
+
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT DISTINCT schema_id
+      FROM (
+        SELECT schema_id
+        FROM templates
+        WHERE issuer_id = $1
+        UNION
+        SELECT schema_id
+        FROM credentials
+        WHERE issuer_id = $1
+        UNION
+        SELECT schema_id
+        FROM presentation_requests
+        WHERE issuer_id = $1
+      ) AS issuer_schema_ids
+      ${filterClause}
+    `,
+    params
+  );
+
+  return Array.from(
+    new Set(
+      rows
+        .map((row) => canonicalSchemaId(String(row.schema_id || "").trim()))
+        .filter(Boolean)
+    )
+  );
 }
 
 export async function listTemplatesByIssuer(

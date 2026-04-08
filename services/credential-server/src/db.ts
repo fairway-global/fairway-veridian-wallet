@@ -49,6 +49,8 @@ export async function runMigrations(): Promise<void> {
     "010_presentation_requests.sql",
     "011_password_reset_tokens.sql",
     "012_issuer_application_requests.sql",
+    "013_schema_registry.sql",
+    "014_backfill_schema_registry_owners.sql",
   ];
 
   for (const migrationFile of migrationFiles) {

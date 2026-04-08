@@ -33,6 +33,7 @@ import {
   getSchemaAttributeDefinitions,
 } from "../../utils/schemaAttributes";
 import { triggerToast } from "../../utils/toast";
+import { getTemplateAttributeTypeLabel } from "./attributeTypeLabels";
 
 interface TemplateIssuedCredentialRow {
   id: string;
@@ -468,11 +469,10 @@ const TemplateDetail = () => {
                       >
                         <Chip
                           size="small"
-                          label={attribute.type}
+                          label={getTemplateAttributeTypeLabel(attribute.type)}
                           sx={{
                             backgroundColor: "rgba(var(--text-color-rgb), 0.08)",
                             color: "var(--text-color)",
-                            textTransform: "capitalize",
                           }}
                         />
                         {attribute.required && (

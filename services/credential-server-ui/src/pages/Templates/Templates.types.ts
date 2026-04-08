@@ -8,6 +8,7 @@ export interface TemplateFormState {
   schemaId: string;
   attributes: TemplateAttribute[];
   autoIssue: boolean;
+  schemaPublic: boolean;
 }
 
 export interface TemplateFormProps {

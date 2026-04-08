@@ -123,6 +123,14 @@ export interface IssuerTemplateRecord extends TemplateRecord {
   autoIssue: boolean;
 }
 
+export interface SchemaRegistryRecord {
+  schemaId: string;
+  ownerIssuerId: string | null;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface IssuerCredentialRecord {
   id: string;
   issuerId: string;

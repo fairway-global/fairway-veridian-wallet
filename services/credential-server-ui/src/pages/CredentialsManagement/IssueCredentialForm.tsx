@@ -1,4 +1,4 @@
-import { Box, Button, MenuItem, Stack, TextField } from "@mui/material";
+import { Box, Button, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useSearchParams } from "react-router-dom";
@@ -8,6 +8,7 @@ import { i18n } from "../../i18n";
 import { ContactService, ManagedCredentialService, TemplateService } from "../../services";
 import { CredentialTemplate } from "../../services/template.types";
 import { triggerToast } from "../../utils/toast";
+import "../../styles/dashboardForms.scss";
 
 interface ConnectionOption {
   id: string;
@@ -25,6 +26,7 @@ const IssueCredentialForm = () => {
   );
   const [connectionId, setConnectionId] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
+  const [prefilledFields, setPrefilledFields] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -107,85 +109,178 @@ const IssueCredentialForm = () => {
     }
   };
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPrefill = async () => {
+      if (!templateId || !connectionId || !selectedTemplate) {
+        setPrefilledFields([]);
+        return;
+      }
+
+      try {
+        const prefill = await ManagedCredentialService.getIssuePrefill(
+          templateId,
+          connectionId
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        setValues(
+          Object.fromEntries(
+            selectedTemplate.attributes.map((attribute) => {
+              const rawValue = prefill.values[attribute.name];
+              return [
+                attribute.name,
+                rawValue === undefined || rawValue === null ? "" : String(rawValue),
+              ];
+            })
+          )
+        );
+        setPrefilledFields(prefill.matchedFields);
+      } catch {
+        if (cancelled) {
+          return;
+        }
+
+        setValues({});
+        setPrefilledFields([]);
+      }
+    };
+
+    void loadPrefill();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [connectionId, selectedTemplate, templateId]);
+
   return (
-    <Box sx={{ padding: "0 2.5rem 2.5rem" }}>
+    <Box
+      sx={{
+        padding: {
+          xs: "0 1rem 1.5rem",
+          sm: "0 1.5rem 2rem",
+          lg: "0 2.5rem 2.5rem",
+        },
+      }}
+    >
       <PageHeader
         onBack={() => navigate(RoutePath.Credentials)}
         title={i18n.t("pages.credentialsManagement.issue.title")}
-        sx={{ margin: "1.5rem 0" }}
+        sx={{
+          margin: {
+            xs: "1rem 0",
+            md: "1.5rem 0",
+          },
+        }}
       />
-      <Stack spacing={2}>
-        <TextField
-          select
-          label={i18n.t("pages.credentialsManagement.issue.template")}
-          value={templateId}
-          onChange={(event) => {
-            setTemplateId(event.target.value);
-            setValues({});
-          }}
-          fullWidth
-        >
-          {templates.map((template) => (
-            <MenuItem
-              key={template.id}
-              value={template.id}
+      <Box className="dashboard-form-shell">
+        <Box className="dashboard-form-panel">
+          <Box className="dashboard-form-grid dashboard-form-grid--two-up">
+            <TextField
+              select
+              label={i18n.t("pages.credentialsManagement.issue.template")}
+              value={templateId}
+              onChange={(event) => {
+                setTemplateId(event.target.value);
+                setValues({});
+                setPrefilledFields([]);
+              }}
+              fullWidth
             >
-              {template.name}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          select
-          label={i18n.t("pages.credentialsManagement.issue.connection")}
-          value={connectionId}
-          onChange={(event) => setConnectionId(event.target.value)}
-          fullWidth
-        >
-          {connections.map((connection) => (
-            <MenuItem
-              key={connection.id}
-              value={connection.id}
+              {templates.map((template) => (
+                <MenuItem
+                  key={template.id}
+                  value={template.id}
+                >
+                  {template.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              label={i18n.t("pages.credentialsManagement.issue.connection")}
+              value={connectionId}
+              onChange={(event) => {
+                setConnectionId(event.target.value);
+                setValues({});
+                setPrefilledFields([]);
+              }}
+              fullWidth
             >
-              {connection.alias}
-            </MenuItem>
-          ))}
-        </TextField>
-        {(selectedTemplate?.attributes || []).map((attribute) => (
-          <TextField
-            key={attribute.name}
-            type={attribute.type === "number" || attribute.type === "integer" ? "number" : "text"}
-            label={`${attribute.name}${attribute.required ? " *" : ""}`}
-            value={values[attribute.name] || ""}
-            onChange={(event) =>
-              setValues((currentValue) => ({
-                ...currentValue,
-                [attribute.name]: event.target.value,
-              }))
-            }
-            fullWidth
-          />
-        ))}
-      </Stack>
-      <Stack
-        direction="row"
-        spacing={1}
-        marginTop={2}
-      >
-        <Button
-          variant="contained"
-          className="neutral-button"
-          onClick={() => navigate(RoutePath.Credentials)}
+              {connections.map((connection) => (
+                <MenuItem
+                  key={connection.id}
+                  value={connection.id}
+                >
+                  {connection.alias}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+          {prefilledFields.length > 0 && (
+            <Typography
+              variant="body2"
+              className="dashboard-form-inline-note"
+            >
+              {i18n.t("pages.credentialsManagement.issue.prefill", {
+                count: prefilledFields.length,
+              })}
+            </Typography>
+          )}
+        </Box>
+
+        {selectedTemplate && (
+          <Box className="dashboard-form-panel">
+            <Box className="dashboard-form-grid dashboard-form-grid--auto-fill">
+              {(selectedTemplate.attributes || []).map((attribute) => (
+                <TextField
+                  key={attribute.name}
+                  type={
+                    attribute.type === "number" || attribute.type === "integer"
+                      ? "number"
+                      : "text"
+                  }
+                  label={`${attribute.name}${attribute.required ? " *" : ""}`}
+                  value={values[attribute.name] || ""}
+                  onChange={(event) =>
+                    setValues((currentValue) => ({
+                      ...currentValue,
+                      [attribute.name]: event.target.value,
+                    }))
+                  }
+                  fullWidth
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
+
+        <Stack
+          direction={{ xs: "column-reverse", sm: "row" }}
+          spacing={1}
+          className="dashboard-form-actions"
+          justifyContent="flex-end"
         >
-          {i18n.t("pages.credentialsManagement.issue.cancel")}
-        </Button>
-        <Button
-          variant="contained"
-          onClick={submit}
-          disabled={!canSubmit || loading}
-        >
-          {i18n.t("pages.credentialsManagement.issue.submit")}
-        </Button>
-      </Stack>
+          <Button
+            variant="contained"
+            className="neutral-button"
+            onClick={() => navigate(RoutePath.Credentials)}
+          >
+            {i18n.t("pages.credentialsManagement.issue.cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={submit}
+            disabled={!canSubmit || loading}
+          >
+            {i18n.t("pages.credentialsManagement.issue.submit")}
+          </Button>
+        </Stack>
+      </Box>
     </Box>
   );
 };

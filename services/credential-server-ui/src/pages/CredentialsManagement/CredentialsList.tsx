@@ -222,7 +222,15 @@ const CredentialsList = () => {
   };
 
   return (
-    <Box sx={{ padding: "0 2.5rem 2.5rem" }}>
+    <Box
+      sx={{
+        padding: {
+          xs: "0 1rem 1.5rem",
+          sm: "0 1.5rem 2rem",
+          lg: "0 2.5rem 2.5rem",
+        },
+      }}
+    >
       <PageHeader
         title={i18n.t("pages.credentialsManagement.title", {
           number: credentials.length,
@@ -231,6 +239,13 @@ const CredentialsList = () => {
           <Box
             display="flex"
             gap={1}
+            sx={{
+              flexWrap: { xs: "wrap", sm: "nowrap" },
+              width: { xs: "100%", sm: "auto" },
+              "& > .MuiButton-root": {
+                flex: { xs: "1 1 100%", sm: "0 0 auto" },
+              },
+            }}
           >
             <Button
               variant="contained"
@@ -250,7 +265,12 @@ const CredentialsList = () => {
             </Button>
           </Box>
         }
-        sx={{ margin: "1.5rem 0" }}
+        sx={{
+          margin: {
+            xs: "1rem 0",
+            md: "1.5rem 0",
+          },
+        }}
       />
       <FilterBar
         onChange={setFilterData}

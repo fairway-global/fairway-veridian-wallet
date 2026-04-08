@@ -4,6 +4,11 @@ import {
   getSchemaDocument,
   listAvailableSchemas,
 } from "../services/dashboardStore";
+import {
+  assertSchemaReadableForIssuer,
+  listVisibleSchemasForIssuer,
+  SchemaAccessError,
+} from "../services/schemaAccessService";
 import { getSignifyClientFromRequest } from "../utils/requestContext";
 
 function normalizeSchemaList(
@@ -34,6 +39,14 @@ function normalizeSchemaList(
     .filter((schema) => Boolean(schema.id));
 }
 
+function getIssuerId(req: Request): string | null {
+  const issuerId = String(
+    req.authUser?.issuerId || req.issuerRuntime?.issuerId || req.gatewayToken?.issuerId || ""
+  ).trim();
+
+  return issuerId || null;
+}
+
 export async function schemaApi(req: Request, res: Response) {
   const schemaMap = new Map<string, string>();
 
@@ -54,8 +67,10 @@ export async function schemaApi(req: Request, res: Response) {
     }
   });
 
-  const schemas = Array.from(schemaMap.entries())
-    .map(([id, name]) => ({ id, name }))
+  const schemas = (await listVisibleSchemasForIssuer(
+    getIssuerId(req),
+    Array.from(schemaMap.entries()).map(([id, name]) => ({ id, name }))
+  ))
     .sort((left, right) => left.name.localeCompare(right.name));
 
   res.status(200).send({
@@ -70,6 +85,24 @@ export async function schemaDetailApi(req: Request, res: Response) {
     res.status(400).send({
       success: false,
       error: "Schema id is required",
+    });
+    return;
+  }
+
+  try {
+    await assertSchemaReadableForIssuer(getIssuerId(req), schemaId);
+  } catch (error) {
+    if (error instanceof SchemaAccessError) {
+      res.status(error.statusCode).send({
+        success: false,
+        error: error.message,
+      });
+      return;
+    }
+
+    res.status(500).send({
+      success: false,
+      error: "Unable to load schema",
     });
     return;
   }

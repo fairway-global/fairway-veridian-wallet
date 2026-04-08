@@ -1,4 +1,10 @@
 .onboarding {
+  .onboarding-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.25rem;
+  }
+
   &.responsive-page-layout {
     .responsive-page-content {
       justify-content: space-evenly;

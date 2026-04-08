@@ -39,6 +39,7 @@ import {
 } from "./apis/templateV2.api";
 import {
   deleteCredentialByIdApiV2,
+  getIssueCredentialPrefillApiV2,
   getCredentialByIdApiV2,
   issueCredentialApiV2,
   listCredentialsApiV2,
@@ -177,6 +178,11 @@ router.get(
   config.path.credentialByIdV2,
   ...issuerReadAccess,
   getCredentialByIdApiV2
+);
+router.get(
+  config.path.issueCredentialPrefillApiV2,
+  ...issuerReadAccess,
+  getIssueCredentialPrefillApiV2
 );
 router.post(
   config.path.issueCredentialApiV2,
