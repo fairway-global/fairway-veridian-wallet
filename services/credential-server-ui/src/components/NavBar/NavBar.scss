@@ -227,6 +227,47 @@
   @media screen and (max-width: 900px) {
     .dashboard-toolbar {
       min-height: 5rem;
+      padding: 0.7rem 0.85rem;
+    }
+
+    .nav-right {
+      gap: 0.35rem;
+
+      a {
+        width: 2.75rem;
+        height: 2.75rem;
+        padding: 0.65rem;
+      }
+    }
+
+    .nav-profile-pill {
+      margin-left: 0;
+      padding: 0.3rem;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .nav-profile-copy {
+      display: none;
+    }
+
+    .nav-profile-avatar {
+      width: 2.35rem;
+      height: 2.35rem;
+      box-shadow: none;
+    }
+
+    .nav-logout-button {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 720px) {
+    .nav-right {
+      a {
+        width: 2.55rem;
+        height: 2.55rem;
+        padding: 0.55rem;
+      }
     }
   }
 
@@ -257,6 +298,8 @@
 }
 
 #drawer {
+  display: flex;
+  flex-direction: column;
   text-align: left;
   height: 100%;
   padding: 1rem 0.75rem calc(1rem + env(safe-area-inset-bottom));
@@ -286,6 +329,53 @@
 
   .drawer-copy {
     min-width: 0;
+  }
+
+  .drawer-profile-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin: 0.25rem 0 1rem;
+    padding: 0.85rem 0.9rem;
+    border-radius: 1.2rem;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(var(--text-color-rgb), 0.05);
+  }
+
+  .drawer-profile-avatar {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(160deg, #1f7558 0%, #5cc69d 100%);
+    color: var(--color-neutral-100);
+    font-weight: 800;
+    box-shadow: 0 0.75rem 1.5rem rgba(31, 117, 88, 0.18);
+    flex-shrink: 0;
+  }
+
+  .drawer-profile-copy {
+    min-width: 0;
+  }
+
+  .drawer-profile-title {
+    display: block;
+    color: var(--color-neutral-800);
+    font-weight: 800;
+  }
+
+  .drawer-profile-subtitle {
+    display: block;
+    color: rgba(var(--text-color-rgb), 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .drawer-utility-list {
+    margin-bottom: 0.5rem;
   }
 
   .drawer-eyebrow {
@@ -342,7 +432,25 @@
       .MuiListItemIcon-root {
         min-width: 1.5rem;
         margin-right: 0.5rem;
+
+        .MuiBadge-root {
+          color: inherit;
+        }
       }
+    }
+  }
+
+  .drawer-logout-button {
+    justify-content: flex-start;
+    margin-top: auto;
+    border-radius: 1rem;
+    padding: 0.9rem 1rem;
+    color: var(--text-color);
+    font-weight: 700;
+
+    &:hover,
+    &:active {
+      background-color: rgba(212, 244, 231, 0.78);
     }
   }
 }

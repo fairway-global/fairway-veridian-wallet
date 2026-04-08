@@ -204,6 +204,7 @@ export const config = {
     credentialsApiV2: "/api/v2/credentials",
     credentialByIdV2: "/api/v2/credentials/:id",
     issueCredentialApiV2: "/api/v2/credentials/issue",
+    issueCredentialPrefillApiV2: "/api/v2/credentials/issue/prefill",
     revokeCredentialApiV2: "/api/v2/credentials/:id/revoke",
     deleteCredentialApiV2: "/api/v2/credentials/:id",
     contactsV2: "/api/v2/contacts",

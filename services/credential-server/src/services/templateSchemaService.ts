@@ -6,6 +6,11 @@ import {
   getSchemaDocument,
 } from "./dashboardStore";
 import { TemplateAttribute, TemplateAttributeType } from "./dashboardStore.types";
+import {
+  ensureSchemaUsableForIssuer,
+  registerSchemaForIssuer,
+  syncSchemaVisibilityForIssuer,
+} from "./schemaAccessService";
 import { resolveOobi } from "../utils/utils";
 
 const IGNORED_SCHEMA_ATTRIBUTE_KEYS = new Set(["d", "i", "u", "dt"]);
@@ -202,9 +207,11 @@ export async function ensureSchemaPublishedToKeria(
 
 export async function resolveTemplateSchemaForPublication(input: {
   client: SignifyClient;
+  issuerId?: string;
   name: string;
   schemaId?: string;
   attributes: TemplateAttribute[];
+  schemaPublic?: boolean;
 }): Promise<{
   schemaId: string;
   attributes: TemplateAttribute[];
@@ -213,6 +220,8 @@ export async function resolveTemplateSchemaForPublication(input: {
   const templateName = String(input.name || "").trim();
   const selectedSchemaId = canonicalSchemaId(String(input.schemaId || "").trim());
   const normalizedAttributes = normalizeTemplateAttributes(input.attributes);
+  const requestedSchemaVisibility =
+    typeof input.schemaPublic === "boolean" ? input.schemaPublic : undefined;
 
   if (!selectedSchemaId) {
     const generatedSchemaId = await createSchemaForTemplate(
@@ -220,11 +229,22 @@ export async function resolveTemplateSchemaForPublication(input: {
       normalizedAttributes
     );
     await ensureSchemaPublishedToKeria(input.client, generatedSchemaId);
+    if (input.issuerId) {
+      await registerSchemaForIssuer({
+        issuerId: input.issuerId,
+        schemaId: generatedSchemaId,
+        isPublic: requestedSchemaVisibility ?? false,
+      });
+    }
     return {
       schemaId: generatedSchemaId,
       attributes: normalizedAttributes,
       generated: true,
     };
+  }
+
+  if (input.issuerId) {
+    await ensureSchemaUsableForIssuer(input.issuerId, selectedSchemaId);
   }
 
   const schemaDocument = await getSchemaDocumentFromClientOrStore(
@@ -241,6 +261,14 @@ export async function resolveTemplateSchemaForPublication(input: {
     : baseAttributes;
 
   if (templateAttributesEqual(effectiveAttributes, baseAttributes)) {
+    if (input.issuerId && requestedSchemaVisibility !== undefined) {
+      await syncSchemaVisibilityForIssuer({
+        issuerId: input.issuerId,
+        schemaId: selectedSchemaId,
+        isPublic: requestedSchemaVisibility,
+      });
+    }
+
     return {
       schemaId: selectedSchemaId,
       attributes: effectiveAttributes,
@@ -253,6 +281,13 @@ export async function resolveTemplateSchemaForPublication(input: {
     effectiveAttributes
   );
   await ensureSchemaPublishedToKeria(input.client, generatedSchemaId);
+  if (input.issuerId) {
+    await registerSchemaForIssuer({
+      issuerId: input.issuerId,
+      schemaId: generatedSchemaId,
+      isPublic: requestedSchemaVisibility ?? false,
+    });
+  }
   return {
     schemaId: generatedSchemaId,
     attributes: effectiveAttributes,

@@ -135,7 +135,13 @@ const TemplatesList = () => {
   return (
     <Box
       className="templates-page"
-      sx={{ padding: "0 2.5rem 2.5rem" }}
+      sx={{
+        padding: {
+          xs: "0 1rem 1.5rem",
+          sm: "0 1.5rem 2rem",
+          lg: "0 2.5rem 2.5rem",
+        },
+      }}
     >
       <PageHeader
         title={i18n.t("pages.templates.title", { number: templates.length })}
@@ -144,12 +150,18 @@ const TemplatesList = () => {
             variant="contained"
             startIcon={<AddCircleOutlineOutlinedIcon />}
             onClick={() => navigate(RoutePath.TemplateCreate)}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+            }}
           >
             {i18n.t("pages.templates.actions.create")}
           </Button>
         }
         sx={{
-          margin: "1.5rem 0",
+          margin: {
+            xs: "1rem 0",
+            md: "1.5rem 0",
+          },
         }}
       />
 

@@ -38,9 +38,15 @@ export const fetchSchemas = createAsyncThunk(
           item.name || item.title || item.id || item.said || item.$id || ""
         ).trim();
 
-        return { id, name };
+        return {
+          id,
+          name,
+          isPublic: Boolean(item.isPublic),
+          ownedByCurrentIssuer: Boolean(item.ownedByCurrentIssuer),
+          canManageVisibility: Boolean(item.canManageVisibility),
+        };
       })
-      .filter((schema: { id: string; name: string }) => Boolean(schema.id));
+      .filter((schema: Schema) => Boolean(schema.id));
   }
 );
 

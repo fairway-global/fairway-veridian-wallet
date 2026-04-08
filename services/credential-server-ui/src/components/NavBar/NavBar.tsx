@@ -237,6 +237,12 @@ const NavBar = ({ mode, window }: Props) => {
               <DrawerContent
                 handleDrawerToggle={handleDrawerToggle}
                 menuItems={displayMenuItems}
+                dashboardLabel={dashboardLabel}
+                dashboardMeta={dashboardMeta}
+                profileInitial={profileInitial}
+                unreadNotificationsCount={unreadNotificationsCount}
+                showUtilityLinks={mode !== "admin"}
+                onLogout={handleLogout}
               />
             </Drawer>
           </Box>
@@ -287,15 +293,17 @@ const NavBar = ({ mode, window }: Props) => {
                   aria-label="show new notifications"
                   color="inherit"
                   component={Link}
-                  to={"/notifications"}
+                  to={RoutePath.Notifications}
                   disableRipple
-                  className={location.pathname === "/notifications" ? "active" : ""}
+                  className={
+                    location.pathname === RoutePath.Notifications ? "active" : ""
+                  }
                 >
                   <Badge
                     badgeContent={unreadNotificationsCount}
                     color="error"
                   >
-                    {location.pathname === "/notifications" ? (
+                    {location.pathname === RoutePath.Notifications ? (
                       <NotificationsFull />
                     ) : (
                       <NotificationsOutlined />
@@ -307,12 +315,12 @@ const NavBar = ({ mode, window }: Props) => {
                   aria-label="show settings"
                   color="inherit"
                   component={Link}
-                  to={"/settings"}
+                  to={RoutePath.Settings}
                   disableRipple
-                  className={location.pathname === "/settings" ? "active" : ""}
+                  className={location.pathname === RoutePath.Settings ? "active" : ""}
                 >
                   <Badge>
-                    {location.pathname === "/settings" ? (
+                    {location.pathname === RoutePath.Settings ? (
                       <SettingsFull />
                     ) : (
                       <SettingsOutlined />
@@ -344,7 +352,7 @@ const NavBar = ({ mode, window }: Props) => {
               className="nav-logout-button"
               startIcon={<LogoutRounded />}
             >
-              Logout
+              {i18n.t("navbar.logout")}
             </Button>
           </Box>
         </Toolbar>

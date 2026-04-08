@@ -27,6 +27,9 @@
     "templates": "Templates",
     "credentials": "Credentials",
     "credentialsManagement": "Credentials",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "logout": "Logout",
     "requestPresentation": "Request Presentation",
     "switchAccount": {
       "title": "Switch account",
@@ -298,10 +301,22 @@
           "schemaId": "Schema ID",
           "selectSchema": "Select schema",
           "autoSchema": "Auto-generate schema SAID",
+          "schemaPublic": "Make schema public",
+          "schemaPublicHintGenerated": "Schemas generated here stay private unless you choose to share them.",
+          "schemaPublicHintManaged": "Public schemas can be reused by other issuers. Private schemas stay limited to your issuer.",
+          "schemaPublicHintReadonly": "This schema is already shared from elsewhere, so its visibility cannot be changed here.",
+          "visibilityPublic": "Public",
+          "visibilityPrivate": "Private",
           "autoIssue": "Auto issue after Fayda verification",
           "autoIssueHint": "Only one template can be auto-issued at a time. Saving this as auto-issue will disable auto-issue on other templates.",
           "attributes": "Attributes",
           "attributeName": "Attribute name",
+          "attributeTypes": {
+            "string": "Text",
+            "integer": "Whole number",
+            "number": "Decimal number",
+            "boolean": "True / false"
+          },
           "required": "Required"
         },
         "validation": {
@@ -365,6 +380,7 @@
         "title": "Issue credential",
         "template": "Template",
         "connection": "Connection",
+        "prefill": "Prefilled {{count}} matching field(s) from saved Fayda verification data.",
         "submit": "Issue",
         "cancel": "Cancel"
       },

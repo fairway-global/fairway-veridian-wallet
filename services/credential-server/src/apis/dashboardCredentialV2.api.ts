@@ -13,8 +13,10 @@ import {
   ensureGeneratedSchemaForTemplate,
   isSchemaIdKnown,
 } from "../services/dashboardStore";
+import { getFaydaPrefillForTemplateAttributes } from "../services/faydaPrefillService";
 import {
   findTemplateBySchemaIdForIssuer,
+  getFaydaVerificationByHolderAidForIssuer,
   getIssuedCredentialByIdForIssuer,
   getTemplateByIdForIssuer,
   listIssuedCredentialsByIssuer,
@@ -331,6 +333,61 @@ export async function issueCredentialApiV2(
     }
     sendError(res, 500, message);
   }
+}
+
+export async function getIssueCredentialPrefillApiV2(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const issuerId = getIssuerId(req);
+  if (!issuerId) {
+    sendError(res, 401, "Unauthorized");
+    return;
+  }
+
+  const templateId = String(req.query.templateId || "").trim();
+  const connectionId = String(req.query.connectionId || "").trim();
+
+  if (!templateId) {
+    sendError(res, 400, "templateId is required");
+    return;
+  }
+  if (!connectionId) {
+    sendError(res, 400, "connectionId is required");
+    return;
+  }
+
+  const template = await getTemplateByIdForIssuer(issuerId, templateId);
+  if (!template) {
+    sendError(res, 404, "Template not found");
+    return;
+  }
+
+  const verification = await getFaydaVerificationByHolderAidForIssuer(
+    issuerId,
+    connectionId
+  );
+
+  if (!verification) {
+    sendSuccess(res, {
+      hasSavedFaydaData: false,
+      matchedFields: [],
+      values: {},
+    });
+    return;
+  }
+
+  const prefill = getFaydaPrefillForTemplateAttributes({
+    attributes: template.attributes,
+    mappedData: verification.mappedData,
+    faydaData: verification.faydaData,
+  });
+
+  sendSuccess(res, {
+    hasSavedFaydaData: true,
+    matchedFields: prefill.matchedFields,
+    values: prefill.values,
+  });
 }
 
 export async function revokeCredentialByIdApiV2(

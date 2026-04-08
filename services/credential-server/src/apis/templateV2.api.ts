@@ -10,6 +10,7 @@ import {
 } from "../services/tenantStore";
 import { TemplateAttribute } from "../services/dashboardStore.types";
 import { resolveTemplateSchemaForPublication } from "../services/templateSchemaService";
+import { SchemaAccessError } from "../services/schemaAccessService";
 import { sendError, sendSuccess } from "../utils/apiResponse";
 
 interface UpsertTemplateRequestBody {
@@ -17,6 +18,7 @@ interface UpsertTemplateRequestBody {
   schemaId?: string;
   attributes?: TemplateAttribute[];
   autoIssue?: boolean;
+  schemaPublic?: boolean;
 }
 
 function getIssuerId(req: Request): string {
@@ -56,6 +58,12 @@ function validateTemplateInput(
     typeof body.autoIssue !== "boolean"
   ) {
     return "Template autoIssue must be a boolean";
+  }
+  if (
+    body.schemaPublic !== undefined &&
+    typeof body.schemaPublic !== "boolean"
+  ) {
+    return "Template schemaPublic must be a boolean";
   }
   return null;
 }
@@ -130,22 +138,36 @@ export async function createTemplateApiV2(
 
   const name = String(req.body.name || "").trim();
   const normalizedAttributes = normalizeAttributes(req.body.attributes);
-  const client = getSignifyClientFromRequest(req);
-  const resolvedSchema = await resolveTemplateSchemaForPublication({
-    client,
-    name,
-    schemaId: String(req.body.schemaId || "").trim(),
-    attributes: normalizedAttributes,
-  });
 
-  const template = await createTemplateForIssuer({
-    issuerId,
-    name,
-    schemaId: resolvedSchema.schemaId,
-    attributes: resolvedSchema.attributes,
-    autoIssue: normalizeAutoIssue(req.body.autoIssue),
-  });
-  sendSuccess(res, template, 201);
+  try {
+    const client = getSignifyClientFromRequest(req);
+    const resolvedSchema = await resolveTemplateSchemaForPublication({
+      client,
+      issuerId,
+      name,
+      schemaId: String(req.body.schemaId || "").trim(),
+      attributes: normalizedAttributes,
+      schemaPublic:
+        req.body.schemaPublic === undefined
+          ? undefined
+          : Boolean(req.body.schemaPublic),
+    });
+
+    const template = await createTemplateForIssuer({
+      issuerId,
+      name,
+      schemaId: resolvedSchema.schemaId,
+      attributes: resolvedSchema.attributes,
+      autoIssue: normalizeAutoIssue(req.body.autoIssue),
+    });
+    sendSuccess(res, template, 201);
+  } catch (error) {
+    sendError(
+      res,
+      error instanceof SchemaAccessError ? error.statusCode : 400,
+      error instanceof Error ? error.message : "Invalid data"
+    );
+  }
 }
 
 export async function updateTemplateApiV2(
@@ -176,29 +198,42 @@ export async function updateTemplateApiV2(
     return;
   }
 
-  const client = getSignifyClientFromRequest(req);
-  const resolvedSchema = await resolveTemplateSchemaForPublication({
-    client,
-    name: String(req.body.name || "").trim(),
-    schemaId: String(req.body.schemaId || "").trim(),
-    attributes: normalizeAttributes(req.body.attributes),
-  });
+  try {
+    const client = getSignifyClientFromRequest(req);
+    const resolvedSchema = await resolveTemplateSchemaForPublication({
+      client,
+      issuerId,
+      name: String(req.body.name || "").trim(),
+      schemaId: String(req.body.schemaId || "").trim(),
+      attributes: normalizeAttributes(req.body.attributes),
+      schemaPublic:
+        req.body.schemaPublic === undefined
+          ? undefined
+          : Boolean(req.body.schemaPublic),
+    });
 
-  const updated = await updateTemplateForIssuer(issuerId, templateId, {
-    name: String(req.body.name || "").trim(),
-    schemaId: resolvedSchema.schemaId,
-    attributes: resolvedSchema.attributes,
-    autoIssue:
-      req.body.autoIssue === undefined
-        ? Boolean(currentTemplate.autoIssue)
-        : normalizeAutoIssue(req.body.autoIssue),
-  });
-  if (!updated) {
-    sendError(res, 404, "Template not found");
-    return;
+    const updated = await updateTemplateForIssuer(issuerId, templateId, {
+      name: String(req.body.name || "").trim(),
+      schemaId: resolvedSchema.schemaId,
+      attributes: resolvedSchema.attributes,
+      autoIssue:
+        req.body.autoIssue === undefined
+          ? Boolean(currentTemplate.autoIssue)
+          : normalizeAutoIssue(req.body.autoIssue),
+    });
+    if (!updated) {
+      sendError(res, 404, "Template not found");
+      return;
+    }
+
+    sendSuccess(res, updated);
+  } catch (error) {
+    sendError(
+      res,
+      error instanceof SchemaAccessError ? error.statusCode : 400,
+      error instanceof Error ? error.message : "Invalid data"
+    );
   }
-
-  sendSuccess(res, updated);
 }
 
 export async function deleteTemplateApiV2(

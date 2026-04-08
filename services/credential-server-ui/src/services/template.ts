@@ -2,6 +2,7 @@ import { config } from "../config";
 import { httpInstance } from "./http";
 import {
   CredentialTemplate,
+  IssueCredentialPrefill,
   IssueCredentialPayload,
   ManagedCredential,
   TemplateDetail,
@@ -71,6 +72,21 @@ const ManagedCredentialService = {
     const response = await httpInstance.post<ApiEnvelope<ManagedCredential>>(
       config.path.issueCredentialApi,
       payload
+    );
+    return response.data.data;
+  },
+  getIssuePrefill: async (
+    templateId: string,
+    connectionId: string
+  ): Promise<IssueCredentialPrefill> => {
+    const response = await httpInstance.get<ApiEnvelope<IssueCredentialPrefill>>(
+      config.path.issueCredentialPrefillApi,
+      {
+        params: {
+          templateId,
+          connectionId,
+        },
+      }
     );
     return response.data.data;
   },

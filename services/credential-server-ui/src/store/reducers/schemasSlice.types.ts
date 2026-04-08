@@ -56,4 +56,7 @@ export interface SchemaDetail {
 export interface Schema {
   id: string;
   name: string;
+  isPublic: boolean;
+  ownedByCurrentIssuer: boolean;
+  canManageVisibility: boolean;
 }

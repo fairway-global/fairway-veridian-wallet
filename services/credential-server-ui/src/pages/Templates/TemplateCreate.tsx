@@ -22,11 +22,24 @@ const TemplateCreate = () => {
   };
 
   return (
-    <Box sx={{ padding: "0 2.5rem 2.5rem" }}>
+    <Box
+      sx={{
+        padding: {
+          xs: "0 1rem 1.5rem",
+          sm: "0 1.5rem 2rem",
+          lg: "0 2.5rem 2.5rem",
+        },
+      }}
+    >
       <PageHeader
         onBack={() => navigate(RoutePath.Templates)}
         title={i18n.t("pages.templates.create.title")}
-        sx={{ margin: "1.5rem 0" }}
+        sx={{
+          margin: {
+            xs: "1rem 0",
+            md: "1.5rem 0",
+          },
+        }}
       />
       <TemplateForm
         submitLabel={i18n.t("pages.templates.create.submit")}

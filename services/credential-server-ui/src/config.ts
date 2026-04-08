@@ -50,6 +50,7 @@ const config = {
     credentialsApi: "/api/v2/credentials",
     credentialById: "/api/v2/credentials/:id",
     issueCredentialApi: "/api/v2/credentials/issue",
+    issueCredentialPrefillApi: "/api/v2/credentials/issue/prefill",
     revokeCredentialApi: "/api/v2/credentials/:id/revoke",
     deleteCredentialApi: "/api/v2/credentials/:id",
     keriOobiV2: "/api/v2/keriOobi",
