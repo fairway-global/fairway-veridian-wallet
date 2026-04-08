@@ -11,6 +11,7 @@ import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { getStateCache } from "../../../store/reducers/stateCache";
 import { updateReduxState } from "../../../store/utils";
 import { Intro } from "../../components/Intro";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { PageFooter } from "../../components/PageFooter";
 import { ResponsivePageLayout } from "../../components/layout/ResponsivePageLayout";
 import { useExitAppWithDoubleTap } from "../../hooks/exitAppWithDoubleTapHook";
@@ -58,7 +59,14 @@ const Onboarding = () => {
   if (hiddenPage) return null;
 
   return (
-    <ResponsivePageLayout pageId={pageId}>
+    <ResponsivePageLayout
+      pageId={pageId}
+      header={
+        <div className="onboarding-header">
+          <LanguageSwitch />
+        </div>
+      }
+    >
       <Intro />
       <PageFooter
         pageId={pageId}

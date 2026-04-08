@@ -87,6 +87,18 @@ describe("Onboarding Page", () => {
     expect(alreadyWallet).toBeInTheDocument();
   });
 
+  test("Render language switcher on onboarding guides", () => {
+    const { getByTestId } = render(
+      <MemoryRouter initialEntries={[RoutePath.ONBOARDING]}>
+        <Provider store={store}>
+          <Onboarding />
+        </Provider>
+      </MemoryRouter>
+    );
+
+    expect(getByTestId("language-switch")).toBeInTheDocument();
+  });
+
   test("If the user hasn't set a passcode yet, they will be asked to create one", async () => {
     const { getByText, findByText } = render(
       <MemoryRouter initialEntries={[RoutePath.ONBOARDING]}>
