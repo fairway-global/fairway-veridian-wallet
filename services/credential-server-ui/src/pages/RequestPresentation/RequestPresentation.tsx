@@ -1,3 +1,5 @@
+import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
+import SchemaOutlinedIcon from "@mui/icons-material/SchemaOutlined";
 import { SwapHorizontalCircleOutlined } from "@mui/icons-material";
 import {
   Box,
@@ -22,11 +24,14 @@ import { RequestPresentationModal } from "../../components/RequestPresentationMo
 import { i18n } from "../../i18n";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { fetchPresentationRequests } from "../../store/reducers/connectionsSlice";
+import { fetchSchemas } from "../../store/reducers/schemasSlice";
 import {
   PresentationRequestData,
   PresentationRequestStatus,
 } from "../../store/reducers/connectionsSlice.types";
 import { formatDate, formatDateTime } from "../../utils/dateFormatter";
+import { triggerToast } from "../../utils/toast";
+import "../../styles/dashboardForms.scss";
 import "./RequestPresentation.scss";
 
 interface PresentationRequestRow extends AppTableBaseData {
@@ -113,7 +118,12 @@ export const RequestPresentation = () => {
   );
   const contacts = useAppSelector((state) => state.connections.contacts);
   const schemas = useAppSelector((state) => state.schemasCache.schemas);
+  const schemasStatus = useAppSelector((state) => state.schemasCache.status);
   const [openModal, setOpenModal] = useState(false);
+  const hasConnections = contacts.length > 0;
+  const hasSchemas = schemas.length > 0;
+  const missingConnections = !hasConnections;
+  const missingSchemas = !missingConnections && schemasStatus !== "loading" && !hasSchemas;
 
   const rows: PresentationRequestRow[] = presentationRequests.map((request) => {
     const contact = contacts.find((item) => item.id === request.holderDid);
@@ -145,7 +155,29 @@ export const RequestPresentation = () => {
     void dispatch(fetchPresentationRequests());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (schemasStatus === "idle") {
+      void dispatch(fetchSchemas());
+    }
+  }, [dispatch, schemasStatus]);
+
   const handleClick = () => {
+    if (missingConnections) {
+      triggerToast(
+        "Create a connection first before requesting a presentation.",
+        "warning"
+      );
+      return;
+    }
+
+    if (missingSchemas) {
+      triggerToast(
+        "No credential types are available yet. Ask an issuer to share or issue credentials first.",
+        "info"
+      );
+      return;
+    }
+
     setOpenModal(true);
   };
 
@@ -191,6 +223,66 @@ export const RequestPresentation = () => {
           onChange={setFilterData}
           totalFound={visibleData.length}
         />
+        {missingConnections ? (
+          <Box className="dashboard-guidance-panel dashboard-guidance-panel--warning">
+            <Box className="dashboard-guidance-panel__header">
+              <Box className="dashboard-guidance-panel__icon">
+                <HubOutlinedIcon />
+              </Box>
+              <Box>
+                <Box className="dashboard-guidance-panel__eyebrow">
+                  Before requesting
+                </Box>
+                <Box className="dashboard-guidance-panel__title">
+                  Create a connection first before requesting a presentation.
+                </Box>
+              </Box>
+            </Box>
+            <Box className="dashboard-guidance-panel__description">
+              Presentation requests are sent to a specific connection. Once you
+              connect with a holder, come back here and choose what credential
+              you want them to present.
+            </Box>
+            <Box className="dashboard-guidance-panel__actions">
+              <Button
+                variant="contained"
+                onClick={() => navigate(RoutePath.Connections)}
+              >
+                Open connections
+              </Button>
+            </Box>
+          </Box>
+        ) : missingSchemas ? (
+          <Box className="dashboard-guidance-panel dashboard-guidance-panel--info">
+            <Box className="dashboard-guidance-panel__header">
+              <Box className="dashboard-guidance-panel__icon">
+                <SchemaOutlinedIcon />
+              </Box>
+              <Box>
+                <Box className="dashboard-guidance-panel__eyebrow">
+                  Waiting for credential types
+                </Box>
+                <Box className="dashboard-guidance-panel__title">
+                  No credential types are available to request yet.
+                </Box>
+              </Box>
+            </Box>
+            <Box className="dashboard-guidance-panel__description">
+              New verifiers often expect this list to be ready immediately. It
+              fills once issuers share schemas or issue credentials that your
+              verifier workspace can work with.
+            </Box>
+            <Box className="dashboard-guidance-panel__actions">
+              <Button
+                variant="contained"
+                className="neutral-button"
+                onClick={() => navigate(RoutePath.Connections)}
+              >
+                Review connections
+              </Button>
+            </Box>
+          </Box>
+        ) : null}
         <Paper className="request-presentation-table">
           <AppTable
             order={order}

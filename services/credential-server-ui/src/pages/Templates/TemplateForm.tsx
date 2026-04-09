@@ -1,5 +1,8 @@
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import PublicRoundedIcon from "@mui/icons-material/PublicRounded";
 import {
   Box,
   Button,
@@ -60,7 +63,7 @@ const TemplateForm = ({
     null
   );
   const [hasInitializedSchemaVisibility, setHasInitializedSchemaVisibility] =
-    useState(!Boolean(initialValue?.schemaId));
+    useState(!initialValue?.schemaId);
   const normalizedSchemas = useMemo(
     () =>
       schemas
@@ -363,48 +366,84 @@ const TemplateForm = ({
       </Box>
 
       <Box className="dashboard-form-toggle-grid">
-        <Box className="dashboard-form-toggle-card">
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={Boolean(form.schemaPublic)}
-                disabled={
-                  hasSchemaId &&
-                  (!selectedSchema || !selectedSchema.canManageVisibility)
-                }
-                onChange={(event) =>
-                  setForm((currentValue) => ({
-                    ...currentValue,
-                    schemaPublic: event.target.checked,
-                  }))
-                }
-              />
-            }
-            label={i18n.t("pages.templates.form.fields.schemaPublic")}
-          />
+        <Box
+          className={`dashboard-form-toggle-card${form.schemaPublic ? " is-active" : ""}`}
+        >
+          <Box className="dashboard-form-toggle-topline">
+            <Box className="dashboard-form-toggle-icon">
+              <PublicRoundedIcon />
+            </Box>
+            <FormControlLabel
+              className="dashboard-form-toggle-control"
+              control={
+                <Checkbox
+                  checked={Boolean(form.schemaPublic)}
+                  disabled={
+                    hasSchemaId &&
+                    (!selectedSchema || !selectedSchema.canManageVisibility)
+                  }
+                  onChange={(event) =>
+                    setForm((currentValue) => ({
+                      ...currentValue,
+                      schemaPublic: event.target.checked,
+                    }))
+                  }
+                />
+              }
+              label={
+                <Typography
+                  component="span"
+                  className="dashboard-form-toggle-title"
+                >
+                  {i18n.t("pages.templates.form.fields.schemaPublic")}
+                </Typography>
+              }
+            />
+          </Box>
           {schemaVisibilityHint && (
-            <Typography variant="body2">
+            <Typography
+              variant="body2"
+              className="dashboard-form-toggle-description"
+            >
               {schemaVisibilityHint}
             </Typography>
           )}
         </Box>
 
-        <Box className="dashboard-form-toggle-card">
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={Boolean(form.autoIssue)}
-                onChange={(event) =>
-                  setForm((currentValue) => ({
-                    ...currentValue,
-                    autoIssue: event.target.checked,
-                  }))
-                }
-              />
-            }
-            label={i18n.t("pages.templates.form.fields.autoIssue")}
-          />
-          <Typography variant="body2">
+        <Box
+          className={`dashboard-form-toggle-card${form.autoIssue ? " is-active" : ""}`}
+        >
+          <Box className="dashboard-form-toggle-topline">
+            <Box className="dashboard-form-toggle-icon">
+              <BoltRoundedIcon />
+            </Box>
+            <FormControlLabel
+              className="dashboard-form-toggle-control"
+              control={
+                <Checkbox
+                  checked={Boolean(form.autoIssue)}
+                  onChange={(event) =>
+                    setForm((currentValue) => ({
+                      ...currentValue,
+                      autoIssue: event.target.checked,
+                    }))
+                  }
+                />
+              }
+              label={
+                <Typography
+                  component="span"
+                  className="dashboard-form-toggle-title"
+                >
+                  {i18n.t("pages.templates.form.fields.autoIssue")}
+                </Typography>
+              }
+            />
+          </Box>
+          <Typography
+            variant="body2"
+            className="dashboard-form-toggle-description"
+          >
             {i18n.t("pages.templates.form.fields.autoIssueHint")}
           </Typography>
         </Box>
@@ -418,103 +457,127 @@ const TemplateForm = ({
           <Button
             variant="text"
             onClick={addAttribute}
+            startIcon={<AutoAwesomeRoundedIcon />}
           >
             {i18n.t("pages.templates.form.addAttribute")}
           </Button>
         </Box>
-        <Stack className="dashboard-attribute-list">
-          {form.attributes.map((attribute, index) => (
-            <Box
-              key={`attribute-${index}`}
-              className="dashboard-attribute-row"
-            >
-              <TextField
-                label={i18n.t("pages.templates.form.fields.attributeName")}
-                value={attribute.name}
-                onChange={(event) =>
-                  setForm((currentValue) => ({
-                    ...currentValue,
-                    attributes: currentValue.attributes.map((item, itemIndex) =>
-                      itemIndex === index
-                        ? {
-                            ...item,
-                            name: event.target.value,
-                          }
-                        : item
-                    ),
-                  }))
-                }
-                fullWidth
-              />
-              <Select
-                value={attribute.type}
-                onChange={(event) =>
-                  setForm((currentValue) => ({
-                    ...currentValue,
-                    attributes: currentValue.attributes.map((item, itemIndex) =>
-                      itemIndex === index
-                        ? {
-                            ...item,
-                            type: event.target.value as TemplateAttributeType,
-                          }
-                        : item
-                    ),
-                  }))
-                }
-                className="dashboard-attribute-select"
-                renderValue={(selected) =>
-                  getTemplateAttributeTypeLabel(selected as TemplateAttributeType)
-                }
+        {form.attributes.length ? (
+          <Stack className="dashboard-attribute-list">
+            {form.attributes.map((attribute, index) => (
+              <Box
+                key={`attribute-${index}`}
+                className="dashboard-attribute-row"
               >
-                {TEMPLATE_ATTRIBUTE_TYPES.map((type) => (
-                  <MenuItem
-                    key={type}
-                    value={type}
-                  >
-                    {getTemplateAttributeTypeLabel(type)}
-                  </MenuItem>
-                ))}
-              </Select>
-              <FormControlLabel
-                className="dashboard-attribute-required"
-                control={
-                  <Checkbox
-                    checked={attribute.required}
-                    onChange={(event) =>
-                      setForm((currentValue) => ({
-                        ...currentValue,
-                        attributes: currentValue.attributes.map(
-                          (item, itemIndex) =>
-                            itemIndex === index
-                              ? {
-                                  ...item,
-                                  required: event.target.checked,
-                                }
-                              : item
-                        ),
-                      }))
-                    }
-                  />
-                }
-                label={i18n.t("pages.templates.form.fields.required")}
-              />
-              <IconButton
-                aria-label="remove attribute"
-                className="dashboard-attribute-delete"
-                onClick={() =>
-                  setForm((currentValue) => ({
-                    ...currentValue,
-                    attributes: currentValue.attributes.filter(
-                      (_, itemIndex) => itemIndex !== index
-                    ),
-                  }))
-                }
-              >
-                <DeleteOutlineOutlinedIcon />
-              </IconButton>
+                <TextField
+                  label={i18n.t("pages.templates.form.fields.attributeName")}
+                  value={attribute.name}
+                  onChange={(event) =>
+                    setForm((currentValue) => ({
+                      ...currentValue,
+                      attributes: currentValue.attributes.map((item, itemIndex) =>
+                        itemIndex === index
+                          ? {
+                              ...item,
+                              name: event.target.value,
+                            }
+                          : item
+                      ),
+                    }))
+                  }
+                  fullWidth
+                />
+                <Select
+                  value={attribute.type}
+                  onChange={(event) =>
+                    setForm((currentValue) => ({
+                      ...currentValue,
+                      attributes: currentValue.attributes.map((item, itemIndex) =>
+                        itemIndex === index
+                          ? {
+                              ...item,
+                              type: event.target.value as TemplateAttributeType,
+                            }
+                          : item
+                      ),
+                    }))
+                  }
+                  className="dashboard-attribute-select"
+                  renderValue={(selected) =>
+                    getTemplateAttributeTypeLabel(selected as TemplateAttributeType)
+                  }
+                >
+                  {TEMPLATE_ATTRIBUTE_TYPES.map((type) => (
+                    <MenuItem
+                      key={type}
+                      value={type}
+                    >
+                      {getTemplateAttributeTypeLabel(type)}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormControlLabel
+                  className="dashboard-attribute-required"
+                  control={
+                    <Checkbox
+                      checked={attribute.required}
+                      onChange={(event) =>
+                        setForm((currentValue) => ({
+                          ...currentValue,
+                          attributes: currentValue.attributes.map(
+                            (item, itemIndex) =>
+                              itemIndex === index
+                                ? {
+                                    ...item,
+                                    required: event.target.checked,
+                                  }
+                                : item
+                          ),
+                        }))
+                      }
+                    />
+                  }
+                  label={i18n.t("pages.templates.form.fields.required")}
+                />
+                <IconButton
+                  aria-label="remove attribute"
+                  className="dashboard-attribute-delete"
+                  onClick={() =>
+                    setForm((currentValue) => ({
+                      ...currentValue,
+                      attributes: currentValue.attributes.filter(
+                        (_, itemIndex) => itemIndex !== index
+                      ),
+                    }))
+                  }
+                >
+                  <DeleteOutlineOutlinedIcon />
+                </IconButton>
+              </Box>
+            ))}
+          </Stack>
+        ) : (
+          <Box className="dashboard-form-empty-state">
+            <Box className="dashboard-form-empty-state__badge">
+              Start with fields
             </Box>
-          ))}
-        </Stack>
+            <Typography className="dashboard-form-empty-state__title">
+              Add the attributes this credential should collect and issue.
+            </Typography>
+            <Typography className="dashboard-form-empty-state__description">
+              Pick a schema to auto-fill supported fields, or add your first
+              attribute manually to shape the template from scratch.
+            </Typography>
+            <Button
+              variant="contained"
+              className="neutral-button"
+              startIcon={<AddCircleOutlineOutlinedIcon />}
+              onClick={addAttribute}
+            >
+              Add first attribute
+            </Button>
+          </Box>
+        )}
       </Box>
 
       <Stack

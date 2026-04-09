@@ -1,4 +1,6 @@
-import { Box } from "@mui/material";
+import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+import RuleFolderOutlinedIcon from "@mui/icons-material/RuleFolderOutlined";
+import { Box, Typography } from "@mui/material";
 import { useNavigate } from "react-router";
 import { PageHeader } from "../../components/PageHeader";
 import { RoutePath } from "../../const/route";
@@ -7,6 +9,7 @@ import { TemplateService } from "../../services";
 import { TemplateUpsertInput } from "../../services/template.types";
 import { triggerToast } from "../../utils/toast";
 import { TemplateForm } from "./TemplateForm";
+import "../../styles/dashboardForms.scss";
 
 const TemplateCreate = () => {
   const navigate = useNavigate();
@@ -41,6 +44,40 @@ const TemplateCreate = () => {
           },
         }}
       />
+      <Box className="dashboard-form-tip-grid">
+        <Box className="dashboard-form-tip-card dashboard-form-tip-card--hero">
+          <Box className="dashboard-form-tip-badge">
+            Guided setup
+          </Box>
+          <Typography className="dashboard-form-tip-title">
+            Create a template your team can issue confidently.
+          </Typography>
+          <Typography className="dashboard-form-tip-description">
+            Start with a recognizable name, choose whether the schema should be
+            reusable, then mark only the fields that are truly required during
+            issuance.
+          </Typography>
+        </Box>
+        <Box className="dashboard-form-tip-card">
+          <Box className="dashboard-form-tip-badge">
+            Quick checks
+          </Box>
+          <Box className="dashboard-form-tip-list">
+            <Box className="dashboard-form-tip-item">
+              <CheckCircleOutlineRoundedIcon />
+              <span>Name the template how issuers will recognize it later.</span>
+            </Box>
+            <Box className="dashboard-form-tip-item">
+              <CheckCircleOutlineRoundedIcon />
+              <span>Use public schemas only when other issuers should reuse them.</span>
+            </Box>
+            <Box className="dashboard-form-tip-item">
+              <RuleFolderOutlinedIcon />
+              <span>Required fields should be the minimum needed to issue safely.</span>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
       <TemplateForm
         submitLabel={i18n.t("pages.templates.create.submit")}
         onSubmit={submit}

@@ -25,7 +25,7 @@ import { PageHeader } from "../../components/PageHeader";
 import { PopupModal } from "../../components/PopupModal";
 import { RoutePath } from "../../const/route";
 import { i18n } from "../../i18n";
-import { ManagedCredentialService } from "../../services";
+import { ManagedCredentialService, TemplateService } from "../../services";
 import { ManagedCredential } from "../../services/template.types";
 import { formatDate, formatDateTime } from "../../utils/dateFormatter";
 import { triggerToast } from "../../utils/toast";
@@ -73,6 +73,7 @@ const CredentialsList = () => {
   const [loading, setLoading] = useState(false);
   const [revokeId, setRevokeId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [checkingIssueSetup, setCheckingIssueSetup] = useState(false);
 
   const getDeleteErrorMessage = (error: unknown): string => {
     const fallback = i18n.t("pages.credentialsManagement.messages.deleteError");
@@ -221,6 +222,26 @@ const CredentialsList = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleIssueCredential = async () => {
+    try {
+      setCheckingIssueSetup(true);
+      const templates = await TemplateService.list();
+      if (!templates.length) {
+        triggerToast(
+          "You must first create a template before issuing a credential.",
+          "warning"
+        );
+        return;
+      }
+
+      navigate(RoutePath.IssueCredential);
+    } catch {
+      triggerToast("Unable to check template setup right now", "error");
+    } finally {
+      setCheckingIssueSetup(false);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -259,7 +280,10 @@ const CredentialsList = () => {
             <Button
               variant="contained"
               startIcon={<AddCircleOutlineOutlinedIcon />}
-              onClick={() => navigate(RoutePath.IssueCredential)}
+              onClick={() => {
+                void handleIssueCredential();
+              }}
+              disabled={checkingIssueSetup}
             >
               {i18n.t("pages.credentialsManagement.actions.issue")}
             </Button>
