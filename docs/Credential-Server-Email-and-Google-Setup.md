@@ -14,6 +14,7 @@ After configuration, the dashboard can:
 - Send password reset emails
 - Send account-created emails when an admin creates a dashboard user
 - Accept Google Sign-In for existing dashboard users whose email already exists in the Fairway dashboard database
+- Create verifier accounts from Google when the email is not yet registered
 
 ## 1. Mail setup for `notifications@fairwallet.et`
 
@@ -132,7 +133,7 @@ You can also test account-created emails:
 
 ## 2. Google Sign-In setup
 
-The dashboard already supports Google Sign-In, but it only signs in users whose email already exists in the Fairway dashboard database.
+The dashboard supports Google Sign-In for existing users and can also create verifier access when the Google email does not exist yet.
 
 ### Create a Google OAuth client
 
@@ -194,18 +195,18 @@ npm run dev
 
 ### Test Google Sign-In
 
-1. Make sure the Google account email matches an existing dashboard user email
-2. Open the login page
-3. Click `Sign in with Google`
-4. Complete the Google flow
-5. Confirm you land in the dashboard with the correct role
+1. Open the login page or verifier sign-up page
+2. Click `Continue with Google`
+3. Complete the Google flow
+4. If the email already exists, confirm you land in the dashboard with the correct role
+5. If the email is new, complete the verifier setup modal and confirm the account is created
 
 ### Important current behavior
 
 Right now Google Sign-In:
 
 - works for existing dashboard users
-- does not yet self-provision public verifier accounts
+- self-provisions verifier accounts when no existing user matches the Google email
 - does not yet approve issuer applications automatically
 
 Those flows can be added next without changing the KERIA connection logic.
@@ -237,4 +238,4 @@ Use this order to keep risk low:
 2. Verify `Forgot password` email delivery
 3. Verify admin-created account emails
 4. Verify Google Sign-In for an existing dashboard user
-5. Only after that, move on to public verifier signup and issuer application flows
+5. Verify Google-based verifier self-provisioning and then move on to issuer application flows

@@ -22,6 +22,9 @@ import { config } from "../config";
 import { log } from "../log";
 import { sendError, sendSuccess } from "../utils/apiResponse";
 
+const GOOGLE_ACCOUNT_NOT_FOUND_MESSAGE = "No account found for this Google sign-in";
+const GOOGLE_ACCOUNT_NOT_FOUND_CODE = "GOOGLE_ACCOUNT_NOT_FOUND";
+
 function maskEmail(value: string): string {
   const normalized = String(value || "").trim();
   const atIndex = normalized.indexOf("@");
@@ -95,10 +98,20 @@ export async function googleLoginApi(
     const session = await loginWithGoogleIdToken({ idToken });
     sendSuccess(res, session);
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Google sign in failed";
+
+    if (message === GOOGLE_ACCOUNT_NOT_FOUND_MESSAGE) {
+      sendError(res, 404, message, {
+        code: GOOGLE_ACCOUNT_NOT_FOUND_CODE,
+      });
+      return;
+    }
+
     sendError(
       res,
       401,
-      error instanceof Error ? error.message : "Google sign in failed"
+      message
     );
   }
 }

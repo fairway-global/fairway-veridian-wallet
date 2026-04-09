@@ -8,7 +8,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router";
 import { config } from "../../config";
 import { RoutePath } from "../../const/route";
@@ -24,33 +32,12 @@ import {
   GoogleCredentialResponse,
   GoogleMark,
 } from "./GoogleIdentity";
+import { GoogleAccountSetupDialog } from "./GoogleAccountSetupDialog";
+import { getErrorMessage, isGoogleAccountNotFoundError } from "./authErrors";
 import "./Login.scss";
 
 const GOOGLE_SCRIPT_ID = "fairway-google-identity-script";
 const REMEMBERED_EMAIL_KEY = "credential_server_ui_remembered_email";
-
-const getErrorMessage = (error: unknown, fallback: string): string => {
-  if (
-    error &&
-    typeof error === "object" &&
-    "response" in error &&
-    error.response &&
-    typeof error.response === "object" &&
-    "data" in error.response &&
-    error.response.data &&
-    typeof error.response.data === "object" &&
-    "error" in error.response.data &&
-    typeof error.response.data.error === "string"
-  ) {
-    return error.response.data.error;
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  return fallback;
-};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -61,6 +48,14 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
+  const [googleSetupOpen, setGoogleSetupOpen] = useState(false);
+  const [googleSetupLoading, setGoogleSetupLoading] = useState(false);
+  const [googleSetupOrganizationName, setGoogleSetupOrganizationName] =
+    useState("");
+  const [pendingGoogleIdToken, setPendingGoogleIdToken] = useState<string | null>(
+    null
+  );
+  const googleButtonHostRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const rememberedEmail = window.localStorage.getItem(REMEMBERED_EMAIL_KEY);
@@ -139,22 +134,73 @@ const Login = () => {
     [dispatch, navigate, rememberMe]
   );
 
+  const resetGoogleSetup = useCallback(() => {
+    setGoogleSetupOpen(false);
+    setGoogleSetupOrganizationName("");
+    setPendingGoogleIdToken(null);
+  }, []);
+
+  const closeGoogleSetup = useCallback(() => {
+    if (googleSetupLoading) {
+      return;
+    }
+
+    resetGoogleSetup();
+  }, [googleSetupLoading, resetGoogleSetup]);
+
+  const submitGoogleSetup = useCallback(async () => {
+    if (!pendingGoogleIdToken) {
+      return;
+    }
+
+    try {
+      setGoogleSetupLoading(true);
+      const session = await AuthService.registerVerifierWithGoogle({
+        idToken: pendingGoogleIdToken,
+        organizationName: googleSetupOrganizationName.trim() || undefined,
+      });
+      resetGoogleSetup();
+      completeLogin(session, session.user.email);
+      triggerToast("Verifier access created", "success");
+    } catch (error) {
+      triggerToast(
+        getErrorMessage(error, "Unable to create verifier access with Google"),
+        "error"
+      );
+    } finally {
+      setGoogleSetupLoading(false);
+    }
+  }, [
+    completeLogin,
+    googleSetupOrganizationName,
+    pendingGoogleIdToken,
+    resetGoogleSetup,
+  ]);
+
   const handleGoogleCredential = useCallback(
     async (response: GoogleCredentialResponse) => {
       if (!response.credential) {
         setGoogleLoading(false);
-        triggerToast("Google sign in did not return a credential", "warning");
+        triggerToast("Google did not return a credential", "warning");
         return;
       }
 
       try {
+        setGoogleLoading(true);
         const session = await AuthService.googleLogin({
           idToken: response.credential,
         });
         completeLogin(session, session.user.email);
       } catch (error) {
+        if (isGoogleAccountNotFoundError(error)) {
+          setPendingGoogleIdToken(response.credential);
+          setGoogleSetupOrganizationName("");
+          setGoogleSetupOpen(true);
+          return;
+        }
+
         triggerToast(
-          getErrorMessage(error, "Google sign in failed"),
+          getErrorMessage(error, "Google authentication failed"),
           "error"
         );
       } finally {
@@ -165,16 +211,45 @@ const Login = () => {
   );
 
   useEffect(() => {
-    if (!googleReady || !config.googleClientId || !window.google?.accounts?.id) {
+    if (
+      !googleReady ||
+      !config.googleClientId ||
+      !window.google?.accounts?.id ||
+      !googleButtonHostRef.current
+    ) {
       return;
     }
 
-    window.google.accounts.id.initialize({
+    const googleIdentity = window.google.accounts.id;
+    const host = googleButtonHostRef.current;
+
+    const renderGoogleButton = () => {
+      const width = Math.max(Math.floor(host.getBoundingClientRect().width), 260);
+      host.replaceChildren();
+      googleIdentity.renderButton(host, {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        shape: "pill",
+        width: String(width),
+        logo_alignment: "left",
+      });
+    };
+
+    googleIdentity.initialize({
       client_id: config.googleClientId,
       callback: handleGoogleCredential,
       auto_select: false,
       cancel_on_tap_outside: true,
     });
+
+    renderGoogleButton();
+    window.addEventListener("resize", renderGoogleButton);
+
+    return () => {
+      window.removeEventListener("resize", renderGoogleButton);
+    };
   }, [googleReady, handleGoogleCredential]);
 
   const onSubmit = async (event: FormEvent) => {
@@ -211,20 +286,8 @@ const Login = () => {
     }
 
     if (!window.google?.accounts?.id) {
-      triggerToast("Google sign in is still loading. Please try again.", "info");
-      return;
+      triggerToast("Google is still loading. Please try again.", "info");
     }
-
-    setGoogleLoading(true);
-    window.google.accounts.id.prompt((notification) => {
-      if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
-        setGoogleLoading(false);
-        triggerToast(
-          "Google sign in could not open. Please try email sign in or retry.",
-          "warning"
-        );
-      }
-    });
   };
 
   const handleForgotPassword = () => {
@@ -245,100 +308,132 @@ const Login = () => {
   );
 
   return (
-    <AuthShell
-      title="Sign in to Fairwallet"
-      subtitle="Access your credential operations workspace securely."
-      footer={
-        <Box className="auth-access-cta">
-          <Typography component="span" className="auth-access-label">
-            Need access?
-          </Typography>
-          <Box className="auth-access-actions">
-            <Button
-              type="button"
-              className="auth-access-link"
-              onClick={() => navigate(RoutePath.VerifierSignup)}
-            >
-              Sign up as verifier
-            </Button>
-            <Typography component="span" className="auth-access-separator">
-              or
+    <Fragment>
+      <AuthShell
+        title="Sign in to Fairwallet"
+        subtitle="Access your credential operations workspace securely."
+        footer={
+          <Box className="auth-access-cta">
+            <Typography component="span" className="auth-access-label">
+              Need access?
             </Typography>
-            <Button
-              type="button"
-              className="auth-access-link"
-              onClick={() => navigate(RoutePath.IssuerRequest)}
-            >
-              Request issuer access
-            </Button>
+            <Box className="auth-access-actions">
+              <Button
+                type="button"
+                className="auth-access-link"
+                onClick={() => navigate(RoutePath.VerifierSignup)}
+              >
+                Sign up as verifier
+              </Button>
+              <Typography component="span" className="auth-access-separator">
+                or
+              </Typography>
+              <Button
+                type="button"
+                className="auth-access-link"
+                onClick={() => navigate(RoutePath.IssuerRequest)}
+              >
+                Request issuer access
+              </Button>
+            </Box>
           </Box>
-        </Box>
-      }
-    >
+        }
+      >
+        <Box className="login-google-button-shell">
           <Button
             className="login-google-button"
             variant="outlined"
             disableElevation
             onClick={handleGoogleLogin}
             disabled={googleLoading || loading}
-            startIcon={googleLoading ? <CircularProgress size={18} color="inherit" /> : <GoogleMark />}
+            startIcon={
+              googleLoading ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <GoogleMark />
+              )
+            }
           >
-            {googleLoading ? "Connecting to Google" : "Sign in with Google"}
+            {googleLoading ? "Connecting to Google" : "Continue with Google"}
           </Button>
+          <Box
+            ref={googleButtonHostRef}
+            className={[
+              "google-button-host",
+              googleReady && !googleLoading && !loading
+                ? "google-button-host--interactive"
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            aria-hidden="true"
+          />
+        </Box>
 
-          <Divider className="login-divider">or sign in with email</Divider>
+        <Divider className="login-divider">or sign in with email</Divider>
 
-          <Box component="form" className="login-form" onSubmit={onSubmit}>
-            <TextField
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="Enter your email"
-              aria-label="Enter your email"
-              size="medium"
-              type="email"
-              required
-              fullWidth
+        <Box component="form" className="login-form" onSubmit={onSubmit}>
+          <TextField
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="Enter your email"
+            aria-label="Enter your email"
+            size="medium"
+            type="email"
+            required
+            fullWidth
+          />
+          <PasswordField
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Enter your password"
+            aria-label="Enter your password"
+            size="medium"
+            required
+            fullWidth
+          />
+
+          <Box className="login-form-meta">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                />
+              }
+              label="Remember me"
             />
-            <PasswordField
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
-              aria-label="Enter your password"
-              size="medium"
-              required
-              fullWidth
-            />
-
-            <Box className="login-form-meta">
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={rememberMe}
-                    onChange={(event) => setRememberMe(event.target.checked)}
-                  />
-                }
-                label="Remember me"
-              />
-              <Button
-                type="button"
-                className="login-forgot-button"
-                onClick={handleForgotPassword}
-              >
-                Forgot password?
-              </Button>
-            </Box>
-
             <Button
-              type="submit"
-              variant="contained"
-              className="login-submit-button primary-button"
-              disableElevation
-              disabled={loading || googleLoading}
+              type="button"
+              className="login-forgot-button"
+              onClick={handleForgotPassword}
             >
-              {loginButtonContent}
+              Forgot password?
             </Button>
           </Box>
-    </AuthShell>
+
+          <Button
+            type="submit"
+            variant="contained"
+            className="login-submit-button primary-button"
+            disableElevation
+            disabled={loading || googleLoading}
+          >
+            {loginButtonContent}
+          </Button>
+        </Box>
+      </AuthShell>
+      <GoogleAccountSetupDialog
+        open={googleSetupOpen}
+        organizationName={googleSetupOrganizationName}
+        loading={googleSetupLoading}
+        onOrganizationNameChange={setGoogleSetupOrganizationName}
+        onClose={closeGoogleSetup}
+        onSubmit={() => {
+          void submitGoogleSetup();
+        }}
+      />
+    </Fragment>
   );
 };
 

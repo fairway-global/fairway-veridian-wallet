@@ -82,6 +82,10 @@
     font-weight: 800;
   }
 
+  .login-google-button-shell {
+    position: relative;
+  }
+
   .login-google-button {
     border-color: rgba(255, 255, 255, 0.2);
     color: var(--color-neutral-100);
@@ -93,6 +97,43 @@
       border-color: rgba(255, 255, 255, 0.28);
       background-color: rgba(255, 255, 255, 0.08);
     }
+
+    &:active,
+    &.Mui-focusVisible {
+      color: var(--color-neutral-100);
+    }
+
+    &.Mui-disabled {
+      color: rgba(255, 255, 255, 0.88);
+      -webkit-text-fill-color: rgba(255, 255, 255, 0.88);
+      border-color: rgba(255, 255, 255, 0.18);
+      background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .MuiCircularProgress-root {
+      color: currentColor;
+    }
+  }
+
+  .google-button-host {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    overflow: hidden;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .google-button-host--interactive {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .google-button-host > div,
+  .google-button-host iframe {
+    width: 100% !important;
+    height: 100% !important;
   }
 
   .google-mark {
@@ -515,4 +556,30 @@
       grid-template-columns: 1fr;
     }
   }
+}
+
+.google-account-dialog {
+  border-radius: 1.5rem !important;
+  background:
+    radial-gradient(circle at top left, rgba(125, 220, 183, 0.12), transparent 30%),
+    linear-gradient(180deg, #f7fcf9 0%, #eef8f3 100%);
+}
+
+.google-account-dialog__content {
+  display: grid;
+  gap: 1rem;
+  padding-top: 0.35rem;
+}
+
+.google-account-dialog__copy {
+  color: rgba(13, 45, 38, 0.72);
+  line-height: 1.65;
+}
+
+.google-account-dialog__actions {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.google-account-dialog__actions .MuiButton-contained .MuiCircularProgress-root {
+  margin-right: 0.55rem;
 }

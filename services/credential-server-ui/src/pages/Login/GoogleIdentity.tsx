@@ -18,6 +18,18 @@ export interface GoogleAccountsIdApi {
     auto_select?: boolean;
     cancel_on_tap_outside?: boolean;
   }) => void;
+  renderButton: (
+    parent: HTMLElement,
+    options: {
+      type?: string;
+      theme?: string;
+      size?: string;
+      text?: string;
+      shape?: string;
+      width?: string;
+      logo_alignment?: string;
+    }
+  ) => void;
   prompt: (
     listener?: (notification: GooglePromptMomentNotification) => void
   ) => void;
