@@ -1,6 +1,6 @@
 {
   "name": "veridian-wallet",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "dev": "webpack serve --config webpack.dev.cjs --host 0.0.0.0 --port 3000",
@@ -16,10 +16,11 @@
     "build:ios:flags": "find ios/xcconfig-overwrites -name '*.release.xcconfig' -exec sh -c 'cp \"$1\" \"ios/App/Pods/Target Support Files/$(basename $(dirname \"$1\"))/\"' _ {} \\;",
     "ios:version:set": "node ./scripts/set-ios-version.cjs",
     "ios:build:bump": "node ./scripts/set-ios-version.cjs --bump-build",
+    "ios:ensure-next-build": "node ./scripts/ensure-ios-build-number.cjs",
     "ios:check-upload-toolchain": "node ./scripts/check-ios-upload-toolchain.cjs",
     "ios:check-archive-symbols": "node ./scripts/check-ios-archive-dsyms.cjs",
     "ios:fix-latest-archive-symbols": "bash ./scripts/ensure-talsec-ios-dsym.sh --latest-archive",
-    "ios:prepare-release": "cross-env DEV_SKIP_ONBOARDING=false ENVIRONMENT=prod APP_ALLOW_XCODE_DEBUG=false webpack --config webpack.prod.cjs && npx cap sync ios && npm run build:ios:flags",
+    "ios:prepare-release": "npm run ios:ensure-next-build && cross-env DEV_SKIP_ONBOARDING=false ENVIRONMENT=prod APP_ALLOW_XCODE_DEBUG=false webpack --config webpack.prod.cjs && npx cap sync ios && npm run build:ios:flags",
     "ios:prepare-xcode-debug": "cross-env DEV_SKIP_ONBOARDING=false ENVIRONMENT=prod APP_ALLOW_XCODE_DEBUG=true webpack --config webpack.prod.cjs && npx cap sync ios && npm run build:ios:flags",
     "build:android:proguard": "node .\\scripts\\copy-freerasp-proguard.cjs",
     "build:release": "cross-env DEV_SKIP_ONBOARDING=false ENVIRONMENT=prod webpack --config webpack.prod.cjs && npm run build:android:proguard && cross-env ENVIRONMENT=prod npx cap update android && npm run android:copy-web",
