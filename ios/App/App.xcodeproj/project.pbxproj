@@ -106,6 +106,7 @@
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
 				9592DBEFFC6D2A0C8D5DEB22 /* [CP] Embed Pods Frameworks */,
+				8F90C08E3A6B4C3DA6D3E501 /* Generate TalsecRuntime dSYM */,
 			);
 			buildRules = (
 			);
@@ -198,6 +199,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-App/Pods-App-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		8F90C08E3A6B4C3DA6D3E501 /* Generate TalsecRuntime dSYM */ = {
+			isa = PBXShellScriptBuildPhase;
+			basedOnDependencyAnalysis = 0;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../../node_modules/capacitor-freerasp/ios/Plugin/TalsecRuntime.xcframework/ios-arm64/TalsecRuntime.framework/TalsecRuntime",
+				"$(SRCROOT)/../../scripts/ensure-talsec-ios-dsym.sh",
+			);
+			name = "Generate TalsecRuntime dSYM";
+			outputPaths = (
+				"$(DWARF_DSYM_FOLDER_PATH)/TalsecRuntime.framework.dSYM",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${ACTION:-}\" = \"install\" ]; then\n  /bin/bash \"${SRCROOT}/../../scripts/ensure-talsec-ios-dsym.sh\"\nelse\n  echo \"Skipping TalsecRuntime dSYM generation for ACTION=${ACTION:-unset}\"\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

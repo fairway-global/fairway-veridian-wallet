@@ -58,7 +58,9 @@ function hasUuidOverlap(a, b) {
 function main() {
   const archive = getNewestArchive();
   if (!archive) {
-    console.error("No .xcarchive found under ~/Library/Developer/Xcode/Archives");
+    console.error(
+      "No .xcarchive found under ~/Library/Developer/Xcode/Archives"
+    );
     process.exit(1);
   }
 
@@ -78,7 +80,27 @@ function main() {
     "DWARF",
     "App"
   );
-  const talsecDsym = path.join(archive, "dSYMs", "TalsecRuntime.framework.dSYM");
+  const talsecDsym = path.join(
+    archive,
+    "dSYMs",
+    "TalsecRuntime.framework.dSYM"
+  );
+  const talsecBinary = path.join(
+    archive,
+    "Products",
+    "Applications",
+    "App.app",
+    "Frameworks",
+    "TalsecRuntime.framework",
+    "TalsecRuntime"
+  );
+  const talsecDsymDwarf = path.join(
+    talsecDsym,
+    "Contents",
+    "Resources",
+    "DWARF",
+    "TalsecRuntime"
+  );
 
   console.log(`Using archive: ${archive}`);
 
@@ -91,7 +113,11 @@ function main() {
 
   const appBinaryUuids = getUuids(appBinary);
   const appDsymUuids = getUuids(appDsymDwarf);
-  if (appBinaryUuids.length && appDsymUuids.length && !hasUuidOverlap(appBinaryUuids, appDsymUuids)) {
+  if (
+    appBinaryUuids.length &&
+    appDsymUuids.length &&
+    !hasUuidOverlap(appBinaryUuids, appDsymUuids)
+  ) {
     console.error(
       "App dSYM UUID mismatch with App binary. Re-archive after Product > Clean Build Folder."
     );
@@ -101,11 +127,25 @@ function main() {
   console.log("App.app.dSYM looks valid.");
 
   if (!fs.existsSync(talsecDsym)) {
-    console.warn(
-      "Warning: TalsecRuntime.framework.dSYM is missing from the archive. This usually comes from the vendor XCFramework and does not block TestFlight."
+    console.error(
+      "Missing TalsecRuntime.framework.dSYM. Run npm run ios:fix-latest-archive-symbols, or re-archive in Xcode with the Generate TalsecRuntime dSYM build phase enabled."
     );
+    process.exit(1);
+  }
+
+  const talsecBinaryUuids = getUuids(talsecBinary);
+  const talsecDsymUuids = getUuids(talsecDsymDwarf);
+  if (
+    talsecBinaryUuids.length &&
+    talsecDsymUuids.length &&
+    !hasUuidOverlap(talsecBinaryUuids, talsecDsymUuids)
+  ) {
+    console.error(
+      "TalsecRuntime.framework.dSYM UUID mismatch with the embedded TalsecRuntime.framework binary."
+    );
+    process.exit(1);
   } else {
-    console.log("TalsecRuntime.framework.dSYM found.");
+    console.log("TalsecRuntime.framework.dSYM looks valid.");
   }
 }
 

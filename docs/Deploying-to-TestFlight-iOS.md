@@ -496,9 +496,10 @@ Symptom:
 Fix:
 
 - this warning comes from the prebuilt `TalsecRuntime.xcframework` inside `capacitor-freerasp`
-- the npm package currently ships the framework binary without the matching dSYM
-- the upload can still process in TestFlight; it only affects symbolication for that vendor framework
-- run `npm run ios:check-archive-symbols` after archiving to verify the app's own `App.app.dSYM` is present and matches the archive
+- the npm package currently ships the framework binary without the matching archive dSYM
+- Xcode now has a `Generate TalsecRuntime dSYM` build phase that creates the missing dSYM automatically during Archive builds
+- if an already-created archive still shows this warning, run `npm run ios:fix-latest-archive-symbols`, then distribute the archive again
+- run `npm run ios:check-archive-symbols` after archiving to verify both `App.app.dSYM` and `TalsecRuntime.framework.dSYM` are present and match the archive binaries
 
 ## Windows answer in plain language
 

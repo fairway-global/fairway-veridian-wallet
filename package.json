@@ -18,6 +18,7 @@
     "ios:build:bump": "node ./scripts/set-ios-version.cjs --bump-build",
     "ios:check-upload-toolchain": "node ./scripts/check-ios-upload-toolchain.cjs",
     "ios:check-archive-symbols": "node ./scripts/check-ios-archive-dsyms.cjs",
+    "ios:fix-latest-archive-symbols": "bash ./scripts/ensure-talsec-ios-dsym.sh --latest-archive",
     "ios:prepare-release": "cross-env DEV_SKIP_ONBOARDING=false ENVIRONMENT=prod APP_ALLOW_XCODE_DEBUG=false webpack --config webpack.prod.cjs && npx cap sync ios && npm run build:ios:flags",
     "ios:prepare-xcode-debug": "cross-env DEV_SKIP_ONBOARDING=false ENVIRONMENT=prod APP_ALLOW_XCODE_DEBUG=true webpack --config webpack.prod.cjs && npx cap sync ios && npm run build:ios:flags",
     "build:android:proguard": "node .\\scripts\\copy-freerasp-proguard.cjs",
