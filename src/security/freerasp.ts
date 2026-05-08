@@ -1,4 +1,5 @@
 import { startFreeRASP } from "capacitor-freerasp";
+import { Capacitor } from "@capacitor/core";
 import React, { Dispatch, SetStateAction } from "react";
 import { i18n } from "../i18n";
 import { ConfigurationService } from "../core/configuration";
@@ -30,8 +31,20 @@ export type FreeRASPInitResult =
   | { success: true }
   | { success: false; error: unknown };
 
+const IOS_BUNDLE_ID_FALLBACK = "global.fairway.faydaidw";
+const IOS_TEAM_ID_FALLBACK = "6DQG622GQY";
+const ANDROID_PACKAGE_NAME_FALLBACK = "org.cardanofoundation.idw";
+
+const isValidAppleTeamId = (teamId: string): boolean =>
+  /^[A-Z0-9]{10}$/.test(teamId);
+
+const allowsXcodeDebugging = (): boolean => {
+  return process.env.APP_ALLOW_XCODE_DEBUG === "true";
+};
+
 const createNonBlockingThreatAction = (threatName: ThreatName) => {
   return () => {
+    // eslint-disable-next-line no-console
     console.warn(`[freeRASP] Non-blocking threat detected: ${threatName}`);
   };
 };
@@ -63,6 +76,24 @@ const createThreatAction = (
 export const initializeFreeRASP = async (
   setThreatsDetected: Dispatch<SetStateAction<ThreatCheck[]>>
 ): Promise<FreeRASPInitResult> => {
+  const platform = Capacitor.getPlatform();
+  const iosBundleId = process.env.APP_BUNDLE_ID || IOS_BUNDLE_ID_FALLBACK;
+  const androidPackageName =
+    process.env.ANDROID_APP_ID || ANDROID_PACKAGE_NAME_FALLBACK;
+  const appTeamId = process.env.APP_TEAM_ID || IOS_TEAM_ID_FALLBACK;
+  const hasValidAppTeamId = isValidAppleTeamId(appTeamId);
+  const isRASPProduction = ConfigurationService.env.security.rasp.enabled;
+  const nonBlockingAppIntegrityOnIOS = platform === "ios" && !hasValidAppTeamId;
+  const nonBlockingDebug =
+    platform === "ios" && isRASPProduction && allowsXcodeDebugging();
+
+  if (nonBlockingAppIntegrityOnIOS) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[freeRASP] APP_TEAM_ID is missing/invalid. App integrity threat will be non-blocking on iOS."
+    );
+  }
+
   const certificateHashes = [process.env.APP_CERT_HASH].filter(
     (value): value is string => Boolean(value)
   );
@@ -77,21 +108,25 @@ export const initializeFreeRASP = async (
       ThreatName.PRIVILEGED_ACCESS,
       i18n.t("systemthreats.rules.privilegedaccess")
     ),
-    debug: createThreatAction(
-      setThreatsDetected,
-      ThreatName.DEBUG,
-      i18n.t("systemthreats.rules.debug")
-    ),
+    debug: nonBlockingDebug
+      ? createNonBlockingThreatAction(ThreatName.DEBUG)
+      : createThreatAction(
+        setThreatsDetected,
+        ThreatName.DEBUG,
+        i18n.t("systemthreats.rules.debug")
+      ),
     simulator: createThreatAction(
       setThreatsDetected,
       ThreatName.SIMULATOR,
       i18n.t("systemthreats.rules.simulator")
     ),
-    appIntegrity: createThreatAction(
-      setThreatsDetected,
-      ThreatName.APP_INTEGRITY,
-      i18n.t("systemthreats.rules.appintegrity")
-    ),
+    appIntegrity: nonBlockingAppIntegrityOnIOS
+      ? createNonBlockingThreatAction(ThreatName.APP_INTEGRITY)
+      : createThreatAction(
+        setThreatsDetected,
+        ThreatName.APP_INTEGRITY,
+        i18n.t("systemthreats.rules.appintegrity")
+      ),
     // This app is intentionally distributed as a signed APK outside Play/App Store.
     // freeRASP flags direct APK installs as "unofficial store" by default, so we
     // keep this as a warning instead of blocking the whole app.
@@ -135,15 +170,15 @@ export const initializeFreeRASP = async (
 
   const freeRASPConfig = {
     androidConfig: {
-      packageName: "org.cardanofoundation.idw",
+      packageName: androidPackageName,
       certificateHashes,
     },
     iosConfig: {
-      appBundleId: "org.cardanofoundation.idw",
-      appTeamId: process.env.APP_TEAM_ID || "",
+      appBundleId: iosBundleId,
+      appTeamId: hasValidAppTeamId ? appTeamId : "",
     },
     watcherMail,
-    isProd: ConfigurationService.env.security.rasp.enabled,
+    isProd: isRASPProduction,
   };
 
   try {

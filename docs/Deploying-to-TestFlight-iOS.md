@@ -5,10 +5,10 @@ This guide is written for a teammate who will do the iOS upload from a Mac.
 It is specific to this repository:
 
 - App name: `Fairwallet`
-- Current bundle ID: `org.cardanofoundation.idw`
+- Current bundle ID: `global.fairway.faydaidw`
 - Current version: `1.1.0`
-- Current iOS build number: `1`
-- iOS deployment target in the Podfile: `18.0`
+- Current iOS build number: `3`
+- iOS deployment target in the Podfile: `17.0`
 - Default beta/demo web build command: `npm run build`
 - iOS project to open in Xcode: `ios/App/App.xcworkspace`
 
@@ -56,7 +56,7 @@ If the app record does not exist yet in App Store Connect, someone with the righ
 
 Install:
 
-- the latest stable Xcode that supports iOS 18 SDKs
+- Xcode 26 or later, with the iOS 26 SDK or later
 - Xcode Command Line Tools
 - CocoaPods
 - Node.js 20
@@ -68,8 +68,11 @@ Helpful checks:
 node -v
 npm -v
 xcodebuild -version
+xcrun --sdk iphoneos --show-sdk-version
 pod --version
 ```
+
+As of May 7, 2026, App Store Connect rejects uploads built with older SDKs. If `xcodebuild -version` reports Xcode 16.2 or `xcrun --sdk iphoneos --show-sdk-version` reports `18.2`, the archive will fail validation before it reaches TestFlight.
 
 ## Important repo-specific notes
 
@@ -142,7 +145,15 @@ npm install
 
 If npm fails because of a local environment mismatch, fix that first before going to Xcode.
 
-### Step 4. Build the web app for the beta/demo environment
+### Step 4. Check the iOS upload toolchain
+
+```bash
+npm run ios:check-upload-toolchain
+```
+
+This must pass before archiving. It verifies the active Xcode selected by `xcode-select` has the iOS SDK required by App Store Connect.
+
+### Step 5. Build the web app for the beta/demo environment
 
 Recommended first pass for a demo/TestFlight build:
 
@@ -159,12 +170,12 @@ Why this is the safe default:
 If you specifically want a production-like configuration with `rasp.enabled: true`, use:
 
 ```bash
-npx cross-env ENVIRONMENT=prod webpack --config webpack.prod.cjs
+npm run ios:prepare-release
 ```
 
-Only choose that if you intentionally want the stricter production configuration and your `APP_TEAM_ID` plus signing setup are already correct.
+Only choose that if you intentionally want the stricter production configuration and your `APP_TEAM_ID` plus signing setup are already correct. For local physical-device debugging from Xcode with the debugger attached, use `npm run ios:prepare-xcode-debug` instead.
 
-### Step 5. Sync the iOS native project
+### Step 6. Sync the iOS native project
 
 ```bash
 npx cap sync ios
@@ -172,13 +183,13 @@ npx cap sync ios
 
 This step copies the fresh web build into the iOS app and refreshes native dependencies.
 
-### Step 6. Apply the iOS release xcconfig overrides
+### Step 7. Apply the iOS release xcconfig overrides
 
 ```bash
 npm run build:ios:flags
 ```
 
-### Step 7. Open the iOS workspace in Xcode
+### Step 8. Open the iOS workspace in Xcode
 
 Either run:
 
@@ -196,7 +207,7 @@ Always open the `.xcworkspace`, not only the `.xcodeproj`.
 
 ## Step-by-step: configure signing in Xcode
 
-### Step 8. Select the correct target and team
+### Step 9. Select the correct target and team
 
 In Xcode:
 
@@ -207,7 +218,7 @@ In Xcode:
 5. Turn on automatic signing if it is not already enabled.
 6. Choose the correct Team.
 
-### Step 9. Confirm the bundle identifier
+### Step 10. Confirm the bundle identifier
 
 The repo is currently configured for:
 
@@ -230,7 +241,7 @@ If you change the bundle ID for iOS, do not change it in only one place. This re
 
 If you need that bundle-ID rewrite, make it as a separate code change before archiving.
 
-### Step 10. Set version and build number
+### Step 11. Set version and build number
 
 In Xcode, open the `General` tab for the `App` target and check:
 
@@ -250,7 +261,7 @@ Example:
 
 If you forget to increment the build number, App Store Connect will reject the upload.
 
-### Step 11. Choose a real archive destination
+### Step 12. Choose a real archive destination
 
 At the top of Xcode, choose a generic device target such as:
 
@@ -262,7 +273,7 @@ Do not archive while a simulator destination is selected.
 
 ## Step-by-step: validate locally before upload
 
-### Step 12. Do one clean build in Xcode
+### Step 13. Do one clean build in Xcode
 
 Recommended:
 
@@ -271,7 +282,7 @@ Recommended:
 
 If the build fails, fix that before attempting an archive.
 
-### Step 13. Optional but strongly recommended: run on one physical iPhone
+### Step 14. Optional but strongly recommended: run on one physical iPhone
 
 Before pushing to TestFlight, it is smart to:
 
@@ -284,7 +295,7 @@ This catches signing/device/runtime problems earlier than TestFlight does.
 
 ## Step-by-step: archive and upload
 
-### Step 14. Archive the app
+### Step 15. Archive the app
 
 In Xcode:
 
@@ -292,7 +303,7 @@ In Xcode:
 2. wait for Xcode Organizer to open
 3. select the new archive
 
-### Step 15. Distribute to App Store Connect
+### Step 16. Distribute to App Store Connect
 
 In Organizer:
 
@@ -307,7 +318,7 @@ If validation fails, fix the reported issue before retrying.
 
 ## Step-by-step: finish the TestFlight setup in App Store Connect
 
-### Step 16. Wait for Apple processing
+### Step 17. Wait for Apple processing
 
 After upload:
 
@@ -317,7 +328,7 @@ After upload:
 
 If it still is not visible, wait longer before assuming something is broken.
 
-### Step 17. Resolve compliance prompts
+### Step 18. Resolve compliance prompts
 
 This app uses encryption-related components, so expect App Store Connect export compliance questions.
 
@@ -325,7 +336,7 @@ Do not skip them.
 
 If App Store Connect shows a compliance warning or a `Missing Compliance` build status, answer the export compliance questions before expecting normal TestFlight distribution.
 
-### Step 18. Internal TestFlight testing
+### Step 19. Internal TestFlight testing
 
 Internal testing is the fastest way to start.
 
@@ -339,7 +350,7 @@ In App Store Connect:
 
 Use this first if you only want your own team to install the app.
 
-### Step 19. External TestFlight testing
+### Step 20. External TestFlight testing
 
 If you want to send the app to people outside the App Store Connect team, do this after internal testing works.
 
@@ -438,17 +449,56 @@ Fix:
 2. clean the build folder
 3. build again
 
+### Upload fails with an SDK version issue
+
+Symptom:
+
+- Xcode Organizer says `Upload failed with errors`
+- the hard error is `SDK version issue`
+- the message says the app was built with the iOS 18.2 SDK and must be built with the iOS 26 SDK or later
+
+Fix:
+
+- install Xcode 26 or later
+- switch the active command line tools to that Xcode with `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
+- run `npm run ios:check-upload-toolchain` and confirm it passes
+- clean the Xcode build folder, archive again, and upload the new archive
+- do not try to fix this with `IPHONEOS_DEPLOYMENT_TARGET`; App Store Connect checks the SDK used to build the archive, not the minimum iOS version your app supports
+
 ### freeRASP or prod security configuration behaves unexpectedly
 
 Symptom:
 
 - a production-style build behaves differently than the normal demo build
+- TestFlight opens to a `Threats Detected` screen mentioning `Verifier` or app integrity
+- running from Xcode opens to a `Threats Detected` screen mentioning debug mode
 
 Fix:
 
-- verify `APP_TEAM_ID`
+- verify `APP_BUNDLE_ID=global.fairway.faydaidw`
+- verify `APP_TEAM_ID=6DQG622GQY`
 - verify whether you intended `remote` or `prod`
+- for local physical-device Xcode debugging, run `npm run ios:prepare-xcode-debug` before running from Xcode
+- before creating a TestFlight/App Store archive, run `npm run ios:prepare-release`
+- do not use the Xcode-debug build for TestFlight/App Store archives
+- rerun `npm run build`, `npx cap sync ios`, and `npm run build:ios:flags`
+- clean the Xcode build folder, archive again, and upload a new incremented build number
 - for the first demo build, prefer `npm run build` unless you explicitly need the stricter prod path
+
+### Xcode upload warns about TalsecRuntime symbols
+
+Symptom:
+
+- Xcode Organizer says `Upload completed with warnings`
+- the warning is `Upload Symbols Failed`
+- the missing dSYM is for `TalsecRuntime.framework` with UUID `03C7AE02-DE1D-3147-8E5D-C7DB23CF74EC`
+
+Fix:
+
+- this warning comes from the prebuilt `TalsecRuntime.xcframework` inside `capacitor-freerasp`
+- the npm package currently ships the framework binary without the matching dSYM
+- the upload can still process in TestFlight; it only affects symbolication for that vendor framework
+- run `npm run ios:check-archive-symbols` after archiving to verify the app's own `App.app.dSYM` is present and matches the archive
 
 ## Windows answer in plain language
 

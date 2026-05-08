@@ -17,7 +17,7 @@
     "plugin:react-hooks/recommended",
     "plugin:import/warnings"
   ],
-  "excludes": ["node_modules", "dist", "build", "*.test.ts", "*.test.tsx"],
+  "ignorePatterns": ["node_modules/", "dist/", "build/"],
   "overrides": [
     {
       "files": ["**/*.test.ts", "**/*.test.tsx"],

@@ -24,10 +24,11 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>org.cardanofoundation.idw</string>
+			<string>global.fairway.faydaidw</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>org.cardanofoundation.idw</string>
+				<string>global.fairway.faydaidw</string>
 			</array>
 		</dict>
 	</array>
@@ -54,7 +55,7 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
