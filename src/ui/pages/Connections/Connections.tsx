@@ -55,19 +55,25 @@ import { ConnectionDetails } from "../ConnectionDetails";
 import { CreateIdentifier } from "../../components/CreateIdentifier";
 import { SearchInput } from "./components/SearchInput";
 import { FaydaModal } from "../faydaFlow/faydaModal";
+import { CandourModal } from "../candourFlow/CandourModal";
 import { setFaydaVerified } from "../../../store/reducers/faydaVerifiedCache";
 import { selectFaydaVerified } from "../../../store/selectors/faydaVerifiedSelectors";
-import { normalizeApiBaseUrl } from "../../utils/envUrl";
+import {
+  IDENTITY_PENDING_CONNECTION_ID_STORAGE_KEY,
+  IDENTITY_PENDING_CONNECTION_LABEL_STORAGE_KEY,
+  IDENTITY_VERIFIED_STATUSES,
+  getIdentityVerificationApiBase,
+  getIdentityVerificationProvider,
+  getIdentityVerificationStatusPath,
+} from "../../utils/identityVerification";
 
-const FAYDA_STATUS_API_BASE = normalizeApiBaseUrl(
-  process.env.REACT_APP_FAYDA_ISSUER_API,
-  "http://localhost:3001"
+const IDENTITY_VERIFICATION_PROVIDER = getIdentityVerificationProvider();
+const IDENTITY_STATUS_API_BASE = getIdentityVerificationApiBase(
+  IDENTITY_VERIFICATION_PROVIDER
 );
-const FAYDA_VERIFIED_STATUSES = new Set([
-  "verified",
-  "pending_manual_review",
-  "credential_issued",
-]);
+const IDENTITY_STATUS_PATH = getIdentityVerificationStatusPath(
+  IDENTITY_VERIFICATION_PROVIDER
+);
 
 const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
   ({ showConnections, setShowConnections }, ref) => {
@@ -232,7 +238,7 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
       let pendingIssuerAid = "";
       try {
         pendingIssuerAid = String(
-          window.localStorage.getItem("fayda_pending_connection_id") || ""
+          window.localStorage.getItem(IDENTITY_PENDING_CONNECTION_ID_STORAGE_KEY) || ""
         ).trim();
       } catch {
         pendingIssuerAid = "";
@@ -247,7 +253,7 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
         }
 
         const response = await fetch(
-          `${FAYDA_STATUS_API_BASE}/saveFayda?${params.toString()}`
+          `${IDENTITY_STATUS_API_BASE}${IDENTITY_STATUS_PATH}?${params.toString()}`
         );
 
         if (!response.ok) {
@@ -261,7 +267,7 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
         ).trim();
         const verified =
           Boolean(payload?.data?.verified) ||
-          FAYDA_VERIFIED_STATUSES.has(verificationStatus);
+          IDENTITY_VERIFIED_STATUSES.has(verificationStatus);
         dispatch(setFaydaVerified(verified));
         return verified;
       } catch {
@@ -278,7 +284,7 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
       let pendingConnectionId: string | null = null;
       try {
         pendingConnectionId = window.localStorage.getItem(
-          "fayda_pending_connection_id"
+          IDENTITY_PENDING_CONNECTION_ID_STORAGE_KEY
         );
       } catch {
         pendingConnectionId = null;
@@ -309,7 +315,7 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
 
         try {
           window.localStorage.setItem(
-            "fayda_pending_connection_label",
+            IDENTITY_PENDING_CONNECTION_LABEL_STORAGE_KEY,
             pendingConnection.label || ""
           );
         } catch {
@@ -406,11 +412,11 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
       if (deletePendingItem) {
         try {
           window.localStorage.setItem(
-            "fayda_pending_connection_id",
+            IDENTITY_PENDING_CONNECTION_ID_STORAGE_KEY,
             deletePendingItem.id
           );
           window.localStorage.setItem(
-            "fayda_pending_connection_label",
+            IDENTITY_PENDING_CONNECTION_LABEL_STORAGE_KEY,
             deletePendingItem.label || ""
           );
         } catch {
@@ -551,10 +557,17 @@ const Connections = forwardRef<ConnectionsOptionRef, ConnectionsComponentProps>(
           )}`}
           onFinishConnecting={handleFinishConnecting}
         />
-        <FaydaModal
-          isOpen={verifiedWithFayda}
-          setIsOpen={setVerifiedWithFayda}
-        />
+        {IDENTITY_VERIFICATION_PROVIDER === "candour" ? (
+          <CandourModal
+            isOpen={verifiedWithFayda}
+            setIsOpen={setVerifiedWithFayda}
+          />
+        ) : (
+          <FaydaModal
+            isOpen={verifiedWithFayda}
+            setIsOpen={setVerifiedWithFayda}
+          />
+        )}
       </>
     );
   }

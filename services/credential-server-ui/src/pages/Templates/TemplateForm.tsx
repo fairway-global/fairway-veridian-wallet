@@ -21,22 +21,17 @@ import { useSchemaDetail } from "../../hooks/SchemaDetail";
 import { i18n } from "../../i18n";
 import {
   TemplateAttribute,
-  TemplateAttributeType,
 } from "../../services/template.types";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { fetchSchemas } from "../../store/reducers/schemasSlice";
 import { triggerToast } from "../../utils/toast";
+import {
+  normalizeTemplateAttributeType,
+  TEMPLATE_ATTRIBUTE_TYPES,
+} from "../../utils/templateAttributeFields";
 import { TemplateFormProps, TemplateFormState } from "./Templates.types";
 import { getTemplateAttributeTypeLabel } from "./attributeTypeLabels";
 import "../../styles/dashboardForms.scss";
-
-const TEMPLATE_ATTRIBUTE_TYPES: TemplateAttributeType[] = [
-  "string",
-  "integer",
-  "number",
-  "boolean",
-];
-const TEMPLATE_ATTRIBUTE_TYPES_SET = new Set(TEMPLATE_ATTRIBUTE_TYPES);
 
 const defaultTemplateState: TemplateFormState = {
   name: "",
@@ -104,22 +99,20 @@ const TemplateForm = ({
     const attributeSchema = schemaDetail?.properties?.a?.oneOf?.[1];
     const properties = (attributeSchema?.properties || {}) as Record<
       string,
-      { type?: string }
+      { type?: string; format?: string }
     >;
     const requiredFields = new Set(attributeSchema?.required || []);
 
     return Object.keys(properties)
       .filter((attributeName) => !IGNORE_ATTRIBUTES.includes(attributeName))
       .map((attributeName) => {
-        const attributeType = String(properties[attributeName]?.type || "string")
-          .trim()
-          .toLowerCase() as TemplateAttributeType;
-
         return {
           name: attributeName,
-          type: TEMPLATE_ATTRIBUTE_TYPES_SET.has(attributeType)
-            ? attributeType
-            : "string",
+          type: normalizeTemplateAttributeType({
+            name: attributeName,
+            type: properties[attributeName]?.type,
+            format: properties[attributeName]?.format,
+          }),
           required: requiredFields.has(attributeName),
         };
       });
@@ -496,16 +489,17 @@ const TemplateForm = ({
                         itemIndex === index
                           ? {
                               ...item,
-                              type: event.target.value as TemplateAttributeType,
+                              type: normalizeTemplateAttributeType({
+                                name: item.name,
+                                type: event.target.value,
+                              }),
                             }
                           : item
                       ),
                     }))
                   }
                   className="dashboard-attribute-select"
-                  renderValue={(selected) =>
-                    getTemplateAttributeTypeLabel(selected as TemplateAttributeType)
-                  }
+                  renderValue={(selected) => getTemplateAttributeTypeLabel(String(selected))}
                 >
                   {TEMPLATE_ATTRIBUTE_TYPES.map((type) => (
                     <MenuItem

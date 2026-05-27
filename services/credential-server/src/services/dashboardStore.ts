@@ -8,9 +8,12 @@ import {
   DashboardStoreData,
   IssuedCredentialRecord,
   TemplateAttribute,
-  TemplateAttributeType,
   TemplateRecord,
 } from "./dashboardStore.types";
+import {
+  getJsonSchemaTypeForAttribute,
+  normalizeTemplateAttributeType,
+} from "./templateAttributeUtils";
 
 const DEFAULT_DASHBOARD_DB_PATH = path.resolve(
   __dirname,
@@ -25,13 +28,6 @@ const DASHBOARD_DB_PATH = path.resolve(
 );
 const ACTIVE_SCHEMA_DIR_PATH = path.resolve(__dirname, "../schemas");
 const IGNORED_SCHEMA_ATTRIBUTE_KEYS = new Set(["d", "i", "u", "dt"]);
-const ATTRIBUTE_TYPE_SET = new Set<TemplateAttributeType>([
-  "string",
-  "integer",
-  "number",
-  "boolean",
-]);
-
 interface SchemaListItem {
   id: string;
   name: string;
@@ -97,17 +93,13 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function normalizeAttributeType(value: unknown): TemplateAttributeType {
-  const normalized = String(value || "string")
-    .trim()
-    .toLowerCase() as TemplateAttributeType;
-  return ATTRIBUTE_TYPE_SET.has(normalized) ? normalized : "string";
-}
-
 function normalizeAttribute(value: Partial<TemplateAttribute>): TemplateAttribute {
   return {
     name: String(value.name || "").trim(),
-    type: normalizeAttributeType(value.type),
+    type: normalizeTemplateAttributeType({
+      name: value.name,
+      type: value.type,
+    }),
     required: Boolean(value.required),
   };
 }
@@ -199,9 +191,10 @@ function buildGeneratedSchemaDocument(
       continue;
     }
 
+    const schemaType = getJsonSchemaTypeForAttribute(attribute.type);
     attributeProperties[attribute.name] = {
       description: attribute.name,
-      type: attribute.type,
+      ...schemaType,
     };
   }
 
@@ -427,7 +420,7 @@ function parseSchemaAttributes(schemaId: string): TemplateAttribute[] {
       properties?: {
         a?: {
           oneOf?: Array<{
-            properties?: Record<string, { type?: string }>;
+            properties?: Record<string, { type?: string; format?: string }>;
             required?: string[];
           }>;
         };
@@ -442,7 +435,11 @@ function parseSchemaAttributes(schemaId: string): TemplateAttribute[] {
       .filter((key) => !IGNORED_SCHEMA_ATTRIBUTE_KEYS.has(key))
       .map((key) => ({
         name: key,
-        type: normalizeAttributeType(properties[key]?.type),
+        type: normalizeTemplateAttributeType({
+          name: key,
+          type: properties[key]?.type,
+          format: properties[key]?.format,
+        }),
         required: requiredKeys.has(key),
       }));
   } catch {

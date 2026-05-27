@@ -12,20 +12,15 @@ import {
   syncSchemaVisibilityForIssuer,
 } from "./schemaAccessService";
 import { resolveOobi } from "../utils/utils";
+import { normalizeTemplateAttributeType } from "./templateAttributeUtils";
 
 const IGNORED_SCHEMA_ATTRIBUTE_KEYS = new Set(["d", "i", "u", "dt"]);
-const ATTRIBUTE_TYPE_SET = new Set<TemplateAttributeType>([
-  "string",
-  "integer",
-  "number",
-  "boolean",
-]);
 
 type SchemaDocument = {
   properties?: {
     a?: {
       oneOf?: Array<{
-        properties?: Record<string, { type?: unknown }>;
+        properties?: Record<string, { type?: unknown; format?: unknown }>;
         required?: unknown[];
       }>;
     };
@@ -33,11 +28,9 @@ type SchemaDocument = {
 };
 
 function normalizeAttributeType(value: unknown): TemplateAttributeType {
-  const normalized = String(value || "string")
-    .trim()
-    .toLowerCase() as TemplateAttributeType;
-
-  return ATTRIBUTE_TYPE_SET.has(normalized) ? normalized : "string";
+  return normalizeTemplateAttributeType({
+    type: value,
+  });
 }
 
 export function normalizeTemplateAttributes(
@@ -70,7 +63,11 @@ export function extractTemplateAttributesFromSchemaDocument(
     .filter((name) => !IGNORED_SCHEMA_ATTRIBUTE_KEYS.has(name))
     .map((name) => ({
       name,
-      type: normalizeAttributeType(properties[name]?.type),
+      type: normalizeTemplateAttributeType({
+        name,
+        type: properties[name]?.type,
+        format: properties[name]?.format,
+      }),
       required: requiredFields.has(name),
     }));
 }

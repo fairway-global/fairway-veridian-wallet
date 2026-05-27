@@ -1,10 +1,15 @@
-import { Box } from "@mui/material";
-import { i18n } from "../../i18n";
-import { AppInput } from "../AppInput";
+import { Box, MenuItem, TextField } from "@mui/material";
 import { InputAttributeProps } from "./IssueCredentialModal.types";
+import {
+  formatTemplateAttributeLabel,
+  getTemplateAttributeInputConfig,
+  normalizeTemplateAttributeType,
+  normalizeTemplateAttributeValueForInput,
+} from "../../utils/templateAttributeFields";
 
 interface AttributeSchema {
   type: string;
+  format?: string;
   [key: string]: unknown;
 }
 
@@ -18,32 +23,101 @@ const InputAttribute = ({
   return (
     <Box className="input-attribute">
       {attributes.map((attribute) => {
-        const inputLabelText = attribute.replace(/([a-z])([A-Z])/g, "$1 $2");
-        const schemaType = properties?.[attribute]?.type;
-        const type = schemaType === "integer" ? "integer" : "string";
+        const inferredType = normalizeTemplateAttributeType({
+          name: attribute,
+          type: properties?.[attribute]?.type,
+          format: properties?.[attribute]?.format,
+        });
+        const inputValue = normalizeTemplateAttributeValueForInput(
+          {
+            name: attribute,
+            type: inferredType,
+          },
+          value[attribute]
+        );
+        const inputConfig = getTemplateAttributeInputConfig(
+          {
+            name: attribute,
+            type: inferredType,
+          },
+          inputValue
+        );
 
-        const inputValue: string =
-          value[attribute] !== undefined && value[attribute] !== null
-            ? String(value[attribute])
-            : "";
+        if (inputConfig.control === "select") {
+          return (
+            <TextField
+              key={attribute}
+              select
+              fullWidth
+              label={formatTemplateAttributeLabel(attribute)}
+              value={inputValue}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                if (inferredType === "boolean") {
+                  setValue(
+                    attribute,
+                    nextValue === "" ? "" : nextValue === "true"
+                  );
+                  return;
+                }
+
+                setValue(attribute, nextValue);
+              }}
+            >
+              {(inputConfig.options || []).map((option) => (
+                <MenuItem
+                  key={`${attribute}-${option.value}`}
+                  value={option.value}
+                >
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          );
+        }
+
+        if (inputConfig.control === "date") {
+          return (
+            <TextField
+              key={attribute}
+              fullWidth
+              type="date"
+              label={formatTemplateAttributeLabel(attribute)}
+              value={inputValue}
+              onChange={(event) => setValue(attribute, event.target.value)}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+          );
+        }
 
         return (
-          <AppInput
+          <TextField
             key={attribute}
             fullWidth
-            label={`${inputLabelText.at(0)?.toUpperCase()}${inputLabelText.slice(1)}`}
-            type={type}
-            optional={!required}
-            value={inputValue}
-            onChange={
-              type === "integer"
-                ? // @ts-expect-error -- suppress type error for controlled number input
-                  (val) => setValue(attribute, val == null ? "" : val)
-                : (e) => setValue(attribute, e.target.value)
+            label={formatTemplateAttributeLabel(attribute)}
+            type={
+              inputConfig.control === "number"
+                ? "number"
+                : inputConfig.htmlInputType || "text"
             }
-            placeholder={i18n.t(
-              "pages.credentialDetails.issueCredential.inputAttribute.placeholder"
-            )}
+            value={inputValue}
+            onChange={(event) => {
+              if (inputConfig.control === "number") {
+                setValue(attribute, event.target.value);
+                return;
+              }
+
+              setValue(attribute, event.target.value);
+            }}
+            inputProps={
+              inputConfig.control === "number"
+                ? {
+                    step: inferredType === "integer" ? 1 : "any",
+                  }
+                : undefined
+            }
           />
         );
       })}

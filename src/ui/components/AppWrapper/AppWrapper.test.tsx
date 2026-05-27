@@ -236,6 +236,19 @@ const dispatch = jest.fn();
 describe("Connection state changed handler", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    dispatch.mockClear();
+    (Agent.agent.identifiers.getIdentifiers as jest.Mock).mockResolvedValue(
+      filteredIdentifierFix
+    );
+    (global as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: {
+          verified: false,
+          verificationStatus: null,
+        },
+      }),
+    });
   });
 
   beforeAll(() => {
@@ -255,6 +268,15 @@ describe("Connection state changed handler", () => {
 
   test("handles connection state succuss", async () => {
     window.localStorage.setItem("fayda_verified", "true");
+    (global as any).fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: {
+          verified: true,
+          verificationStatus: "credential_issued",
+        },
+      }),
+    });
 
     const connectionStateChangedEventMockSuccess = {
       ...connectionStateChangedEvent,

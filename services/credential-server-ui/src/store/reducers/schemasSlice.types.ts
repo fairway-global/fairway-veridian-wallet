@@ -33,6 +33,7 @@ export type OneOfProperties = {
 export interface D {
   description: string;
   type: string;
+  format?: string;
 }
 
 export interface Dt {

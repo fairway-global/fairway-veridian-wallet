@@ -27,6 +27,7 @@ import {
 import { RealtimeEventService } from "../services/realtimeEventService";
 import { sendError, sendSuccess } from "../utils/apiResponse";
 import { getIssuerAliasFromRequest, getQviCredentialIdFromRequest } from "../utils/requestContext";
+import { coerceTemplateAttributeValue } from "../services/templateAttributeUtils";
 
 interface CredentialIssueRequestBody {
   templateId?: string;
@@ -53,23 +54,6 @@ type SignifyCredentialRecord = {
 
 function toCredentialStatus(statusCode: unknown): "issued" | "revoked" {
   return String(statusCode || "") === "1" ? "revoked" : "issued";
-}
-
-function toNumberBooleanOrString(
-  value: unknown,
-  type: string
-): string | number | boolean {
-  if (type === "integer") {
-    return Number.parseInt(String(value), 10);
-  }
-  if (type === "number") {
-    return Number(String(value));
-  }
-  if (type === "boolean") {
-    const normalized = String(value).trim().toLowerCase();
-    return ["true", "1", "yes"].includes(normalized);
-  }
-  return String(value);
 }
 
 function getIssuerId(req: Request): string {
@@ -270,10 +254,14 @@ export async function issueCredentialApiV2(
     if (rawValue === undefined || rawValue === null || String(rawValue).trim() === "") {
       continue;
     }
-    attributePayload[attribute.name] = toNumberBooleanOrString(
-      rawValue,
-      attribute.type
-    );
+
+    const typedValue = coerceTemplateAttributeValue(rawValue, attribute);
+    if (typedValue === undefined) {
+      sendError(res, 400, `Invalid value for attribute: ${attribute.name}`);
+      return;
+    }
+
+    attributePayload[attribute.name] = typedValue;
   }
 
   try {

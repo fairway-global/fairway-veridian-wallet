@@ -29,6 +29,10 @@ import {
 import { IssuerTemplateRecord } from "../services/tenantStore.types";
 import { RealtimeEventService } from "../services/realtimeEventService";
 import { IssuerSignifyService } from "../services/issuerSignifyService";
+import {
+  coerceTemplateAttributeValue,
+  hasMeaningfulValue,
+} from "../services/templateAttributeUtils";
 
 type FaydaData = {
   id?: string;
@@ -153,26 +157,6 @@ function normalizeLookupKey(value: unknown): string {
     .replace(/[^a-z0-9]+/g, "");
 }
 
-function hasMeaningfulValue(value: unknown): boolean {
-  if (value === undefined || value === null) {
-    return false;
-  }
-
-  if (typeof value === "string") {
-    return Boolean(value.trim());
-  }
-
-  if (Array.isArray(value)) {
-    return value.length > 0;
-  }
-
-  if (typeof value === "object") {
-    return Object.keys(value as Record<string, unknown>).length > 0;
-  }
-
-  return true;
-}
-
 function formatAddress(value: unknown): string {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return "";
@@ -247,40 +231,7 @@ function toTemplateAttributeValue(
   rawValue: unknown,
   attribute: TemplateAttribute
 ): string | number | boolean | undefined {
-  if (!hasMeaningfulValue(rawValue)) {
-    return undefined;
-  }
-
-  if (attribute.type === "integer") {
-    const parsed = Number.parseInt(String(rawValue).trim(), 10);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }
-
-  if (attribute.type === "number") {
-    const parsed = Number(String(rawValue).trim());
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }
-
-  if (attribute.type === "boolean") {
-    if (typeof rawValue === "boolean") {
-      return rawValue;
-    }
-
-    const normalized = toTrimmedString(rawValue).toLowerCase();
-    if (!normalized) {
-      return undefined;
-    }
-    if (["true", "1", "yes"].includes(normalized)) {
-      return true;
-    }
-    if (["false", "0", "no"].includes(normalized)) {
-      return false;
-    }
-
-    return undefined;
-  }
-
-  if (typeof rawValue === "object") {
+  if (typeof rawValue === "object" && attribute.type === "string") {
     const formattedAddress = formatAddress(rawValue);
     if (formattedAddress) {
       return formattedAddress;
@@ -288,8 +239,7 @@ function toTemplateAttributeValue(
     return JSON.stringify(rawValue);
   }
 
-  const normalized = toTrimmedString(rawValue);
-  return normalized || undefined;
+  return coerceTemplateAttributeValue(rawValue, attribute);
 }
 
 function extractFaydaIdFromRecord(record: Record<string, unknown>): string {

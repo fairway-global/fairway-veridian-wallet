@@ -51,6 +51,7 @@ export async function runMigrations(): Promise<void> {
     "012_issuer_application_requests.sql",
     "013_schema_registry.sql",
     "014_backfill_schema_registry_owners.sql",
+    "015_candour_verification_state.sql",
   ];
 
   for (const migrationFile of migrationFiles) {

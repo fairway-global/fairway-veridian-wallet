@@ -315,7 +315,8 @@
             "string": "Text",
             "integer": "Whole number",
             "number": "Decimal number",
-            "boolean": "True / false"
+            "boolean": "True / false",
+            "date": "Date"
           },
           "required": "Required"
         },

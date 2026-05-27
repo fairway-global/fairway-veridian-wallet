@@ -11,6 +11,11 @@ import { i18n } from "../../i18n";
 import { ContactService, ManagedCredentialService, TemplateService } from "../../services";
 import { CredentialTemplate } from "../../services/template.types";
 import { triggerToast } from "../../utils/toast";
+import {
+  formatTemplateAttributeLabel,
+  getTemplateAttributeInputConfig,
+  normalizeTemplateAttributeValueForInput,
+} from "../../utils/templateAttributeFields";
 import "../../styles/dashboardForms.scss";
 
 interface ConnectionOption {
@@ -161,7 +166,7 @@ const IssueCredentialForm = () => {
               const rawValue = prefill.values[attribute.name];
               return [
                 attribute.name,
-                rawValue === undefined || rawValue === null ? "" : String(rawValue),
+                normalizeTemplateAttributeValueForInput(attribute, rawValue),
               ];
             })
           )
@@ -357,25 +362,88 @@ const IssueCredentialForm = () => {
             {selectedTemplate && (
               <Box className="dashboard-form-panel">
                 <Box className="dashboard-form-grid dashboard-form-grid--auto-fill">
-                  {(selectedTemplate.attributes || []).map((attribute) => (
-                    <TextField
-                      key={attribute.name}
-                      type={
-                        attribute.type === "number" || attribute.type === "integer"
-                          ? "number"
-                          : "text"
-                      }
-                      label={`${attribute.name}${attribute.required ? " *" : ""}`}
-                      value={values[attribute.name] || ""}
-                      onChange={(event) =>
-                        setValues((currentValue) => ({
-                          ...currentValue,
-                          [attribute.name]: event.target.value,
-                        }))
-                      }
-                      fullWidth
-                    />
-                  ))}
+                  {(selectedTemplate.attributes || []).map((attribute) => {
+                    const currentValue = values[attribute.name] || "";
+                    const inputConfig = getTemplateAttributeInputConfig(
+                      attribute,
+                      currentValue
+                    );
+
+                    if (inputConfig.control === "select") {
+                      return (
+                        <TextField
+                          key={attribute.name}
+                          select
+                          label={`${formatTemplateAttributeLabel(attribute.name)}${attribute.required ? " *" : ""}`}
+                          value={currentValue}
+                          onChange={(event) =>
+                            setValues((currentValueMap) => ({
+                              ...currentValueMap,
+                              [attribute.name]: event.target.value,
+                            }))
+                          }
+                          fullWidth
+                        >
+                          {(inputConfig.options || []).map((option) => (
+                            <MenuItem
+                              key={`${attribute.name}-${option.value}`}
+                              value={option.value}
+                            >
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      );
+                    }
+
+                    if (inputConfig.control === "date") {
+                      return (
+                        <TextField
+                          key={attribute.name}
+                          type="date"
+                          label={`${formatTemplateAttributeLabel(attribute.name)}${attribute.required ? " *" : ""}`}
+                          value={currentValue}
+                          onChange={(event) =>
+                            setValues((currentValueMap) => ({
+                              ...currentValueMap,
+                              [attribute.name]: event.target.value,
+                            }))
+                          }
+                          fullWidth
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                        />
+                      );
+                    }
+
+                    return (
+                      <TextField
+                        key={attribute.name}
+                        type={
+                          inputConfig.control === "number"
+                            ? "number"
+                            : inputConfig.htmlInputType || "text"
+                        }
+                        label={`${formatTemplateAttributeLabel(attribute.name)}${attribute.required ? " *" : ""}`}
+                        value={currentValue}
+                        onChange={(event) =>
+                          setValues((currentValueMap) => ({
+                            ...currentValueMap,
+                            [attribute.name]: event.target.value,
+                          }))
+                        }
+                        fullWidth
+                        inputProps={
+                          inputConfig.control === "number"
+                            ? {
+                                step: attribute.type === "integer" ? 1 : "any",
+                              }
+                            : undefined
+                        }
+                      />
+                    );
+                  })}
                 </Box>
               </Box>
             )}

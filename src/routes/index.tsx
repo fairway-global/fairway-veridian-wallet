@@ -18,7 +18,7 @@ import { VerifyRecoverySeedPhrase } from "../ui/pages/VerifyRecoverySeedPhrase";
 import { VerifySeedPhrase } from "../ui/pages/VerifySeedPhrase";
 import { getNextRoute } from "./nextRoute";
 import { RoutePath } from "./paths";
-import { FaydaCallback } from "../ui/pages/faydaCallback/FaydaCallback";
+import { IdentityVerificationCallback } from "../ui/pages/identityVerificationCallback/IdentityVerificationCallback";
 
 const Routes = ({ className }: { className?: string }) => {
   const stateCache = useAppSelector(getStateCache);
@@ -90,7 +90,7 @@ const Routes = ({ className }: { className?: string }) => {
       />
       <Route
         path="/callback"
-        component={FaydaCallback}
+        component={IdentityVerificationCallback}
         exact
       />
     </IonRouterOutlet>

@@ -1,6 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import CredentialBG from "../../assets/credential-bg.svg";
 import { i18n } from "../../i18n";
+import { formatSchemaAttributeValue } from "../../utils/schemaAttributes";
 import { ReviewProps } from "./IssueCredentialModal.types";
 
 const Review = ({
@@ -70,7 +71,7 @@ const Review = ({
             className="content"
             variant="body2"
           >
-            {attribute[credAttribute.key]}
+            {formatSchemaAttributeValue(attribute[credAttribute.key])}
           </Typography>
         </Box>
       ))}

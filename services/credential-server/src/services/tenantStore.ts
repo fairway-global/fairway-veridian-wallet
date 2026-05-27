@@ -9,6 +9,7 @@ import {
   AuthPasswordResetTokenRecord,
   AuthRefreshTokenRecord,
   CreateIssuerTemplateInput,
+  IssuerCandourVerificationRecord,
   IssuerCredentialRecord,
   IssuerApplicationRequestRecord,
   IssuerApplicationRequestStatus,
@@ -142,10 +143,14 @@ function mapAccountChangeRequestRow(
     reviewedBy: row.reviewed_by ? String(row.reviewed_by) : null,
     adminNote: row.admin_note ? String(row.admin_note) : null,
     userEmail: row.user_email ? String(row.user_email) : undefined,
-    userRole: row.user_role ? (String(row.user_role) as IssuerUserRecord["role"]) : undefined,
+    userRole: row.user_role
+      ? (String(row.user_role) as IssuerUserRecord["role"])
+      : undefined,
     issuerCode: row.issuer_code ? String(row.issuer_code) : undefined,
     issuerName: row.issuer_name ? String(row.issuer_name) : undefined,
-    reviewedByEmail: row.reviewed_by_email ? String(row.reviewed_by_email) : undefined,
+    reviewedByEmail: row.reviewed_by_email
+      ? String(row.reviewed_by_email)
+      : undefined,
   };
 }
 
@@ -259,7 +264,9 @@ function parseBooleanRecord(value: unknown): Record<string, boolean> {
   );
 }
 
-function mapCredentialRow(row: Record<string, unknown>): IssuerCredentialRecord {
+function mapCredentialRow(
+  row: Record<string, unknown>
+): IssuerCredentialRecord {
   return {
     id: String(row.id),
     issuerId: String(row.issuer_id),
@@ -314,18 +321,14 @@ function mapPresentationRequestRow(
 
 function parseStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item || "").trim())
-      .filter(Boolean);
+    return value.map((item) => String(item || "").trim()).filter(Boolean);
   }
 
   if (typeof value === "string") {
     try {
       const parsed = JSON.parse(value);
       if (Array.isArray(parsed)) {
-        return parsed
-          .map((item) => String(item || "").trim())
-          .filter(Boolean);
+        return parsed.map((item) => String(item || "").trim()).filter(Boolean);
       }
     } catch {
       return [];
@@ -355,10 +358,39 @@ function mapFaydaVerificationRow(
   };
 }
 
-export async function getIssuerByCode(code: string): Promise<IssuerRecord | null> {
+function mapCandourVerificationRow(
+  row: Record<string, unknown>
+): IssuerCandourVerificationRecord {
+  return {
+    id: String(row.id),
+    issuerId: String(row.issuer_id),
+    holderAid: String(row.holder_aid),
+    candourId: String(row.candour_id || ""),
+    verificationSessionId: row.verification_session_id
+      ? String(row.verification_session_id)
+      : null,
+    templateId: row.template_id ? String(row.template_id) : null,
+    credentialId: row.credential_id ? String(row.credential_id) : null,
+    status: String(row.status) as IssuerCandourVerificationRecord["status"],
+    missingFields: parseStringArray(row.missing_fields),
+    mappedData: parseCredentialData(row.mapped_data),
+    candourData: parseCredentialData(row.candour_data),
+    verifiedAt: toIso(row.verified_at),
+    createdAt: toIso(row.created_at),
+    updatedAt: toIso(row.updated_at),
+  };
+}
+
+export async function getIssuerByCode(
+  code: string
+): Promise<IssuerRecord | null> {
   const rows = await query<Record<string, unknown>>(
     `SELECT * FROM issuers WHERE code = $1 LIMIT 1`,
-    [String(code || "").trim().toLowerCase()]
+    [
+      String(code || "")
+        .trim()
+        .toLowerCase(),
+    ]
   );
   return rows[0] ? mapIssuerRow(rows[0]) : null;
 }
@@ -409,7 +441,9 @@ export async function createIssuer(input: {
     `,
     [
       id,
-      String(input.code || "").trim().toLowerCase(),
+      String(input.code || "")
+        .trim()
+        .toLowerCase(),
       String(input.name || "").trim(),
       String(input.status || "active").trim(),
     ]
@@ -504,7 +538,9 @@ export async function updateIssuerSignifyRuntime(
   );
 }
 
-export async function listIssuerUsers(issuerId: string): Promise<IssuerUserRecord[]> {
+export async function listIssuerUsers(
+  issuerId: string
+): Promise<IssuerUserRecord[]> {
   const rows = await query<Record<string, unknown>>(
     `SELECT * FROM issuer_users WHERE issuer_id = $1 ORDER BY created_at ASC`,
     [issuerId]
@@ -636,7 +672,9 @@ export async function createIssuerApplicationRequest(input: {
       String(input.organizationName || "").trim(),
       input.organizationType ? String(input.organizationType).trim() : null,
       String(input.contactName || "").trim(),
-      String(input.email || "").trim().toLowerCase(),
+      String(input.email || "")
+        .trim()
+        .toLowerCase(),
       input.phoneNumber ? String(input.phoneNumber).trim() : null,
       input.country ? String(input.country).trim() : null,
       input.website ? String(input.website).trim() : null,
@@ -774,7 +812,9 @@ export async function createIssuerUser(input: {
     [
       randomUUID(),
       input.issuerId,
-      String(input.email || "").trim().toLowerCase(),
+      String(input.email || "")
+        .trim()
+        .toLowerCase(),
       input.passwordHash,
       input.role,
       input.isActive ?? true,
@@ -1013,7 +1053,9 @@ export async function replaceRefreshToken(
   );
 }
 
-export async function revokeRefreshTokensByUserId(userId: string): Promise<void> {
+export async function revokeRefreshTokensByUserId(
+  userId: string
+): Promise<void> {
   await query(
     `
       UPDATE auth_refresh_tokens
@@ -1158,7 +1200,9 @@ export async function upsertSchemaRegistry(input: {
   ownerIssuerId?: string | null;
   isPublic: boolean;
 }): Promise<SchemaRegistryRecord> {
-  const normalizedSchemaId = canonicalSchemaId(String(input.schemaId || "").trim());
+  const normalizedSchemaId = canonicalSchemaId(
+    String(input.schemaId || "").trim()
+  );
   if (!normalizedSchemaId) {
     throw new Error("Schema id is required");
   }
@@ -1783,4 +1827,118 @@ export async function deleteFaydaVerificationByHolderAidForIssuer(
   );
 
   return Boolean(rows.length);
+}
+
+export async function getCandourVerificationByHolderAidForIssuer(
+  issuerId: string,
+  holderAid: string
+): Promise<IssuerCandourVerificationRecord | null> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      SELECT *
+      FROM issuer_candour_verifications
+      WHERE issuer_id = $1 AND holder_aid = $2
+      LIMIT 1
+    `,
+    [issuerId, String(holderAid || "").trim()]
+  );
+
+  return rows[0] ? mapCandourVerificationRow(rows[0]) : null;
+}
+
+export async function deleteCandourVerificationByHolderAidForIssuer(
+  issuerId: string,
+  holderAid: string
+): Promise<boolean> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      DELETE FROM issuer_candour_verifications
+      WHERE issuer_id = $1 AND holder_aid = $2
+      RETURNING id
+    `,
+    [issuerId, String(holderAid || "").trim()]
+  );
+
+  return Boolean(rows.length);
+}
+
+export async function deleteCandourVerificationsByHolderAid(
+  holderAid: string
+): Promise<number> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      DELETE FROM issuer_candour_verifications
+      WHERE holder_aid = $1
+      RETURNING id
+    `,
+    [String(holderAid || "").trim()]
+  );
+
+  return rows.length;
+}
+
+export async function upsertCandourVerificationForIssuer(input: {
+  id?: string;
+  issuerId: string;
+  holderAid: string;
+  candourId: string;
+  verificationSessionId?: string | null;
+  templateId?: string | null;
+  credentialId?: string | null;
+  status: IssuerCandourVerificationRecord["status"];
+  missingFields?: string[];
+  mappedData?: Record<string, unknown>;
+  candourData?: Record<string, unknown>;
+  verifiedAt?: string;
+}): Promise<IssuerCandourVerificationRecord> {
+  const rows = await query<Record<string, unknown>>(
+    `
+      INSERT INTO issuer_candour_verifications(
+        id,
+        issuer_id,
+        holder_aid,
+        candour_id,
+        verification_session_id,
+        template_id,
+        credential_id,
+        status,
+        missing_fields,
+        mapped_data,
+        candour_data,
+        verified_at,
+        created_at,
+        updated_at
+      )
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+      ON CONFLICT(issuer_id, holder_aid)
+      DO UPDATE SET
+        candour_id = EXCLUDED.candour_id,
+        verification_session_id = EXCLUDED.verification_session_id,
+        template_id = EXCLUDED.template_id,
+        credential_id = EXCLUDED.credential_id,
+        status = EXCLUDED.status,
+        missing_fields = EXCLUDED.missing_fields,
+        mapped_data = EXCLUDED.mapped_data,
+        candour_data = EXCLUDED.candour_data,
+        verified_at = EXCLUDED.verified_at,
+        updated_at = NOW()
+      RETURNING *
+    `,
+    [
+      input.id || randomUUID(),
+      input.issuerId,
+      String(input.holderAid || "").trim(),
+      String(input.candourId || "").trim(),
+      input.verificationSessionId || null,
+      input.templateId || null,
+      input.credentialId || null,
+      input.status,
+      JSON.stringify(input.missingFields || []),
+      JSON.stringify(input.mappedData || {}),
+      JSON.stringify(input.candourData || {}),
+      input.verifiedAt || new Date().toISOString(),
+    ]
+  );
+
+  return mapCandourVerificationRow(rows[0]);
 }

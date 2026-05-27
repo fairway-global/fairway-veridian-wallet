@@ -86,7 +86,6 @@ import { OperationType, ToastMsgType } from "../../globals/types";
 import { CredentialsFilters } from "../../pages/Credentials/Credentials.types";
 import { IdentifiersFilters } from "../../pages/Identifiers/Identifiers.types";
 import { showError } from "../../utils/error";
-import { normalizeApiBaseUrl } from "../../utils/envUrl";
 import { Alert } from "../Alert";
 import { CardListViewType } from "../SwitchCardView";
 import "./AppWrapper.scss";
@@ -98,20 +97,23 @@ import {
   operationFailureHandler,
 } from "./coreEventListeners";
 import { useActivityTimer } from "./hooks/useActivityTimer";
+import {
+  IDENTITY_PENDING_CONNECTION_ID_STORAGE_KEY,
+  IDENTITY_PENDING_CONNECTION_LABEL_STORAGE_KEY,
+  IDENTITY_VERIFIED_STATUSES,
+  IDENTITY_VERIFIED_STORAGE_KEY,
+  getIdentityVerificationApiBase,
+  getIdentityVerificationProvider,
+  getIdentityVerificationStatusPath,
+} from "../../utils/identityVerification";
 
-const FAYDA_STATUS_API_BASE = normalizeApiBaseUrl(
-  process.env.REACT_APP_FAYDA_ISSUER_API,
-  "http://localhost:3001"
+const IDENTITY_VERIFICATION_PROVIDER = getIdentityVerificationProvider();
+const IDENTITY_STATUS_API_BASE = getIdentityVerificationApiBase(
+  IDENTITY_VERIFICATION_PROVIDER
 );
-const FAYDA_VERIFIED_STATUSES = new Set([
-  "verified",
-  "pending_manual_review",
-  "credential_issued",
-]);
-const FAYDA_VERIFIED_STORAGE_KEY = "fayda_verified";
-const FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY = "fayda_pending_connection_id";
-const FAYDA_PENDING_CONNECTION_LABEL_STORAGE_KEY =
-  "fayda_pending_connection_label";
+const IDENTITY_STATUS_PATH = getIdentityVerificationStatusPath(
+  IDENTITY_VERIFICATION_PROVIDER
+);
 
 const getFallbackUserNameFromIdentifiers = (
   identifiers: IdentifierShortDetails[]
@@ -157,13 +159,74 @@ function removeLocalStorageItem(key: string): void {
   }
 }
 
+function getPrimaryIndividualIdentifier(
+  identifiers: IdentifierShortDetails[]
+): IdentifierShortDetails | undefined {
+  return identifiers.find(
+    (identifier) =>
+      identifier.creationStatus === CreationStatus.COMPLETE &&
+      !identifier.groupMetadata &&
+      !identifier.groupMemberPre
+  );
+}
+
+async function syncIdentityVerificationStatusForIssuer(
+  issuerAid: string,
+  dispatch: ReturnType<typeof useAppDispatch>
+): Promise<boolean> {
+  if (typeof fetch !== "function") {
+    dispatch(setFaydaVerified(false));
+    return false;
+  }
+
+  try {
+    const identifiers = await Agent.agent.identifiers.getIdentifiers();
+    const primaryIdentifier = getPrimaryIndividualIdentifier(identifiers);
+
+    if (!primaryIdentifier?.id) {
+      dispatch(setFaydaVerified(false));
+      return false;
+    }
+
+    const aid = primaryIdentifier.id;
+    sessionStorage.setItem("fayda_holder_aid", aid);
+
+    const params = new URLSearchParams({
+      aid,
+    });
+    if (issuerAid) {
+      params.set("issuerAid", issuerAid);
+    }
+
+    const response = await fetch(
+      `${IDENTITY_STATUS_API_BASE}${IDENTITY_STATUS_PATH}?${params.toString()}`
+    );
+
+    if (!response.ok) {
+      dispatch(setFaydaVerified(false));
+      return false;
+    }
+
+    const payload = await response.json();
+    const verificationStatus = String(
+      payload?.data?.verificationStatus || ""
+    ).trim();
+    const verified =
+      Boolean(payload?.data?.verified) ||
+      IDENTITY_VERIFIED_STATUSES.has(verificationStatus);
+
+    dispatch(setFaydaVerified(verified));
+    return verified;
+  } catch {
+    dispatch(setFaydaVerified(false));
+    return false;
+  }
+}
+
 const connectionStateChangedHandler = async (
   event: ConnectionStateChangedEvent,
   dispatch: ReturnType<typeof useAppDispatch>
 ) => {
-  const isFaydaVerified =
-    getLocalStorageItem(FAYDA_VERIFIED_STORAGE_KEY) === "true";
-
   if (event.payload.status === ConnectionStatus.PENDING) {
     if (event.payload.isMultiSigInvite) return;
 
@@ -183,14 +246,18 @@ const connectionStateChangedHandler = async (
       await Agent.agent.connections.getConnectionShortDetailById(
         connectionRecordId
       );
+    const isIdentityVerified = await syncIdentityVerificationStatusForIssuer(
+      connectionRecordId,
+      dispatch
+    );
 
-    if (!isFaydaVerified) {
+    if (!isIdentityVerified) {
       setLocalStorageItem(
-        FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY,
+        IDENTITY_PENDING_CONNECTION_ID_STORAGE_KEY,
         connectionRecordId
       );
       setLocalStorageItem(
-        FAYDA_PENDING_CONNECTION_LABEL_STORAGE_KEY,
+        IDENTITY_PENDING_CONNECTION_LABEL_STORAGE_KEY,
         connectionDetails.label || ""
       );
       dispatch(
@@ -383,7 +450,7 @@ const AppWrapper = (props: { children: ReactNode }) => {
 
   useEffect(() => {
     setLocalStorageItem(
-      FAYDA_VERIFIED_STORAGE_KEY,
+      IDENTITY_VERIFIED_STORAGE_KEY,
       faydaVerified ? "true" : "false"
     );
   }, [faydaVerified]);
@@ -397,7 +464,7 @@ const AppWrapper = (props: { children: ReactNode }) => {
 
     const refreshFaydaWalletState = async () => {
       const pendingConnectionId = getLocalStorageItem(
-        FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY
+        IDENTITY_PENDING_CONNECTION_ID_STORAGE_KEY
       );
 
       try {
@@ -437,8 +504,8 @@ const AppWrapper = (props: { children: ReactNode }) => {
         );
       } finally {
         if (pendingConnectionId) {
-          removeLocalStorageItem(FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY);
-          removeLocalStorageItem(FAYDA_PENDING_CONNECTION_LABEL_STORAGE_KEY);
+          removeLocalStorageItem(IDENTITY_PENDING_CONNECTION_ID_STORAGE_KEY);
+          removeLocalStorageItem(IDENTITY_PENDING_CONNECTION_LABEL_STORAGE_KEY);
         }
       }
     };
@@ -467,7 +534,7 @@ const AppWrapper = (props: { children: ReactNode }) => {
       const aid = primaryIdentifier.id;
       sessionStorage.setItem("fayda_holder_aid", aid);
       const pendingIssuerAid = String(
-        getLocalStorageItem(FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY) || ""
+        getLocalStorageItem(IDENTITY_PENDING_CONNECTION_ID_STORAGE_KEY) || ""
       ).trim();
 
       if (typeof fetch !== "function") {
@@ -484,7 +551,7 @@ const AppWrapper = (props: { children: ReactNode }) => {
         }
 
         const response = await fetch(
-          `${FAYDA_STATUS_API_BASE}/saveFayda?${params.toString()}`
+          `${IDENTITY_STATUS_API_BASE}${IDENTITY_STATUS_PATH}?${params.toString()}`
         );
 
         if (!response.ok) {
@@ -498,7 +565,7 @@ const AppWrapper = (props: { children: ReactNode }) => {
         ).trim();
         const verified =
           Boolean(payload?.data?.verified) ||
-          FAYDA_VERIFIED_STATUSES.has(verificationStatus);
+          IDENTITY_VERIFIED_STATUSES.has(verificationStatus);
         dispatch(setFaydaVerified(verified));
         return verified;
       } catch {
@@ -586,15 +653,16 @@ const AppWrapper = (props: { children: ReactNode }) => {
         storedIdentifiers
       );
       const pendingConnectionId = getLocalStorageItem(
-        FAYDA_PENDING_CONNECTION_ID_STORAGE_KEY
+        IDENTITY_PENDING_CONNECTION_ID_STORAGE_KEY
       );
-      const normalizedConnections = !isFaydaVerified && pendingConnectionId
-        ? connectionsDetails.map((connection) =>
-            connection.id === pendingConnectionId
-              ? { ...connection, status: ConnectionStatus.PENDING }
-              : connection
-          )
-        : connectionsDetails;
+      const normalizedConnections =
+        !isFaydaVerified && pendingConnectionId
+          ? connectionsDetails.map((connection) =>
+              connection.id === pendingConnectionId
+                ? { ...connection, status: ConnectionStatus.PENDING }
+                : connection
+            )
+          : connectionsDetails;
 
       dispatch(setIdentifiersCache(storedIdentifiers));
       dispatch(setCredsCache(credsCache));

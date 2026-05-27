@@ -15,6 +15,12 @@ import {
   revokeCredential,
 } from "./apis/credential.api";
 import {
+  createCandourSession,
+  deleteCandourData,
+  getCandourDataStatus,
+  saveCandourData,
+} from "./apis/candour.api";
+import {
   getFaydaDataStatus,
   saveFaydaData,
   deleteFaydaData,
@@ -130,10 +136,7 @@ const accountAccess = [
   requireAccessToken,
   requireRole(["issuer", "verifier"]),
 ] as const;
-const adminAccess = [
-  requireAccessToken,
-  requireRole(["admin"]),
-] as const;
+const adminAccess = [requireAccessToken, requireRole(["admin"])] as const;
 
 router.get(config.path.adminUsersV2, ...adminAccess, adminListUsersApi);
 router.post(config.path.adminUsersV2, ...adminAccess, adminCreateUserApi);
@@ -160,20 +163,40 @@ router.patch(
   adminReviewIssuerApplicationApi
 );
 router.get(config.path.accountProfileV2, ...accountAccess, accountProfileApi);
-router.get(config.path.accountRequestsV2, ...accountAccess, accountListRequestsApi);
-router.post(config.path.accountRequestsV2, ...accountAccess, accountCreateRequestApi);
+router.get(
+  config.path.accountRequestsV2,
+  ...accountAccess,
+  accountListRequestsApi
+);
+router.post(
+  config.path.accountRequestsV2,
+  ...accountAccess,
+  accountCreateRequestApi
+);
 
 router.get(config.path.templatesV2, ...issuerReadAccess, listTemplatesApiV2);
-router.get(config.path.templateByIdV2, ...issuerReadAccess, getTemplateByIdApiV2);
+router.get(
+  config.path.templateByIdV2,
+  ...issuerReadAccess,
+  getTemplateByIdApiV2
+);
 router.post(config.path.templatesV2, ...issuerWriteAccess, createTemplateApiV2);
-router.put(config.path.templateByIdV2, ...issuerWriteAccess, updateTemplateApiV2);
+router.put(
+  config.path.templateByIdV2,
+  ...issuerWriteAccess,
+  updateTemplateApiV2
+);
 router.delete(
   config.path.templateByIdV2,
   ...issuerWriteAccess,
   deleteTemplateApiV2
 );
 
-router.get(config.path.credentialsApiV2, ...issuerReadAccess, listCredentialsApiV2);
+router.get(
+  config.path.credentialsApiV2,
+  ...issuerReadAccess,
+  listCredentialsApiV2
+);
 router.get(
   config.path.credentialByIdV2,
   ...issuerReadAccess,
@@ -183,6 +206,26 @@ router.get(
   config.path.issueCredentialPrefillApiV2,
   ...issuerReadAccess,
   getIssueCredentialPrefillApiV2
+);
+router.post(
+  config.path.candourSessionV2,
+  ...sharedReadAccess,
+  createCandourSession
+);
+router.get(
+  config.path.candourStatusV2,
+  ...sharedReadAccess,
+  getCandourDataStatus
+);
+router.post(
+  config.path.candourFinalizeV2,
+  ...sharedReadAccess,
+  saveCandourData
+);
+router.delete(
+  config.path.candourFinalizeV2,
+  ...issuerWriteAccess,
+  deleteCandourData
 );
 router.post(
   config.path.issueCredentialApiV2,
@@ -272,10 +315,17 @@ if (config.allowLegacyUnauthRoutes) {
   router.use(legacyDeprecationNotice);
   router.get(config.path.keriOobi, keriOobiApi);
   router.get(config.path.saveFayda, getFaydaDataStatus);
+  router.get(config.path.saveCandour, getCandourDataStatus);
   router.get(config.path.saveFaydaData, getFaydaDataStatus);
+  router.get(config.path.saveCandourData, getCandourDataStatus);
+  router.post(config.path.candourSession, createCandourSession);
   router.post(config.path.issueAcdcCredential, issueAcdcCredential);
   router.post(config.path.saveFayda, saveFaydaData);
+  router.post(config.path.saveCandour, saveCandourData);
   router.post(config.path.saveFaydaData, saveFaydaData);
+  router.post(config.path.saveCandourData, saveCandourData);
+  router.delete(config.path.saveCandour, deleteCandourData);
+  router.delete(config.path.saveCandourData, deleteCandourData);
   router.delete(config.path.saveData, deleteFaydaData);
   router.post(config.path.resolveOobi, resolveOobi);
   router.get(config.path.contacts, contactList);
@@ -286,11 +336,23 @@ if (config.allowLegacyUnauthRoutes) {
   router.delete(config.path.deleteRevokedCredentials, deleteRevokedCredentials);
   router.delete(config.path.deleteContact, deleteContact);
   router.get(config.path.templates, requireDashboardAuth, listTemplatesApi);
-  router.get(config.path.templateById, requireDashboardAuth, getTemplateByIdApi);
+  router.get(
+    config.path.templateById,
+    requireDashboardAuth,
+    getTemplateByIdApi
+  );
   router.post(config.path.templates, requireDashboardAuth, createTemplateApi);
   router.put(config.path.templateById, requireDashboardAuth, updateTemplateApi);
-  router.delete(config.path.templateById, requireDashboardAuth, deleteTemplateApi);
-  router.get(config.path.credentialsApi, requireDashboardAuth, listCredentialsApi);
+  router.delete(
+    config.path.templateById,
+    requireDashboardAuth,
+    deleteTemplateApi
+  );
+  router.get(
+    config.path.credentialsApi,
+    requireDashboardAuth,
+    listCredentialsApi
+  );
   router.get(
     config.path.credentialById,
     requireDashboardAuth,

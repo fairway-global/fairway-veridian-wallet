@@ -48,6 +48,7 @@ import { initializeFreeRASP, ThreatCheck } from "../security/freerasp";
 import { SystemThreatAlert } from "./pages/SystemThreatAlert/SystemThreatAlert";
 import { ConfigurationService } from "../core/configuration";
 import { i18n } from "../i18n";
+import { getIdentityVerificationNativeRedirectUri } from "./utils/identityVerification";
 
 setupIonicReact();
 
@@ -65,10 +66,7 @@ const App = () => {
   }>({ success: false, error: "" });
 
   const [threatsDetected, setThreatsDetected] = useState<ThreatCheck[]>([]);
-  const [, forceLanguageRefresh] = useReducer(
-    (count: number) => count + 1,
-    0
-  );
+  const [, forceLanguageRefresh] = useReducer((count: number) => count + 1, 0);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -89,8 +87,22 @@ const App = () => {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
+    const identityCallbackPrefixes = ["fayda", "candour"].map((provider) => {
+      const callbackUrl = new URL(
+        getIdentityVerificationNativeRedirectUri(
+          provider as "fayda" | "candour"
+        )
+      );
+      callbackUrl.search = "";
+      callbackUrl.hash = "";
+      return callbackUrl.toString();
+    });
+
     const listener = CapacitorApp.addListener("appUrlOpen", async ({ url }) => {
-      if (!url?.startsWith("org.cardanofoundation.idw://fayda/callback")) {
+      if (
+        !url ||
+        !identityCallbackPrefixes.some((prefix) => url.startsWith(prefix))
+      ) {
         return;
       }
 

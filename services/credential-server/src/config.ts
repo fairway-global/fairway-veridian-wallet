@@ -56,8 +56,7 @@ const jwtAccessSecret =
 const jwtRefreshSecret =
   process.env.JWT_REFRESH_SECRET ?? "dev-change-me-refresh-secret";
 const googleClientId = process.env.GOOGLE_CLIENT_ID ?? "";
-const dashboardUiUrl =
-  process.env.DASHBOARD_UI_URL ?? "http://localhost:5173";
+const dashboardUiUrl = process.env.DASHBOARD_UI_URL ?? "http://localhost:5173";
 const smtpHost = process.env.SMTP_HOST ?? "";
 const smtpPort = Number(process.env.SMTP_PORT || 587);
 const smtpSecure = String(process.env.SMTP_SECURE ?? "false").trim() === "true";
@@ -69,9 +68,7 @@ const smtpConnectionTimeoutMs = Number(
 const smtpGreetingTimeoutMs = Number(
   process.env.SMTP_GREETING_TIMEOUT_MS || 10000
 );
-const smtpSocketTimeoutMs = Number(
-  process.env.SMTP_SOCKET_TIMEOUT_MS || 15000
-);
+const smtpSocketTimeoutMs = Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 15000);
 const smtpDnsTimeoutMs = Number(process.env.SMTP_DNS_TIMEOUT_MS || 5000);
 const mailDebug = String(process.env.MAIL_DEBUG ?? "false").trim() === "true";
 const mailFromName = process.env.MAIL_FROM_NAME ?? "Fairwallet";
@@ -83,7 +80,9 @@ const gatewayJwtIssuer =
   process.env.GATEWAY_JWT_ISSUER ?? "fairway-backend-gateway";
 const gatewayJwtAudience =
   process.env.GATEWAY_JWT_AUDIENCE ?? "credential-server-internal";
-const accessTokenTtlSeconds = Number(process.env.ACCESS_TOKEN_TTL_SECONDS || 900);
+const accessTokenTtlSeconds = Number(
+  process.env.ACCESS_TOKEN_TTL_SECONDS || 900
+);
 const refreshTokenTtlSeconds = Number(
   process.env.REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 30
 );
@@ -97,9 +96,9 @@ const branEncryptionKey =
   process.env.BRAN_ENCRYPTION_KEY ?? "dev-change-me-bran-encryption-key";
 const defaultIssuerCode = process.env.DEFAULT_ISSUER_CODE ?? "default";
 const defaultIssuerName = process.env.DEFAULT_ISSUER_NAME ?? "Default Issuer";
-const defaultIssuerAidAlias =
-  process.env.DEFAULT_ISSUER_AID_ALIAS ?? "issuer";
-const defaultAdminEmail = process.env.DEFAULT_ADMIN_EMAIL ?? "admin@default.local";
+const defaultIssuerAidAlias = process.env.DEFAULT_ISSUER_AID_ALIAS ?? "issuer";
+const defaultAdminEmail =
+  process.env.DEFAULT_ADMIN_EMAIL ?? "admin@default.local";
 const defaultAdminPassword =
   process.env.DEFAULT_ADMIN_PASSWORD ?? "ChangeMe123!";
 const defaultIssuerUserEmail =
@@ -110,6 +109,25 @@ const defaultVerifierEmail =
   process.env.DEFAULT_VERIFIER_EMAIL ?? "verifier@default.local";
 const defaultVerifierPassword =
   process.env.DEFAULT_VERIFIER_PASSWORD ?? "Verifier123!";
+const candourApiBaseUrl =
+  process.env.CANDOUR_API_BASE_URL ?? "https://rest-sandbox.candour.fi/v1";
+const candourPublicKey = process.env.CANDOUR_PUBLIC_KEY ?? "";
+const candourHmacKey = process.env.CANDOUR_HMAC_KEY ?? "";
+const candourSessionTtlMinutes = Number(
+  process.env.CANDOUR_SESSION_TTL_MINUTES || 15
+);
+const candourMaxTries = Number(process.env.CANDOUR_MAX_TRIES || 5);
+const candourAllowIdWeb =
+  String(process.env.CANDOUR_ALLOW_ID_WEB ?? "true").trim() !== "false";
+const candourAllowIdApp =
+  String(process.env.CANDOUR_ALLOW_ID_APP ?? "true").trim() !== "false";
+const candourAllowRfidApp =
+  String(process.env.CANDOUR_ALLOW_RFID_APP ?? "true").trim() !== "false";
+const candourAllowIdCard =
+  String(process.env.CANDOUR_ALLOW_ID_CARD ?? "true").trim() !== "false";
+const candourDefaultCallbackUrl =
+  process.env.CANDOUR_DEFAULT_CALLBACK_URL ??
+  "https://connect.fairwallet.et/callback?provider=candour&bridgeToApp=1";
 
 export const config = {
   endpoint: endpoint,
@@ -152,6 +170,18 @@ export const config = {
   defaultIssuerUserPassword,
   defaultVerifierEmail,
   defaultVerifierPassword,
+  candour: {
+    apiBaseUrl: candourApiBaseUrl,
+    publicKey: candourPublicKey,
+    hmacKey: candourHmacKey,
+    sessionTtlMinutes: candourSessionTtlMinutes,
+    maxTries: candourMaxTries,
+    allowIdWeb: candourAllowIdWeb,
+    allowIdApp: candourAllowIdApp,
+    allowRfidApp: candourAllowRfidApp,
+    allowIdCard: candourAllowIdCard,
+    defaultCallbackUrl: candourDefaultCallbackUrl,
+  },
   keria: {
     url: keriaUrl,
     bootUrl: keriaBootUrl,
@@ -160,9 +190,12 @@ export const config = {
     ping: "/ping",
     keriOobi: "/keriOobi",
     saveFayda: "/saveFayda",
+    saveCandour: "/saveCandour",
     issueAcdcCredential: "/issueAcdcCredential",
     saveFaydaData: "/saveFaydaData",
+    saveCandourData: "/saveCandourData",
     saveData: "/saveData",
+    candourSession: "/candour/session",
     contacts: "/contacts",
     contactCredentials: "/contactCredentials",
     resolveOobi: "/resolveOobi",
@@ -205,6 +238,9 @@ export const config = {
     credentialByIdV2: "/api/v2/credentials/:id",
     issueCredentialApiV2: "/api/v2/credentials/issue",
     issueCredentialPrefillApiV2: "/api/v2/credentials/issue/prefill",
+    candourSessionV2: "/api/v2/candour/session",
+    candourStatusV2: "/api/v2/candour/status",
+    candourFinalizeV2: "/api/v2/candour/finalize",
     revokeCredentialApiV2: "/api/v2/credentials/:id/revoke",
     deleteCredentialApiV2: "/api/v2/credentials/:id",
     contactsV2: "/api/v2/contacts",

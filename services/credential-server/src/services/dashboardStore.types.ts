@@ -2,7 +2,8 @@ export type TemplateAttributeType =
   | "string"
   | "integer"
   | "number"
-  | "boolean";
+  | "boolean"
+  | "date";
 
 export interface TemplateAttribute {
   name: string;

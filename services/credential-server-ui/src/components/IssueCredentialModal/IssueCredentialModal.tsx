@@ -37,7 +37,7 @@ const IssueCredentialModal = ({
   const [selectedConnection, setSelectedConnection] = useState(connectionId);
   const [selectedCredTemplate, setSelectedCredTemplate] =
     useState(credentialTypeId);
-  const [attributes, setAttributes] = useState<Record<string, string>>({});
+  const [attributes, setAttributes] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(false);
   const schema = useSchemaDetail(selectedCredTemplate);
   const properties = schema?.properties?.a?.oneOf?.[1]?.properties || {};
@@ -53,7 +53,9 @@ const IssueCredentialModal = ({
       ? true
       : renderedRequiredList.every(
           (key) =>
-            attributes[key] !== undefined && attributes[key].trim() !== ""
+            attributes[key] !== undefined &&
+            attributes[key] !== null &&
+            String(attributes[key]).trim() !== ""
         );
 
   useEffect(() => {
@@ -209,7 +211,7 @@ const IssueCredentialModal = ({
     );
   };
 
-  const updateAttributes = (key: string, value: string) => {
+  const updateAttributes = (key: string, value: unknown) => {
     setAttributes((currentValue) => ({
       ...currentValue,
       [key]: value,

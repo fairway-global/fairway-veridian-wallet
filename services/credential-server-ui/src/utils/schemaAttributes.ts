@@ -1,5 +1,9 @@
 import { IGNORE_ATTRIBUTES } from "../const";
 import { SchemaDetail } from "../store/reducers/schemasSlice.types";
+import {
+  formatTemplateAttributeLabel,
+  normalizeTemplateAttributeType,
+} from "./templateAttributeFields";
 
 export interface SchemaAttributeDefinition {
   name: string;
@@ -18,14 +22,7 @@ function getSubjectAttributeSchema(schemaDetail?: SchemaDetail) {
 }
 
 export function formatSchemaAttributeLabel(name: string): string {
-  const normalized = String(name || "")
-    .replace(/[_-]+/g, " ")
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .trim();
-
-  return normalized
-    ? normalized.charAt(0).toUpperCase() + normalized.slice(1)
-    : "";
+  return formatTemplateAttributeLabel(name);
 }
 
 export function getSchemaAttributeDefinitions(
@@ -35,7 +32,7 @@ export function getSchemaAttributeDefinitions(
   const properties =
     (attributeSchema?.properties as Record<
       string,
-      { description?: string; type?: string } | undefined
+      { description?: string; type?: string; format?: string } | undefined
     >) || {};
   const requiredFields = new Set(attributeSchema?.required || []);
 
@@ -46,7 +43,11 @@ export function getSchemaAttributeDefinitions(
       label: formatSchemaAttributeLabel(name),
       description: String(property?.description || "").trim(),
       required: requiredFields.has(name),
-      type: String(property?.type || "string").trim().toLowerCase(),
+      type: normalizeTemplateAttributeType({
+        name,
+        type: property?.type,
+        format: property?.format,
+      }),
     }));
 }
 

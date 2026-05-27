@@ -200,6 +200,28 @@ export interface IssuerFaydaVerificationRecord {
   updatedAt: string;
 }
 
+export type IssuerCandourVerificationStatus =
+  | "verified"
+  | "pending_manual_review"
+  | "credential_issued";
+
+export interface IssuerCandourVerificationRecord {
+  id: string;
+  issuerId: string;
+  holderAid: string;
+  candourId: string;
+  verificationSessionId: string | null;
+  templateId: string | null;
+  credentialId: string | null;
+  status: IssuerCandourVerificationStatus;
+  missingFields: string[];
+  mappedData: Record<string, unknown>;
+  candourData: Record<string, unknown>;
+  verifiedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreateIssuerTemplateInput {
   issuerId: string;
   name: string;
